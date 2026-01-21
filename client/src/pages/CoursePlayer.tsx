@@ -9,22 +9,29 @@ import {
   ChevronRight,
   Clock,
   Lock,
-  Download
+  Download,
+  MoreVertical,
+  Maximize2,
+  Volume2,
+  Settings,
+  Share2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function CoursePlayer() {
-  const [activeLesson, setActiveLesson] = useState(1);
+  const [activeLesson, setActiveLesson] = useState(2);
 
   const courseStructure = {
     title: "Neurociencia de la Voluntad",
+    instructor: "Dr. Barkley",
     weeks: [
       {
         id: 1,
-        title: "Semana 1: El Punto de Acción",
+        title: "Módulo 1: El Punto de Acción",
         lessons: [
           { id: 1, title: "Introducción al Método Barkley", type: "video", duration: "12 min", status: "completed" },
           { id: 2, title: "La Brecha de Intención-Acción", type: "video", duration: "18 min", status: "current" },
@@ -35,7 +42,7 @@ export default function CoursePlayer() {
       },
       {
         id: 2,
-        title: "Semana 2: Externalización del Tiempo",
+        title: "Módulo 2: Externalización del Tiempo",
         lessons: [
           { id: 6, title: "El Reloj Mental vs El Reloj Visual", type: "video", duration: "15 min", status: "locked" },
           { id: 7, title: "Configuración de Ráfagas", type: "video", duration: "20 min", status: "locked" }
@@ -45,59 +52,53 @@ export default function CoursePlayer() {
   };
 
   return (
-    <div className="flex h-screen bg-white overflow-hidden font-sans text-[#1e1e1e]">
-      {/* Course Navigation Sidebar - Ultra Minimalist */}
-      <aside className="w-96 border-r border-gray-100 flex flex-col bg-[#fcfcfc]">
-        <div className="p-8 border-b border-gray-100 bg-white">
-          <a href="/dashboard" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#a51c30] mb-6 hover:gap-4 transition-all">
+    <div className="flex h-screen bg-[#0a0a0a] overflow-hidden font-sans text-white">
+      {/* Course Navigation Sidebar - Dark Mode MasterClass Style */}
+      <aside className="w-80 border-r border-white/5 flex flex-col bg-[#0a0a0a]">
+        <div className="p-6 border-b border-white/5">
+          <a href="/dashboard" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#a51c30] mb-6 hover:translate-x-1 transition-transform">
             <ChevronLeft className="w-4 h-4" /> Volver al Panel
           </a>
-          <h1 className="text-2xl font-serif font-black leading-tight mb-4">{courseStructure.title}</h1>
+          <h1 className="text-xl font-serif font-bold leading-tight mb-4">{courseStructure.title}</h1>
           <div className="space-y-2">
-            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-400">
-              <span>Progreso del curso</span>
+            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-white/40">
+              <span>Completado</span>
               <span>24%</span>
             </div>
-            <Progress value={24} className="h-1 bg-gray-100" />
+            <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+              <div className="h-full bg-[#a51c30] w-[24%]" />
+            </div>
           </div>
         </div>
 
         <ScrollArea className="flex-1">
-          <div className="p-0">
+          <div className="py-2">
             {courseStructure.weeks.map((week) => (
-              <div key={week.id} className="border-b border-gray-50">
-                <div className="px-8 py-6 bg-gray-50/50">
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">{week.title}</h3>
+              <div key={week.id} className="mb-2">
+                <div className="px-6 py-4 bg-white/5">
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-white/40">{week.title}</h3>
                 </div>
-                <div className="divide-y divide-gray-50">
+                <div>
                   {week.lessons.map((lesson) => (
                     <button
                       key={lesson.id}
                       onClick={() => lesson.status !== 'locked' && setActiveLesson(lesson.id)}
-                      className={`w-full flex items-start gap-4 px-8 py-6 text-left transition-all hover:bg-white group ${activeLesson === lesson.id ? 'bg-white border-l-4 border-[#a51c30]' : 'border-l-4 border-transparent'}`}
+                      className={`w-full flex items-center gap-4 px-6 py-4 text-left transition-all border-l-2 ${activeLesson === lesson.id ? 'bg-[#a51c30]/10 border-[#a51c30]' : 'border-transparent hover:bg-white/5'}`}
                     >
-                      <div className="mt-1">
+                      <div className="shrink-0">
                         {lesson.status === 'completed' ? (
-                          <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
-                            <CheckSquare className="w-3 h-3 text-white" />
-                          </div>
+                          <CheckSquare className="w-4 h-4 text-emerald-500" />
                         ) : lesson.status === 'locked' ? (
-                          <Lock className="w-4 h-4 text-gray-200" />
+                          <Lock className="w-4 h-4 text-white/20" />
                         ) : (
-                          <div className={`w-5 h-5 rounded-full border-2 ${activeLesson === lesson.id ? 'border-[#a51c30]' : 'border-gray-200'}`} />
+                          <PlayCircle className={`w-4 h-4 ${activeLesson === lesson.id ? 'text-[#a51c30]' : 'text-white/40'}`} />
                         )}
                       </div>
-                      <div className="flex-1">
-                        <p className={`text-[13px] font-bold leading-snug mb-1 ${lesson.status === 'locked' ? 'text-gray-300' : 'text-[#1e1e1e]'}`}>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-[12px] font-bold truncate ${lesson.status === 'locked' ? 'text-white/20' : 'text-white/90'}`}>
                           {lesson.title}
                         </p>
-                        <div className="flex items-center gap-3">
-                          {lesson.type === 'video' && <PlayCircle className="w-3 h-3 text-gray-400" />}
-                          {lesson.type === 'pdf' && <FileText className="w-3 h-3 text-gray-400" />}
-                          {lesson.type === 'quiz' && <CheckSquare className="w-3 h-3 text-gray-400" />}
-                          {lesson.type === 'assignment' && <MessageSquare className="w-3 h-3 text-gray-400" />}
-                          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">{lesson.duration}</span>
-                        </div>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-white/30">{lesson.duration}</span>
                       </div>
                     </button>
                   ))}
@@ -108,82 +109,137 @@ export default function CoursePlayer() {
         </ScrollArea>
       </aside>
 
-      {/* Main Player Area - Inspired by High-End Platforms */}
-      <main className="flex-1 flex flex-col bg-white overflow-y-auto">
-        <div className="aspect-video bg-black relative group cursor-pointer">
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col bg-[#0a0a0a]">
+        {/* Video Player - Cinema Experience */}
+        <div className="relative aspect-video bg-black group overflow-hidden shadow-2xl">
           <div className="absolute inset-0 flex items-center justify-center">
-             <div className="w-24 h-24 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 group-hover:scale-110 transition-transform">
-                <PlayCircle className="w-12 h-12 text-white" />
+             <div className="w-20 h-20 bg-white/5 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/10 group-hover:scale-110 group-hover:bg-[#a51c30]/20 transition-all duration-500 cursor-pointer">
+                <PlayCircle className="w-10 h-10 text-white" />
              </div>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-800">
-             <div className="h-full bg-[#a51c30] w-1/3 relative">
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg" />
-             </div>
+          
+          {/* Controls Overlay */}
+          <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/80 to-transparent translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+            <div className="flex flex-col gap-4">
+               <div className="h-1 w-full bg-white/20 rounded-full cursor-pointer relative">
+                  <div className="h-full bg-[#a51c30] w-1/3 rounded-full relative">
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg" />
+                  </div>
+               </div>
+               <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-6">
+                    <PlayCircle className="w-5 h-5 cursor-pointer hover:text-[#a51c30]" />
+                    <Volume2 className="w-5 h-5 cursor-pointer hover:text-[#a51c30]" />
+                    <span className="text-[10px] font-black tracking-widest opacity-60">06:24 / 18:00</span>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <Settings className="w-5 h-5 cursor-pointer hover:text-[#a51c30]" />
+                    <Maximize2 className="w-5 h-5 cursor-pointer hover:text-[#a51c30]" />
+                  </div>
+               </div>
+            </div>
           </div>
         </div>
 
-        <div className="max-w-4xl mx-auto w-full px-12 py-16 space-y-12">
-          <div className="flex items-start justify-between">
-            <div className="space-y-4">
-              <Badge className="bg-[#a51c30]/10 text-[#a51c30] border-none rounded-none px-4 py-1 text-[10px] font-black uppercase tracking-[0.3em]">
-                Módulo 1 • Lección 2
-              </Badge>
-              <h2 className="text-5xl font-serif font-black italic text-[#1e1e1e]">La Brecha de Intención-Acción</h2>
-              <div className="flex items-center gap-6 text-gray-400">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  <span className="text-[11px] font-black uppercase tracking-widest">18 Minutos de contenido</span>
-                </div>
-                <div className="w-1.5 h-1.5 rounded-full bg-gray-100" />
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  <span className="text-[11px] font-black uppercase tracking-widest">2 Recursos descargables</span>
+        {/* Lesson Info & Content */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-4xl mx-auto px-12 py-16">
+            <Tabs defaultValue="lesson" className="w-full">
+              <div className="flex items-center justify-between border-b border-white/5 mb-12">
+                <TabsList className="bg-transparent h-auto p-0 gap-8 rounded-none">
+                  <TabsTrigger value="lesson" className="bg-transparent text-[11px] font-black uppercase tracking-[0.3em] data-[state=active]:bg-transparent data-[state=active]:text-[#a51c30] data-[state=active]:border-b-2 data-[state=active]:border-[#a51c30] rounded-none pb-4 border-b-2 border-transparent transition-all">Lección</TabsTrigger>
+                  <TabsTrigger value="resources" className="bg-transparent text-[11px] font-black uppercase tracking-[0.3em] data-[state=active]:bg-transparent data-[state=active]:text-[#a51c30] data-[state=active]:border-b-2 data-[state=active]:border-[#a51c30] rounded-none pb-4 border-b-2 border-transparent transition-all">Recursos</TabsTrigger>
+                  <TabsTrigger value="notes" className="bg-transparent text-[11px] font-black uppercase tracking-[0.3em] data-[state=active]:bg-transparent data-[state=active]:text-[#a51c30] data-[state=active]:border-b-2 data-[state=active]:border-[#a51c30] rounded-none pb-4 border-b-2 border-transparent transition-all">Mis Notas</TabsTrigger>
+                  <TabsTrigger value="community" className="bg-transparent text-[11px] font-black uppercase tracking-[0.3em] data-[state=active]:bg-transparent data-[state=active]:text-[#a51c30] data-[state=active]:border-b-2 data-[state=active]:border-[#a51c30] rounded-none pb-4 border-b-2 border-transparent transition-all">Comunidad</TabsTrigger>
+                </TabsList>
+                <div className="flex gap-4">
+                   <Button variant="outline" className="border-white/10 bg-white/5 hover:bg-white/10 text-[9px] font-black uppercase tracking-widest h-10 px-4 rounded-none">
+                     <Share2 className="w-3.5 h-3.5 mr-2" /> Compartir
+                   </Button>
+                   <Button variant="outline" className="border-white/10 bg-white/5 hover:bg-white/10 text-[9px] font-black uppercase tracking-widest h-10 px-4 rounded-none">
+                     <MoreVertical className="w-3.5 h-3.5" />
+                   </Button>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <div className="prose prose-lg max-w-none">
-            <p className="text-xl text-gray-600 leading-relaxed font-medium mb-8">
-              En esta lección exploraremos por qué saber lo que tienes que hacer no es suficiente para lograrlo. Analizaremos cómo el Método Barkley ataca directamente el "Punto de Acción" para cerrar esta brecha neurobiológica.
-            </p>
-            
-            <div className="bg-gray-50 p-10 border-l-8 border-[#a51c30] mb-12">
-               <h4 className="text-[12px] font-black uppercase tracking-[0.4em] text-[#a51c30] mb-4">Objetivo de la Lección</h4>
-               <p className="text-gray-700 italic font-serif text-lg">
-                 "El conocimiento no es poder. La ejecución es poder. Entenderás la base científica de por qué tu cerebro elige procrastinar incluso cuando el objetivo es importante."
-               </p>
-            </div>
+              <TabsContent value="lesson" className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="space-y-6">
+                  <Badge className="bg-[#a51c30] text-white rounded-none px-4 py-1 text-[9px] font-black uppercase tracking-[0.35em] border-none">Módulo 1 • Parte 2</Badge>
+                  <h2 className="text-5xl font-serif font-black italic">La Brecha de <br /><span className="text-[#a51c30] not-italic">Intención-Acción</span></h2>
+                  <p className="text-xl text-white/60 leading-relaxed font-medium">
+                    Explora por qué saber no es hacer. En esta sesión, el Dr. Barkley desglosa los mecanismos neurobiológicos que impiden que tus metas se conviertan en realidad y cómo hackear tu entorno para ganar consistencia.
+                  </p>
+                </div>
 
-            <h3 className="text-2xl font-serif font-black text-[#1e1e1e] mt-12 mb-6">Recursos de la Semana</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               {[
-                 { title: "Guía de Trabajo: Mapa de Intenciones", type: "PDF", size: "2.4 MB" },
-                 { title: "Lectura Complementaria: Dr. Russell Barkley", type: "DOCX", size: "1.1 MB" }
-               ].map((doc, i) => (
-                 <div key={i} className="flex items-center justify-between p-6 border border-gray-100 hover:border-[#a51c30]/20 transition-all group">
-                   <div className="flex items-center gap-4">
-                     <div className="w-12 h-12 bg-gray-50 flex items-center justify-center group-hover:bg-[#a51c30]/5 transition-all">
-                       <Download className="w-5 h-5 text-gray-300 group-hover:text-[#a51c30]" />
-                     </div>
-                     <div>
-                       <p className="text-sm font-bold text-[#1e1e1e]">{doc.title}</p>
-                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{doc.type} • {doc.size}</p>
-                     </div>
+                <div className="bg-white/5 p-12 border-l-4 border-[#a51c30] relative overflow-hidden group">
+                   <div className="absolute top-0 right-0 p-8 opacity-5">
+                      <Brain className="w-32 h-32" />
                    </div>
-                 </div>
-               ))}
-            </div>
-          </div>
+                   <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#a51c30] mb-6">Concepto Clave</h4>
+                   <p className="text-2xl font-serif font-bold italic text-white/90 leading-relaxed relative z-10">
+                     "La procrastinación no es un problema de gestión de tiempo, es un problema de regulación emocional y soporte de las funciones ejecutivas."
+                   </p>
+                </div>
 
-          <div className="pt-16 border-t border-gray-100 flex justify-between items-center">
-             <Button variant="ghost" className="text-gray-400 uppercase font-black tracking-widest text-[11px] h-14 px-8 rounded-none">
-               Anterior
-             </Button>
-             <Button className="bg-[#a51c30] hover:bg-[#821626] text-white uppercase font-black tracking-[0.3em] text-[11px] h-14 px-12 rounded-none flex items-center gap-3">
-               Siguiente Lección <ChevronRight className="w-4 h-4" />
-             </Button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-8">
+                   <div className="space-y-6">
+                      <h5 className="text-[12px] font-black uppercase tracking-[0.3em] text-white">Lo que aprenderás</h5>
+                      <ul className="space-y-4">
+                        {[
+                          "Identificar el 'Punto de Acción' en tus tareas",
+                          "Comprender el papel de la Dopamina en la espera",
+                          "Estrategias de andamiaje externo para tu voluntad"
+                        ].map((item, i) => (
+                          <li key={i} className="flex items-start gap-4 text-sm text-white/50">
+                            <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#a51c30]" />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                   </div>
+                   <div className="space-y-6">
+                      <h5 className="text-[12px] font-black uppercase tracking-[0.3em] text-white">Instrucciones</h5>
+                      <p className="text-sm text-white/50 leading-relaxed">
+                        Completa el video tutorial antes de descargar la guía de trabajo. Te recomendamos realizar la actividad de redacción inmediatamente después para fijar el conocimiento.
+                      </p>
+                   </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="resources" className="animate-in fade-in duration-500">
+                <div className="grid grid-cols-1 gap-4">
+                  {[
+                    { title: "Guía de Trabajo: Mapa de Intenciones", type: "PDF", size: "2.4 MB" },
+                    { title: "Lectura Complementaria: Dr. Russell Barkley", type: "DOCX", size: "1.1 MB" },
+                    { title: "Audio: Meditación de Enfoque Barkley", type: "MP3", size: "8.5 MB" }
+                  ].map((doc, i) => (
+                    <div key={i} className="flex items-center justify-between p-6 bg-white/5 border border-white/5 hover:border-[#a51c30]/40 transition-all group cursor-pointer">
+                      <div className="flex items-center gap-6">
+                        <div className="w-14 h-14 bg-white/5 flex items-center justify-center group-hover:bg-[#a51c30]/10 transition-all">
+                          <Download className="w-5 h-5 text-white/40 group-hover:text-[#a51c30]" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-white/90">{doc.title}</p>
+                          <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">{doc.type} • {doc.size}</p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-white/20 group-hover:text-[#a51c30] group-hover:translate-x-1 transition-all" />
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            <div className="mt-32 pt-16 border-t border-white/5 flex justify-between items-center">
+              <div className="flex flex-col gap-2">
+                <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white/20">Anterior</span>
+                <span className="text-xs font-bold text-white/60">1. Introducción al Método</span>
+              </div>
+              <Button className="bg-[#a51c30] hover:bg-[#821626] text-white uppercase font-black tracking-[0.3em] text-[11px] h-16 px-14 rounded-none flex items-center gap-4 group">
+                Siguiente Lección <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </div>
           </div>
         </div>
       </main>
