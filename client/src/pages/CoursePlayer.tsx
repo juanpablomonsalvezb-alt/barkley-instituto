@@ -10,225 +10,208 @@ import {
   Clock,
   Lock,
   Download,
-  Share2,
-  Bookmark,
-  ChevronDown
+  Calendar,
+  BarChart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function CoursePlayer() {
-  const [activeLesson, setActiveLesson] = useState(2);
+  const [activeLesson, setActiveLesson] = useState(1);
 
-  const courseStructure = {
-    title: "Neurociencia de la Voluntad",
-    instructor: "Barkley Instituto",
-    weeks: [
-      {
-        id: 1,
-        title: "Semana 1: El Punto de Acción",
-        lessons: [
-          { id: 1, title: "1.1 Introducción al Método Barkley", type: "video", duration: "12 min", status: "completed" },
-          { id: 2, title: "1.2 La Brecha de Intención-Acción", type: "video", duration: "18 min", status: "current" },
-          { id: 3, title: "1.3 Lectura: Bases de la Función Ejecutiva", type: "pdf", duration: "15 min", status: "locked" },
-          { id: 4, title: "1.4 Actividad: Registro de Procrastinación", type: "assignment", duration: "30 min", status: "locked" },
-          { id: 5, title: "1.5 Test Semanal: Nivel 1", type: "quiz", duration: "10 min", status: "locked" }
-        ]
-      },
-      {
-        id: 2,
-        title: "Semana 2: Externalización del Tiempo",
-        lessons: [
-          { id: 6, title: "2.1 El Reloj Mental vs El Reloj Visual", type: "video", duration: "15 min", status: "locked" },
-          { id: 7, title: "2.2 Configuración de Ráfagas", type: "video", duration: "20 min", status: "locked" }
-        ]
-      }
-    ]
-  };
+  // 32-week structure implementation based on user request:
+  // 6 OA * 5 weeks each = 30 weeks + 1 vacation + 2 final evaluations
+  const weeks = Array.from({ length: 32 }, (_, i) => {
+    const weekNum = i + 1;
+    let type = "learning";
+    let title = `Semana ${weekNum}: `;
+    
+    if (weekNum === 16) {
+      type = "vacation";
+      title += "Receso Académico";
+    } else if (weekNum > 30) {
+      type = "evaluation";
+      title += "Evaluación General Final";
+    } else {
+      const oaNum = Math.ceil(weekNum / 5);
+      const themeNum = ((weekNum - 1) % 5) + 1;
+      title += `OA ${oaNum} - Tema ${themeNum}`;
+    }
+
+    return {
+      id: weekNum,
+      title,
+      type,
+      lessons: type === 'learning' ? [
+        { id: weekNum * 10 + 1, title: "Video Tutorial: Conceptos Clave", type: "video", duration: "15 min", status: weekNum === 1 ? "current" : "locked" },
+        { id: weekNum * 10 + 2, title: "Lectura: Material de Profundización", type: "pdf", duration: "20 min", status: "locked" },
+        { id: weekNum * 10 + 3, title: "Actividad de Redacción", type: "assignment", duration: "30 min", status: "locked" },
+        { id: weekNum * 10 + 4, title: "Test de Salida Semanal", type: "quiz", duration: "10 min", status: "locked" }
+      ] : []
+    };
+  });
 
   return (
-    <div className="flex flex-col h-screen bg-white font-sans text-[#1e1e1e]">
-      {/* Top Navbar - Harvard Online Style */}
-      <header className="h-16 border-b border-gray-100 flex items-center justify-between px-8 bg-white shrink-0">
-        <div className="flex items-center gap-8">
-          <a href="/dashboard" className="flex items-center gap-3">
-             <div className="w-8 h-8 bg-[#a51c30] flex items-center justify-center">
-                <GraduationCap className="text-white w-5 h-5" />
-             </div>
-             <div className="flex flex-col">
-                <span className="font-serif text-[14px] font-black text-[#1e1e1e] uppercase leading-none">Barkley</span>
-                <span className="text-[6px] tracking-[0.4em] font-black text-[#a51c30] uppercase">Instituto</span>
-             </div>
+    <div className="flex h-screen bg-white overflow-hidden font-sans text-[#1e1e1e]">
+      {/* Sidebar Navigation - 32 Week Roadmap */}
+      <aside className="w-80 border-r border-gray-100 flex flex-col bg-[#fcfcfc] shrink-0">
+        <div className="p-6 border-b border-gray-100 bg-white">
+          <a href="/dashboard" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#a51c30] mb-6 hover:translate-x-1 transition-all">
+            <ChevronLeft className="w-4 h-4" /> Mi Escritorio
           </a>
-          <div className="h-6 w-[1px] bg-gray-200" />
-          <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 truncate max-w-[300px]">
-            {courseStructure.title}
-          </h2>
+          <h1 className="text-xl font-serif font-black leading-tight mb-2">Lengua y Literatura</h1>
+          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400">
+             <Calendar className="w-3 h-3" /> 32 Semanas • 7° Básico
+          </div>
         </div>
-        
-        <div className="flex items-center gap-6">
-           <div className="hidden md:flex flex-col items-end mr-4">
-              <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">Tu Progreso</span>
-              <div className="flex items-center gap-3">
-                <div className="w-32 h-1 bg-gray-100 rounded-full overflow-hidden">
-                   <div className="h-full bg-[#a51c30] w-[24%]" />
+
+        <ScrollArea className="flex-1">
+          <div className="p-2 space-y-1">
+            {weeks.map((week) => (
+              <div key={week.id} className="rounded-none overflow-hidden">
+                <div className={`px-4 py-3 flex items-center justify-between ${week.type === 'vacation' ? 'bg-emerald-50 text-emerald-700' : week.type === 'evaluation' ? 'bg-amber-50 text-amber-700' : 'bg-gray-50 text-gray-500'}`}>
+                  <span className="text-[9px] font-black uppercase tracking-widest">{week.title}</span>
+                  {week.type === 'learning' && <ChevronRight className="w-3 h-3 opacity-30" />}
                 </div>
-                <span className="text-[10px] font-black text-[#1e1e1e]">24%</span>
-              </div>
-           </div>
-           <Button variant="outline" className="border-gray-200 rounded-none text-[10px] font-black uppercase tracking-widest h-10 px-6">
-              Siguiente <ChevronRight className="ml-2 w-3.5 h-3.5" />
-           </Button>
-        </div>
-      </header>
-
-      <div className="flex flex-1 overflow-hidden">
-        {/* Main Content - Left Side */}
-        <main className="flex-1 overflow-y-auto bg-[#fdfdfd]">
-          <div className="aspect-video bg-black w-full shadow-lg">
-             {/* Simulating the Harvard Video Experience */}
-             <div className="w-full h-full flex items-center justify-center relative group">
-                <PlayCircle className="w-20 h-20 text-white/20 group-hover:text-white/40 transition-all cursor-pointer" />
-                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/60 to-transparent flex justify-between items-end">
-                   <div className="space-y-2">
-                      <Badge className="bg-[#a51c30] text-white rounded-none border-none text-[8px] font-black uppercase tracking-widest">Lección 1.2</Badge>
-                      <h3 className="text-white font-serif italic text-xl">La Brecha de Intención-Acción</h3>
-                   </div>
-                   <div className="flex gap-3">
-                      <Button size="icon" variant="ghost" className="text-white hover:bg-white/10"><Share2 className="w-4 h-4" /></Button>
-                      <Button size="icon" variant="ghost" className="text-white hover:bg-white/10"><Bookmark className="w-4 h-4" /></Button>
-                   </div>
-                </div>
-             </div>
-          </div>
-
-          <div className="max-w-4xl mx-auto px-10 py-16 space-y-12">
-            <div className="space-y-6 border-b border-gray-100 pb-12">
-               <h1 className="text-5xl font-serif font-black text-[#1e1e1e] leading-tight italic">
-                  Cerrando la Brecha: <br />
-                  <span className="text-[#a51c30] not-italic">De la Intención a la Acción</span>
-               </h1>
-               <p className="text-xl text-gray-600 leading-relaxed font-medium">
-                  En el núcleo del Método Barkley reside una verdad científica: la procrastinación no es pereza, es un fallo en el andamiaje de las funciones ejecutivas.
-               </p>
-            </div>
-
-            <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="bg-transparent h-auto p-0 gap-10 border-b border-gray-100 w-full justify-start rounded-none mb-10">
-                <TabsTrigger value="overview" className="bg-transparent text-[11px] font-black uppercase tracking-[0.3em] data-[state=active]:text-[#a51c30] data-[state=active]:border-[#a51c30] border-b-2 border-transparent rounded-none px-0 pb-4 transition-all">Visión General</TabsTrigger>
-                <TabsTrigger value="resources" className="bg-transparent text-[11px] font-black uppercase tracking-[0.3em] data-[state=active]:text-[#a51c30] data-[state=active]:border-[#a51c30] border-b-2 border-transparent rounded-none px-0 pb-4 transition-all">Materiales (3)</TabsTrigger>
-                <TabsTrigger value="activity" className="bg-transparent text-[11px] font-black uppercase tracking-[0.3em] data-[state=active]:text-[#a51c30] data-[state=active]:border-[#a51c30] border-b-2 border-transparent rounded-none px-0 pb-4 transition-all">Actividad</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="overview" className="space-y-10 animate-in fade-in duration-500">
-                 <div className="prose prose-gray max-w-none">
-                    <p className="text-gray-600 text-lg leading-relaxed">
-                       Esta semana nos enfocamos en el <strong>"Punto de Acción"</strong>. Aprenderás por qué el cerebro de una persona con dificultades de ejecución necesita estímulos externos para activar la voluntad.
-                    </p>
-                    <div className="my-10 p-10 bg-[#f9f9f9] border-l-4 border-[#a51c30] flex items-start gap-6">
-                       <Clock className="w-6 h-6 text-[#a51c30] shrink-0 mt-1" />
-                       <p className="text-lg font-serif italic text-[#1e1e1e]">
-                          "El conocimiento no es suficiente para cambiar el comportamiento. El cambio ocurre en el punto de acción, a través de la modificación del entorno."
-                       </p>
-                    </div>
-                 </div>
-
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <CardOutline title="Objetivos Semanales" items={["Identificar disparadores", "Externalizar metas", "Mini-sprints de 20 min"]} />
-                    <CardOutline title="Conceptos Clave" items={["Funciones Ejecutivas", "Punto de Acción", "Dopamina de Espera"]} />
-                 </div>
-              </TabsContent>
-
-              <TabsContent value="resources" className="space-y-4 animate-in fade-in duration-500">
-                 {[
-                    { name: "Guía: Mapa del Punto de Acción", type: "PDF", size: "1.2 MB" },
-                    { name: "Lectura: Neurobiología del TDAH", type: "Lectura Web", size: "5 min" },
-                    { name: "Hoja de Ruta de la Semana", type: "Excel", size: "450 KB" }
-                 ].map((res, i) => (
-                    <div key={i} className="flex items-center justify-between p-6 border border-gray-100 hover:bg-gray-50 transition-all cursor-pointer group">
-                       <div className="flex items-center gap-4">
-                          <FileText className="w-5 h-5 text-gray-300 group-hover:text-[#a51c30]" />
-                          <div>
-                             <p className="text-sm font-bold text-[#1e1e1e]">{res.name}</p>
-                             <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">{res.type} • {res.size}</p>
-                          </div>
-                       </div>
-                       <Download className="w-4 h-4 text-gray-200 group-hover:text-[#a51c30]" />
-                    </div>
-                 ))}
-              </TabsContent>
-            </Tabs>
-          </div>
-        </main>
-
-        {/* Sidebar Navigation - Right Side (Classic Canvas/Harvard Style) */}
-        <aside className="w-[400px] border-l border-gray-100 flex flex-col bg-white shrink-0">
-          <div className="p-8 border-b border-gray-100">
-             <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-[#1e1e1e] mb-2">Contenido del Curso</h3>
-             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Semana 1 de 8</p>
-          </div>
-          <ScrollArea className="flex-1">
-             <div className="divide-y divide-gray-50">
-                {courseStructure.weeks.map((week) => (
-                  <div key={week.id}>
-                     <button className="w-full px-8 py-5 bg-gray-50/50 flex items-center justify-between group">
-                        <span className="text-[11px] font-black uppercase tracking-widest text-gray-500">{week.title}</span>
-                        <ChevronDown className="w-4 h-4 text-gray-300" />
-                     </button>
-                     <div className="bg-white">
-                        {week.lessons.map((lesson) => (
-                          <button
-                            key={lesson.id}
-                            onClick={() => lesson.status !== 'locked' && setActiveLesson(lesson.id)}
-                            className={`w-full text-left px-8 py-6 flex items-start gap-4 transition-all hover:bg-gray-50 border-l-4 ${activeLesson === lesson.id ? 'border-[#a51c30] bg-gray-50/30' : 'border-transparent'}`}
-                          >
-                             <div className="mt-1">
-                                {lesson.status === 'completed' ? (
-                                  <CheckSquare className="w-4 h-4 text-emerald-500" />
-                                ) : lesson.status === 'locked' ? (
-                                  <Lock className="w-4 h-4 text-gray-200" />
-                                ) : (
-                                  <div className={`w-4 h-4 rounded-full border-2 ${activeLesson === lesson.id ? 'border-[#a51c30]' : 'border-gray-200'}`} />
-                                )}
-                             </div>
-                             <div>
-                                <p className={`text-[13px] font-bold leading-tight mb-1 ${lesson.status === 'locked' ? 'text-gray-300' : 'text-[#1e1e1e]'}`}>
-                                   {lesson.title}
-                                </p>
-                                <div className="flex items-center gap-2">
-                                   <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">{lesson.type}</span>
-                                   <div className="w-1 h-1 rounded-full bg-gray-200" />
-                                   <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">{lesson.duration}</span>
-                                </div>
-                             </div>
-                          </button>
-                        ))}
-                     </div>
+                {week.id === 1 && (
+                  <div className="bg-white">
+                    {week.lessons.map((lesson) => (
+                      <button
+                        key={lesson.id}
+                        onClick={() => setActiveLesson(lesson.id)}
+                        className={`w-full text-left px-6 py-4 flex items-start gap-4 transition-all border-l-2 ${activeLesson === lesson.id ? 'border-[#a51c30] bg-[#a51c30]/5' : 'border-transparent hover:bg-gray-50'}`}
+                      >
+                         <div className="mt-1">
+                            {lesson.type === 'video' ? <PlayCircle className="w-4 h-4 text-gray-300" /> : <FileText className="w-4 h-4 text-gray-300" />}
+                         </div>
+                         <div className="flex-1 min-w-0">
+                            <p className="text-[12px] font-bold truncate">{lesson.title}</p>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">{lesson.duration}</span>
+                         </div>
+                      </button>
+                    ))}
                   </div>
-                ))}
-             </div>
-          </ScrollArea>
-        </aside>
-      </div>
-    </div>
-  );
-}
+                )}
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      </aside>
 
-function CardOutline({ title, items }: { title: string, items: string[] }) {
-  return (
-    <div className="p-8 border border-gray-100 bg-white space-y-6 shadow-sm">
-       <h5 className="text-[11px] font-black uppercase tracking-[0.3em] text-[#a51c30]">{title}</h5>
-       <ul className="space-y-3">
-          {items.map((item, i) => (
-            <li key={i} className="flex items-center gap-3 text-sm text-gray-600 font-medium">
-               <div className="w-1.5 h-1.5 bg-gray-200 rounded-full" />
-               {item}
-            </li>
-          ))}
-       </ul>
+      {/* Main Lesson View */}
+      <main className="flex-1 overflow-y-auto bg-white">
+        <div className="max-w-5xl mx-auto px-12 py-16 space-y-12">
+          {/* Progress Header */}
+          <div className="flex items-center justify-between border-b border-gray-100 pb-8">
+             <div className="space-y-1">
+                <Badge className="bg-[#a51c30]/10 text-[#a51c30] rounded-none border-none text-[9px] font-black uppercase tracking-widest mb-2">Semana 1 • Tema 1</Badge>
+                <h2 className="text-4xl font-serif font-black italic">Análisis de Narraciones</h2>
+             </div>
+             <div className="text-right space-y-2">
+                <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Progreso de la Asignatura</div>
+                <div className="flex items-center gap-4">
+                   <div className="w-32 h-1 bg-gray-100">
+                      <div className="h-full bg-[#a51c30] w-[5%]" />
+                   </div>
+                   <span className="text-xs font-black">1 / 32</span>
+                </div>
+             </div>
+          </div>
+
+          {/* Video Placeholder */}
+          <div className="aspect-video bg-[#1e1e1e] flex items-center justify-center relative group shadow-2xl">
+             <div className="w-20 h-20 bg-white/5 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10 group-hover:scale-110 transition-all cursor-pointer">
+                <PlayCircle className="w-10 h-10 text-white" />
+             </div>
+             <div className="absolute bottom-6 left-8 flex items-center gap-4">
+                <Badge className="bg-white/10 text-white backdrop-blur-md border-none rounded-none text-[8px] font-black uppercase tracking-widest px-3 py-1">HD • 15:00</Badge>
+             </div>
+          </div>
+
+          {/* Content Sections */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
+             <div className="lg:col-span-8 space-y-10">
+                <div className="prose prose-gray max-w-none">
+                   <p className="text-xl text-gray-600 leading-relaxed font-medium">
+                      Bienvenido a la primera semana de Lengua y Literatura. Durante este OA1 (Objetivo de Aprendizaje 1), nos enfocaremos en desglosar cómo los conflictos narrativos impulsan la historia. 
+                   </p>
+                   <div className="p-10 bg-gray-50 border-l-4 border-[#a51c30] my-10">
+                      <h4 className="text-[11px] font-black uppercase tracking-[0.4em] text-[#a51c30] mb-4">Misión de la Semana</h4>
+                      <p className="text-lg font-serif italic text-[#1e1e1e]">
+                         "Identificarás el conflicto central en tres micro-cuentos y redactarás un breve análisis sobre cómo la voz del narrador afecta tu percepción del dilema."
+                      </p>
+                   </div>
+                </div>
+
+                {/* Resource List */}
+                <div className="space-y-6">
+                   <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-gray-400">Material de Descarga</h3>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {[
+                        { title: "Guía de Análisis OA1", type: "PDF", size: "1.5 MB" },
+                        { title: "Ficha de Narradores", type: "PDF", size: "800 KB" }
+                      ].map((doc, i) => (
+                        <div key={i} className="flex items-center justify-between p-6 border border-gray-100 hover:border-[#a51c30]/20 transition-all group cursor-pointer">
+                           <div className="flex items-center gap-4">
+                              <Download className="w-5 h-5 text-gray-300 group-hover:text-[#a51c30]" />
+                              <div>
+                                 <p className="text-sm font-bold">{doc.title}</p>
+                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{doc.type} • {doc.size}</p>
+                              </div>
+                           </div>
+                        </div>
+                      ))}
+                   </div>
+                </div>
+             </div>
+
+             {/* Right Sidebar - Weekly Stats */}
+             <div className="lg:col-span-4 space-y-8">
+                <Card className="border-none bg-[#f9f9f9] p-8 rounded-none">
+                   <div className="space-y-6">
+                      <div className="flex items-center gap-3">
+                         <BarChart className="w-5 h-5 text-[#a51c30]" />
+                         <h4 className="text-[11px] font-black uppercase tracking-[0.3em]">Hábito Semanal</h4>
+                      </div>
+                      <div className="space-y-4">
+                         <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                            <span className="text-gray-400">Día 2/5 completado</span>
+                            <span>40%</span>
+                         </div>
+                         <Progress value={40} className="h-1 bg-gray-200" />
+                      </div>
+                      <p className="text-[10px] font-bold text-gray-400 leading-relaxed uppercase tracking-tight">
+                         Recuerda: El viernes a las 23:59 cierra el Test OA1.
+                      </p>
+                   </div>
+                </Card>
+
+                {/* Task Checklist */}
+                <div className="space-y-6 p-2">
+                   <h4 className="text-[11px] font-black uppercase tracking-[0.3em]">Tareas de la Lección</h4>
+                   <div className="space-y-4">
+                      {[
+                        { label: "Ver Video OA1", done: true },
+                        { label: "Lectura Narradores", done: false },
+                        { label: "Actividad Redacción", done: false },
+                        { label: "Test Final OA1", done: false },
+                      ].map((task, i) => (
+                        <div key={i} className="flex items-center gap-4">
+                           <div className={`w-5 h-5 border-2 flex items-center justify-center ${task.done ? 'bg-emerald-500 border-emerald-500' : 'border-gray-200'}`}>
+                              {task.done && <CheckSquare className="w-3 h-3 text-white" />}
+                           </div>
+                           <span className={`text-xs font-bold uppercase tracking-tight ${task.done ? 'text-gray-300 line-through' : 'text-gray-600'}`}>{task.label}</span>
+                        </div>
+                      ))}
+                   </div>
+                </div>
+             </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
