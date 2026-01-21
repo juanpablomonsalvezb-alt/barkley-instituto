@@ -77,7 +77,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Main Navigation - Refined to match exact Harvard behavior */}
+      {/* Main Navigation */}
       <header className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md h-20' : 'bg-white h-24'}`}>
         <nav className="container-harvard h-full flex items-center justify-between">
           <div className="flex items-center gap-14 h-full">
@@ -117,7 +117,7 @@ export default function Home() {
       </header>
 
       <main>
-        {/* Exact Hero Implementation */}
+        {/* Hero Section */}
         <section className="relative min-h-[700px] flex items-center overflow-hidden bg-black">
           <div className="absolute inset-0">
             <img src={heroBg} alt="" className="w-full h-full object-cover opacity-60 grayscale-[30%]" />
@@ -140,7 +140,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Horizontal Segmentation: Section 1 */}
+        {/* Courses Section */}
         <section className="py-24 bg-white border-b border-gray-100">
           <div className="container-harvard">
             <div className="flex flex-col md:flex-row items-baseline justify-between mb-16 gap-6">
@@ -169,7 +169,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Section 2: Carefully Crafted Selector */}
+        {/* Catalog Section */}
         <section className="py-32 bg-[#f9f9f9]">
           <div className="container-harvard grid grid-cols-1 lg:grid-cols-12 gap-20 items-center">
             <div className="lg:col-span-5 space-y-10">
@@ -203,9 +203,8 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Global Impact Horizontal Strip */}
+        {/* Stats Section */}
         <section className="py-40 bg-[#1e1e1e] relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]" />
           <div className="container-harvard grid grid-cols-1 md:grid-cols-3 gap-32 relative z-10">
             {[
               { num: "150+", label: "Countries Represented" },
@@ -213,7 +212,7 @@ export default function Home() {
               { num: "200+", label: "Harvard Faculty" }
             ].map((stat, i) => (
               <div key={i} className="text-center space-y-8 group">
-                <div className="text-[120px] font-serif font-black text-[#a51c30] leading-none opacity-90 group-hover:opacity-100 transition-opacity drop-shadow-2xl italic">{stat.num}</div>
+                <div className="text-[120px] font-serif font-black text-[#a51c30] leading-none opacity-90 group-hover:opacity-100 transition-opacity italic">{stat.num}</div>
                 <div className="h-1.5 w-16 bg-[#a51c30] mx-auto scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
                 <p className="text-[12px] font-black uppercase tracking-[0.5em] text-white/50">{stat.label}</p>
               </div>
@@ -222,7 +221,7 @@ export default function Home() {
         </section>
       </main>
 
-      {/* Official Refined Footer */}
+      {/* Footer Section */}
       <footer className="bg-white border-t border-gray-100 pt-32 pb-20">
         <div className="container-harvard">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-24 mb-32">
@@ -264,7 +263,7 @@ export default function Home() {
           <div className="pt-12 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-8">
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">
               © 2026 President and Fellows of Harvard College
-            </div>
+            </p>
             <div className="flex items-center gap-8 text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">
               <span>Veritas</span>
               <div className="w-16 h-[1px] bg-gray-200" />
@@ -274,7 +273,7 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-[100] bg-[#1e1e1e] text-white p-8 flex flex-col animate-in fade-in slide-in-from-right duration-300">
           <div className="flex justify-end mb-12">
