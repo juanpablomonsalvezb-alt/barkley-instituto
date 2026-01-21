@@ -17,7 +17,6 @@ import {
   Zap,
   StickyNote,
   Headphones,
-  Video,
   Map,
   ImageIcon,
   Presentation,
@@ -31,7 +30,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function CoursePlayer() {
-  const [activeLesson, setActiveLesson] = useState(1);
+  const [activeTab, setActiveTab] = useState("captacion");
   const [timeLeft, setTimeLeft] = useState(600); 
   const [isActive, setIsActive] = useState(false);
   const [showReward, setShowReward] = useState(false);
@@ -64,9 +63,16 @@ export default function CoursePlayer() {
     { title: "Informe Semanal", icon: FileSearch, color: "text-slate-500", desc: "Análisis profundo de la materia" },
   ];
 
+  const moments = [
+    { id: "captacion", label: "1. Captación (Video)", time: "10m" },
+    { id: "procesamiento", label: "2. Procesamiento (IA)", time: "15m" },
+    { id: "sintesis", label: "3. Síntesis (Actividad)", time: "20m" },
+    { id: "cierre", label: "4. Cierre (Check-point)", time: "5m" },
+  ];
+
   return (
     <div className="flex h-screen bg-[#fcfcfc] overflow-hidden font-sans text-[#1e1e1e]">
-      {/* 1. Dashboard as Executive Prosthesis */}
+      {/* Sidebar Navigation */}
       <aside className="w-80 border-r border-gray-100 flex flex-col bg-white shrink-0">
         <div className="p-6 border-b border-gray-100">
           <a href="/dashboard" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#a51c30] mb-6 hover:translate-x-1 transition-all">
@@ -80,32 +86,16 @@ export default function CoursePlayer() {
 
         <ScrollArea className="flex-1">
           <div className="p-6 space-y-8">
-            <div className="space-y-4">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Ruta de Ejecución</h3>
-              <div className="flex items-center gap-1.5">
-                {[1, 2, 3, 4].map((step) => (
-                  <div key={step} className={`h-1.5 flex-1 rounded-full ${step === 1 ? 'bg-[#a51c30]' : 'bg-gray-100'}`} />
-                ))}
-              </div>
-              <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-gray-400">
-                <span className="text-[#a51c30]">Captación</span>
-                <span>Procesamiento</span>
-                <span>Síntesis</span>
-                <span>Cierre</span>
-              </div>
-            </div>
-
             <div className="space-y-2">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-4">Momentos de la Clase</h3>
-              {[
-                { label: "1. Captación (Video)", time: "10m", active: true },
-                { label: "2. Procesamiento (NotebookLM)", time: "15m", active: false },
-                { label: "3. Síntesis (Actividad)", time: "20m", active: false },
-                { label: "4. Cierre (Check-point)", time: "5m", active: false },
-              ].map((item, i) => (
-                <button key={i} className={`w-full text-left p-4 flex items-center justify-between border-l-4 transition-all ${item.active ? 'bg-[#a51c30]/5 border-[#a51c30]' : 'border-transparent opacity-50 hover:opacity-80'}`}>
-                  <span className="text-xs font-bold">{item.label}</span>
-                  <Badge variant="outline" className="text-[8px] font-black">{item.time}</Badge>
+              {moments.map((moment) => (
+                <button 
+                  key={moment.id} 
+                  onClick={() => setActiveTab(moment.id)}
+                  className={`w-full text-left p-4 flex items-center justify-between border-l-4 transition-all ${activeTab === moment.id ? 'bg-[#a51c30]/5 border-[#a51c30]' : 'border-transparent opacity-50 hover:opacity-80'}`}
+                >
+                  <span className="text-xs font-bold">{moment.label}</span>
+                  <Badge variant="outline" className="text-[8px] font-black">{moment.time}</Badge>
                 </button>
               ))}
             </div>
@@ -116,7 +106,7 @@ export default function CoursePlayer() {
                 <span className="text-[9px] font-black uppercase tracking-widest">Misión de Enfoque</span>
               </div>
               <p className="text-[11px] font-bold text-amber-900 leading-tight uppercase tracking-tight">
-                Primero observa el video (Captación) y luego procesa la información con el Mapa Mental.
+                Completa cada momento en orden para asegurar la retención neurológica.
               </p>
             </div>
           </div>
@@ -124,6 +114,7 @@ export default function CoursePlayer() {
       </aside>
 
       <main className="flex-1 overflow-y-auto bg-white flex flex-col">
+        {/* Barkley Visual Timer Bar */}
         <div className="bg-white border-b border-gray-100 p-4 flex items-center justify-center gap-12 sticky top-0 z-50 shadow-sm">
           <div className="flex items-center gap-5">
             <div className="relative w-14 h-14">
@@ -154,21 +145,12 @@ export default function CoursePlayer() {
         </div>
 
         <div className="flex-1 p-12 max-w-5xl mx-auto w-full">
-          <Tabs defaultValue="class" className="space-y-12">
-            <div className="flex items-center justify-between border-b border-gray-100">
-              <TabsList className="bg-transparent h-auto p-0 gap-10">
-                <TabsTrigger value="class" className="bg-transparent text-[11px] font-black uppercase tracking-[0.4em] data-[state=active]:text-[#a51c30] data-[state=active]:border-[#a51c30] border-b-2 border-transparent rounded-none px-0 pb-4 transition-all">1. Captación (Video)</TabsTrigger>
-                <TabsTrigger value="notebook" className="bg-transparent text-[11px] font-black uppercase tracking-[0.4em] data-[state=active]:text-[#a51c30] data-[state=active]:border-[#a51c30] border-b-2 border-transparent rounded-none px-0 pb-4 transition-all">2. Procesamiento (IA)</TabsTrigger>
-                <TabsTrigger value="activity" className="bg-transparent text-[11px] font-black uppercase tracking-[0.4em] data-[state=active]:text-[#a51c30] data-[state=active]:border-[#a51c30] border-b-2 border-transparent rounded-none px-0 pb-4 transition-all">3. Síntesis (Actividad)</TabsTrigger>
-              </TabsList>
-            </div>
-
-            <TabsContent value="class" className="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-12">
+            <TabsContent value="captacion" className="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500 m-0">
               <div className="space-y-6">
-                <Badge className="bg-[#a51c30] text-white rounded-none text-[9px] font-black tracking-[0.3em] uppercase border-none px-4 py-1">Pilar Barkley: Captación Visual</Badge>
+                <Badge className="bg-[#a51c30] text-white rounded-none text-[9px] font-black tracking-[0.3em] uppercase border-none px-4 py-1">Momento 1: Captación Visual</Badge>
                 <h2 className="text-5xl font-serif font-black italic leading-tight text-[#1e1e1e]">El Surgimiento de las <br /><span className="text-[#a51c30] not-italic text-4xl">Rutas Comerciales</span></h2>
               </div>
-              
               <div className="aspect-video bg-black rounded-none shadow-2xl relative group overflow-hidden border-8 border-white">
                  <div className="absolute inset-0 flex items-center justify-center">
                     <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 group-hover:scale-110 group-hover:bg-[#a51c30]/20 transition-all cursor-pointer">
@@ -178,7 +160,11 @@ export default function CoursePlayer() {
               </div>
             </TabsContent>
 
-            <TabsContent value="notebook" className="space-y-10 animate-in fade-in duration-500">
+            <TabsContent value="procesamiento" className="space-y-10 animate-in fade-in duration-500 m-0">
+               <div className="space-y-6">
+                  <Badge className="bg-[#a51c30] text-white rounded-none text-[9px] font-black tracking-[0.3em] uppercase border-none px-4 py-1">Momento 2: Procesamiento IA</Badge>
+                  <h2 className="text-5xl font-serif font-black italic leading-tight text-[#1e1e1e]">Andamiaje Cognitivo</h2>
+               </div>
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                  {notebookResources.map((res, i) => (
                    <Card key={i} className="border border-gray-100 hover:border-[#a51c30]/40 hover:shadow-xl transition-all rounded-none p-8 group cursor-pointer bg-white">
@@ -193,29 +179,40 @@ export default function CoursePlayer() {
                    </Card>
                  ))}
                </div>
-               
-               <div className="p-10 bg-[#f9f9f9] border-l-4 border-[#a51c30] flex items-start gap-8">
-                  <Brain className="w-10 h-10 text-[#a51c30] shrink-0" />
-                  <div className="space-y-3">
-                    <h5 className="text-[12px] font-black uppercase tracking-[0.4em] text-[#a51c30]">Análisis Cognitivo Barkley</h5>
-                    <p className="text-lg font-serif italic text-gray-600 leading-relaxed">
-                      "Después de la captación visual, el cerebro necesita andamiaje. Utiliza estos recursos para procesar la información sin saturar tu memoria de trabajo."
-                    </p>
+            </TabsContent>
+
+            <TabsContent value="sintesis" className="space-y-10 animate-in fade-in duration-500 m-0">
+               <div className="space-y-6">
+                  <Badge className="bg-[#a51c30] text-white rounded-none text-[9px] font-black tracking-[0.3em] uppercase border-none px-4 py-1">Momento 3: Síntesis Activa</Badge>
+                  <h2 className="text-5xl font-serif font-black italic leading-tight text-[#1e1e1e]">Laboratorio de Aplicación</h2>
+               </div>
+               <div className="p-12 border-2 border-dashed border-gray-100 flex flex-col items-center justify-center text-center space-y-6 bg-gray-50/50">
+                  <div className="w-20 h-20 bg-white shadow-sm flex items-center justify-center">
+                     <CheckSquare className="w-10 h-10 text-[#a51c30]" />
                   </div>
+                  <div className="space-y-2">
+                     <h3 className="text-2xl font-serif font-black italic">Actividad Práctica</h3>
+                     <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest">Utiliza los recursos de procesamiento para completar tu entrega</p>
+                  </div>
+                  <Button className="bg-[#a51c30] rounded-none h-14 px-12 text-[10px] font-black uppercase tracking-widest">Subir Actividad</Button>
                </div>
             </TabsContent>
 
-            <TabsContent value="activity" className="space-y-10 animate-in fade-in duration-500">
-              <div className="p-12 border-2 border-dashed border-gray-100 flex flex-col items-center justify-center text-center space-y-6">
-                 <div className="w-20 h-20 bg-gray-50 flex items-center justify-center">
-                    <CheckSquare className="w-10 h-10 text-gray-200" />
-                 </div>
-                 <div className="space-y-2">
-                    <h3 className="text-2xl font-serif font-black italic">Actividad de Síntesis</h3>
-                    <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest">Aplica lo aprendido en el momento de procesamiento</p>
-                 </div>
-                 <Button className="bg-[#a51c30] rounded-none h-14 px-12 text-[10px] font-black uppercase tracking-widest">Empezar Actividad</Button>
-              </div>
+            <TabsContent value="cierre" className="space-y-10 animate-in fade-in duration-500 m-0">
+               <div className="space-y-6">
+                  <Badge className="bg-[#a51c30] text-white rounded-none text-[9px] font-black tracking-[0.3em] uppercase border-none px-4 py-1">Momento 4: Cierre y Check-point</Badge>
+                  <h2 className="text-5xl font-serif font-black italic leading-tight text-[#1e1e1e]">Validación de Aprendizaje</h2>
+               </div>
+               <Card className="border-none bg-[#1e1e1e] text-white p-12 rounded-none space-y-8">
+                  <div className="flex items-center gap-6">
+                     <Brain className="w-12 h-12 text-[#a51c30]" />
+                     <div>
+                        <h4 className="text-lg font-serif font-black italic">Test de Salida Semanal</h4>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-white/40">5 Preguntas • 5 Minutos</p>
+                     </div>
+                  </div>
+                  <Button className="w-full bg-[#a51c30] hover:bg-[#821626] rounded-none h-16 text-[11px] font-black uppercase tracking-[0.4em]">Iniciar Evaluación</Button>
+               </Card>
             </TabsContent>
           </Tabs>
         </div>
