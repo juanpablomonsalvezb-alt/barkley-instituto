@@ -13,12 +13,15 @@ import {
   TrendingUp,
   History,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Lock,
+  CheckCircle2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 export default function Dashboard() {
   const [timeLeft, setTimeLeft] = useState(1200);
@@ -51,10 +54,39 @@ export default function Dashboard() {
   ];
 
   const currentCourses = [
-    { id: "lengua", title: "Lengua y Literatura", progress: 15, next: "OA3: Análisis de Narraciones", category: "7° Básico", color: "bg-blue-500" },
-    { id: "mate", title: "Matemática", progress: 8, next: "OA1: Números Enteros", category: "7° Básico", color: "bg-crimson-500" },
-    { id: "ciencias", title: "Ciencias Naturales", progress: 0, next: "OA1: La Célula", category: "7° Básico", color: "bg-green-500" },
+    { 
+      id: "lengua", 
+      title: "Lengua y Literatura", 
+      progress: 15, 
+      currentWeek: 5,
+      next: "OA3: Análisis de Narraciones", 
+      category: "7° Básico", 
+      color: "bg-blue-500",
+      accent: "#3b82f6"
+    },
+    { 
+      id: "mate", 
+      title: "Matemática", 
+      progress: 8, 
+      currentWeek: 3,
+      next: "OA1: Números Enteros", 
+      category: "7° Básico", 
+      color: "bg-[#a51c30]",
+      accent: "#a51c30"
+    },
+    { 
+      id: "ciencias", 
+      title: "Ciencias Naturales", 
+      progress: 0, 
+      currentWeek: 1,
+      next: "OA1: La Célula", 
+      category: "7° Básico", 
+      color: "bg-green-500",
+      accent: "#22c55e"
+    },
   ];
+
+  const totalWeeks = 33;
 
   return (
     <div className="min-h-screen bg-[#fcfcfc] flex font-sans text-[#1e1e1e]">
@@ -116,16 +148,16 @@ export default function Dashboard() {
               <section className="space-y-6">
                 <div className="flex items-baseline justify-between">
                   <h2 className="text-3xl font-serif font-black italic">Mi Ruta de Aprendizaje</h2>
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Basado en Temario Mineduc</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Progreso Anual de Unidades</span>
                 </div>
                 
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 gap-8">
                   {currentCourses.map(course => (
-                    <Card key={course.id} className="border border-gray-100 shadow-sm hover:shadow-md transition-all rounded-none overflow-hidden group">
+                    <Card key={course.id} className="border border-gray-100 shadow-sm hover:shadow-md transition-all rounded-none overflow-hidden group bg-white">
                       <CardContent className="p-0">
-                        <div className="flex flex-col md:flex-row">
-                          <div className={`w-2 ${course.color} shrink-0`} />
-                          <div className="p-8 flex-1 flex flex-col md:flex-row md:items-center justify-between gap-8">
+                        <div className="flex flex-col">
+                          {/* Upper Section: Course Info */}
+                          <div className="p-8 flex items-center justify-between gap-8 border-b border-gray-50">
                             <div className="space-y-3">
                               <div className="flex items-center gap-3">
                                 <Badge className="bg-gray-100 text-gray-500 rounded-none border-none text-[8px] font-black uppercase tracking-widest">{course.category}</Badge>
@@ -136,14 +168,55 @@ export default function Dashboard() {
                                 <Play className="w-3 h-3 text-[#a51c30]" /> Próximo: {course.next}
                               </p>
                             </div>
-                            <div className="flex items-center gap-6">
-                              <div className="w-32 h-1 bg-gray-100 overflow-hidden">
-                                <div className={`h-full ${course.color} transition-all duration-1000`} style={{ width: `${course.progress}%` }} />
-                              </div>
-                              <Link href={`/course/${course.id}`}>
-                                <Button className="bg-[#1e1e1e] hover:bg-black text-white rounded-none h-12 px-8 text-[10px] font-black uppercase tracking-[0.2em]">Continuar</Button>
-                              </Link>
+                            <Link href={`/course/${course.id}`}>
+                              <Button className="bg-[#1e1e1e] hover:bg-black text-white rounded-none h-12 px-8 text-[10px] font-black uppercase tracking-[0.2em]">Continuar</Button>
+                            </Link>
+                          </div>
+
+                          {/* Lower Section: Horizontal 33-Week Timeline */}
+                          <div className="px-8 py-6 bg-gray-50/30">
+                            <div className="flex items-center justify-between mb-4">
+                              <span className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-400">Línea de Tiempo (33 Semanas)</span>
+                              <span className="text-[9px] font-black uppercase tracking-[0.3em] text-[#a51c30]">Semana {course.currentWeek} Activa</span>
                             </div>
+                            
+                            <ScrollArea className="w-full whitespace-nowrap">
+                              <div className="flex items-center gap-2 pb-4">
+                                {Array.from({ length: totalWeeks }).map((_, i) => {
+                                  const weekNum = i + 1;
+                                  const isCompleted = weekNum < course.currentWeek;
+                                  const isActive = weekNum === course.currentWeek;
+                                  const isLocked = weekNum > course.currentWeek;
+                                  const isMidterm = weekNum === 15;
+                                  const isFinal = weekNum === 33;
+
+                                  return (
+                                    <div key={weekNum} className="flex flex-col items-center gap-2 shrink-0 group">
+                                      <div 
+                                        className={`w-8 h-8 flex items-center justify-center text-[9px] font-black transition-all relative
+                                          ${isCompleted ? 'bg-gray-200 text-gray-400 opacity-50' : ''}
+                                          ${isActive ? 'bg-[#a51c30] text-white shadow-lg scale-110' : ''}
+                                          ${isLocked ? 'bg-white border border-gray-100 text-gray-300' : ''}
+                                          ${(isMidterm || isFinal) && !isActive && !isCompleted ? 'border-dashed border-2 border-[#a51c30]/30' : ''}
+                                        `}
+                                      >
+                                        {isCompleted ? <CheckCircle2 className="w-3 h-3" /> : isLocked ? <Lock className="w-3 h-3 opacity-50" /> : weekNum}
+                                        
+                                        {/* Hover Tooltip (Simulated) */}
+                                        <div className="absolute -top-8 bg-[#1e1e1e] text-white text-[7px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none uppercase tracking-widest">
+                                          Semana {weekNum} {isMidterm ? '• Macro' : isFinal ? '• Final' : ''}
+                                        </div>
+                                      </div>
+                                      {/* Connection Line */}
+                                      {weekNum < totalWeeks && (
+                                        <div className="absolute right-[-4px] top-4 w-2 h-[1px] bg-gray-100 hidden" />
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <ScrollBar orientation="horizontal" className="h-1.5" />
+                            </ScrollArea>
                           </div>
                         </div>
                       </CardContent>
