@@ -1,0 +1,42 @@
+Para adaptar el modelo de Russell Barkley al entorno online, debemos pasar de la teoría clínica a la ingeniería de interfaz y diseño instruccional. El desafío del TDAH online es la "ceguera del tiempo" y la desconexión con el entorno físico.
+
+Aquí te presento cómo instituciones líderes en EE.UU. (como Beacon College y programas certificados por CHADD) han adaptado los pilares de Barkley a la metodología virtual:
+
+1. El "Dashboard" como Prótesis Ejecutiva
+En lugar de un aula virtual estática, se utiliza una interfaz que actúa como la memoria de trabajo externa del estudiante.
+
+Caso Real: Plataformas que integran Time Timers visuales directamente en la pantalla de la clase.
+
+Adaptación Online: El cronómetro no es solo un número; es un círculo que se vacía cromáticamente. Esto ayuda a combatir la "ceguera temporal" de Barkley, permitiendo que el alumno vea el tiempo pasar mientras realiza la actividad.
+
+2. Micro-Segmentación (Chunking) y Feedback Inmediato
+Barkley afirma que la motivación debe ser externa e inmediata porque el cerebro con TDAH no procesa bien las recompensas a largo plazo.
+
+Estructura Online: Las clases no duran 45 minutos seguidos. Se fragmentan en bloques de 10-15 minutos de instrucción seguidos de 5 minutos de gamificación obligatoria.
+
+Aplicación: Al terminar un video corto, aparece un mini-quiz de una sola pregunta. Si acierta, hay una gratificación visual (fuegos artificiales, puntos, sonidos). Esto "recarga" el tanque de dopamina necesario para el siguiente bloque.
+
+3. Externalización de Reglas (Visual Cues)
+Dado que el profesor no está físicamente para tocar el hombro del alumno, se utilizan señales visuales persistentes.
+
+La "Barra de Estado": En la parte superior de la pantalla, el alumno siempre ve en qué etapa de la lección está (Inicio > Práctica > Cierre).
+
+Instrucciones "Sticky": Las instrucciones de la tarea no desaparecen cuando el alumno empieza a escribir. Se mantienen en una ventana flotante o en un lateral, eliminando la necesidad de que el niño las retenga en su memoria de trabajo (que, según Barkley, es limitada).
+
+4. El Rol del "Coach" vs. El Profesor
+Barkley sugiere que el adulto debe ser un facilitador del entorno, no solo un instructor.
+
+Casos en EE.UU. (Modelos tipo Landmark School): * Utilizan sesiones de Body Doubling (Duplicación de Cuerpo) online: Salas de Zoom abiertas donde los alumnos estudian en silencio mientras un tutor supervisa. La simple presencia visual de otros trabajando actúa como un regulador externo de la conducta.
+
+Check-ins de 5 minutos: Al inicio de la jornada, una breve videollamada para "setear" el entorno físico (limpiar el escritorio, tener agua, silenciar el celular).
+
+Estructura Comparativa: Tradicional vs. Adaptación Barkley Online
+Función Ejecutiva	Problema Online	Solución "Barkley Online"
+Memoria de Trabajo	Olvida las instrucciones al cambiar de pestaña.	Instrucciones flotantes permanentes en pantalla.
+Sentido del Tiempo	Se pierde en la navegación o distracción.	Reloj visual integrado y alertas sonoras de transición.
+Autorregulación	No sabe cuándo parar o empezar.	Estructura de "clase sándwich" (Bloques cortos con descansos activos).
+Motivación	La nota final está muy lejos.	Sistema de puntos/tokens acumulables por cada micro-tarea completada.
+¿Cómo podemos aplicar esto a tu proyecto?
+Dado que estás diseñando el diseño general basado en Harvard Online, podríamos integrar estas "prótesis visuales" (relojes, barras de progreso, mini-metas) dentro de esa estética limpia y profesional.
+
+¿Te gustaría que diseñáramos un "Wireframe" (esquema visual) de cómo se vería la pantalla de un estudiante bajo este método? Podría detallarte dónde ubicar los elementos de apoyo para que no saturen pero que cumplan la función de Barkley.
