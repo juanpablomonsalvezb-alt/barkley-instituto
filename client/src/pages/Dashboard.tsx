@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "wouter";
 import { 
   GraduationCap, 
   LayoutDashboard, 
@@ -186,9 +187,11 @@ export default function Dashboard() {
                            </div>
                            <Progress value={course.progress} className="h-1 bg-gray-100" />
                         </div>
-                        <Button variant="ghost" size="icon" className="hover:bg-[#a51c30]/5 hover:text-[#a51c30] rounded-none">
-                          <Play className="w-5 h-5 fill-current" />
-                        </Button>
+                        <Link href={`/course/${course.id}`}>
+                          <Button variant="ghost" size="icon" className="hover:bg-[#a51c30]/5 hover:text-[#a51c30] rounded-none">
+                            <Play className="w-5 h-5 fill-current" />
+                          </Button>
+                        </Link>
                       </div>
                     </CardContent>
                   </Card>
