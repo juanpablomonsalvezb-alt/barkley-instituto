@@ -1,8 +1,6 @@
-import { useState } from "react";
-import { Search, Menu, BookOpen, GraduationCap, Clock, ChevronRight, Play, ExternalLink } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, Menu, GraduationCap, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 // Asset Imports
@@ -12,158 +10,156 @@ import mathThumbnail from "@assets/generated_images/mathematics_course_thumbnail
 import heroBg from "@assets/generated_images/harvard_yard_entrance_with_banners.png";
 
 export default function Home() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const courseCategories = [
-    "Technology & Innovation",
-    "Leadership & Communication",
-    "Health Care",
-    "Arts & Humanities",
-    "Business & Management"
-  ];
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 50);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const featuredCourses = [
     {
       id: 1,
       title: "Building a Winning Mindset: Flexibility and Resiliency at Work",
-      time: "2.5 hours",
-      type: "Featured",
+      time: "2.5 hours • Start today",
       image: csThumbnail,
-      category: "Leadership"
+      category: "Featured"
     },
     {
       id: 2,
       title: "Tech Ethics: Critical Thinking in the Age of Apps, Algorithms, and AI",
-      time: "2.5 hours",
-      type: "Featured",
+      time: "2.5 hours • Start today",
       image: mathThumbnail,
-      category: "Technology"
+      category: "Featured"
     },
     {
       id: 3,
       title: "Cultivating Power for Positive Impact",
-      time: "2.5 hours",
-      type: "Featured",
+      time: "2.5 hours • Start today",
       image: artThumbnail,
-      category: "Business"
+      category: "Featured"
+    }
+  ];
+
+  const catalogCourses = [
+    {
+      id: 4,
+      title: "Data Science for Business",
+      time: "4–5 hours per week • Starting Mar 25, 2026",
+      image: csThumbnail,
+      tags: ["Featured", "Certificate"]
+    },
+    {
+      id: 5,
+      title: "Strategy Execution for Public Leadership",
+      time: "4–5 hours per week • Starting Apr 1, 2026",
+      image: mathThumbnail,
+      tags: ["Featured", "Certificate"]
+    },
+    {
+      id: 6,
+      title: "Health Care Strategy",
+      time: "4-6 hours per week • Starting Apr 15, 2026",
+      image: artThumbnail,
+      tags: ["Featured", "Certificate"]
     }
   ];
 
   return (
-    <div className="min-h-screen bg-white flex flex-col font-sans selection:bg-[#a51c30] selection:text-white">
-      {/* Top Utility Bar */}
-      <div className="bg-[#1e1e1e] text-[10px] text-white/60 py-2 hidden md:block">
-        <div className="container mx-auto px-6 flex justify-end gap-6 font-bold tracking-widest uppercase">
-          <a href="#" className="hover:text-white transition-colors">For Individuals</a>
-          <a href="#" className="hover:text-white transition-colors">For Organizations</a>
-          <a href="#" className="hover:text-white transition-colors">About Harvard Online</a>
+    <div className="min-h-screen bg-white flex flex-col font-sans text-[#1e1e1e]">
+      {/* Top Banner (Utility) */}
+      <div className="bg-[#1e1e1e] text-[11px] text-white/80 py-2.5 font-bold tracking-widest uppercase border-b border-white/5">
+        <div className="container-harvard flex justify-end gap-8">
+          <a href="#" className="hover:text-[#a51c30] transition-colors">For Individuals</a>
+          <a href="#" className="hover:text-[#a51c30] transition-colors">For Organizations</a>
         </div>
       </div>
 
-      {/* Main Navigation */}
-      <nav className="border-b border-gray-100 sticky top-0 z-50 bg-white shadow-sm">
-        <div className="container mx-auto px-6 h-24 flex items-center justify-between">
-          <div className="flex items-center gap-12">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-[#a51c30] flex items-center justify-center">
-                <GraduationCap className="text-white w-9 h-9" />
+      {/* Main Navigation - Refined to match exact Harvard behavior */}
+      <header className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md h-20' : 'bg-white h-24'}`}>
+        <nav className="container-harvard h-full flex items-center justify-between">
+          <div className="flex items-center gap-14 h-full">
+            <a href="/" className="flex items-center gap-4 group">
+              <div className="w-12 h-12 bg-[#a51c30] flex items-center justify-center shrink-0">
+                <GraduationCap className="text-white w-8 h-8" />
               </div>
               <div className="flex flex-col">
-                <span className="font-serif text-2xl font-black tracking-tight text-[#1e1e1e] uppercase leading-none">
-                  Harvard
-                </span>
-                <span className="font-sans text-[11px] tracking-[0.4em] font-black text-[#a51c30] uppercase mt-1">
-                  Online
-                </span>
+                <span className="font-serif text-[26px] font-black tracking-tight text-[#1e1e1e] uppercase leading-none">Harvard</span>
+                <span className="text-[11px] tracking-[0.45em] font-black text-[#a51c30] uppercase mt-0.5">Online</span>
               </div>
-            </div>
+            </a>
             
-            <div className="hidden xl:flex items-center gap-10 text-[12px] font-black text-[#1e1e1e] uppercase tracking-[0.15em]">
-              <a href="#" className="hover:text-[#a51c30] transition-colors border-b-2 border-transparent hover:border-[#a51c30] pb-1">Our Courses</a>
-              <a href="#" className="hover:text-[#a51c30] transition-colors border-b-2 border-transparent hover:border-[#a51c30] pb-1">Programs</a>
-              <a href="#" className="hover:text-[#a51c30] transition-colors border-b-2 border-transparent hover:border-[#a51c30] pb-1">Impact</a>
-              <a href="#" className="hover:text-[#a51c30] transition-colors border-b-2 border-transparent hover:border-[#a51c30] pb-1">Faculty</a>
+            <div className="hidden lg:flex items-center gap-10 text-[13px] font-black text-[#1e1e1e] uppercase tracking-[0.15em] h-full">
+              {['Our Courses', 'Programs', 'Impact', 'Faculty'].map((item) => (
+                <a key={item} href="#" className="hover:text-[#a51c30] transition-colors relative group h-full flex items-center">
+                  {item}
+                  <span className="absolute bottom-0 left-0 w-0 h-1 bg-[#a51c30] transition-all group-hover:w-full" />
+                </a>
+              ))}
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
-            <button className="p-2 hover:bg-gray-50 transition-colors">
-              <Search className="w-6 h-6 text-[#1e1e1e]" />
+          <div className="flex items-center gap-8">
+            <button className="hidden sm:flex items-center gap-2 text-[12px] font-black uppercase tracking-widest hover:text-[#a51c30] transition-colors">
+              <Search className="w-5 h-5" />
+              <span>Search</span>
             </button>
-            <Button className="bg-[#a51c30] hover:bg-[#821626] text-white rounded-none uppercase tracking-[0.2em] text-[12px] font-black px-10 h-14 transition-all shadow-md">
-              Explore Courses
+            <Button className="bg-[#a51c30] hover:bg-[#821626] text-white rounded-none uppercase tracking-[0.25em] text-[12px] font-black px-10 h-14 transition-all">
+              Our Courses
             </Button>
-            <Button variant="ghost" size="icon" className="xl:hidden">
-              <Menu className="w-8 h-8 text-[#1e1e1e]" />
-            </Button>
+            <button onClick={() => setMobileMenuOpen(true)} className="lg:hidden">
+              <Menu className="w-8 h-8" />
+            </button>
           </div>
-        </div>
-      </nav>
+        </nav>
+      </header>
 
       <main>
-        {/* Real Harvard Online Hero */}
-        <section className="relative h-[85vh] flex items-center overflow-hidden bg-[#1e1e1e]">
+        {/* Exact Hero Implementation */}
+        <section className="relative min-h-[700px] flex items-center overflow-hidden bg-black">
           <div className="absolute inset-0">
-            <img src={heroBg} alt="" className="w-full h-full object-cover opacity-60 scale-105" />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
+            <img src={heroBg} alt="" className="w-full h-full object-cover opacity-60 grayscale-[30%]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/20 to-transparent" />
           </div>
           
-          <div className="container mx-auto px-6 relative z-10">
-            <div className="max-w-3xl">
-              <div className="mb-8 flex items-center gap-4">
-                <div className="h-[2px] w-12 bg-[#a51c30]" />
-                <span className="text-white font-black uppercase tracking-[0.4em] text-xs">Learn, Lead, Transform</span>
-              </div>
-              <h1 className="text-6xl md:text-8xl font-serif text-white mb-10 leading-[1.05] font-black italic">
-                Advance your <br />
-                <span className="not-italic text-[#a51c30]">perspective.</span>
+          <div className="container-harvard relative z-10 pt-20">
+            <div className="max-w-2xl">
+              <h1 className="text-7xl md:text-[100px] font-serif text-white mb-10 leading-[0.95] font-black">
+                Learn, lead, <br />
+                <span className="italic font-light">transform</span>
               </h1>
-              <p className="text-xl md:text-2xl text-white/90 mb-14 leading-relaxed font-light max-w-2xl border-l-4 border-[#a51c30] pl-8">
+              <p className="text-xl md:text-2xl text-white/90 mb-12 leading-relaxed font-medium max-w-xl">
                 Building the competence, curiosity, and confidence of learners on our campuses and around the world.
               </p>
-              <div className="flex flex-wrap gap-6">
-                <Button size="lg" className="bg-[#a51c30] text-white hover:bg-[#821626] rounded-none px-12 py-9 text-[13px] font-black uppercase tracking-[0.3em] transition-all group">
-                  Our Courses <ChevronRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </div>
+              <Button size="lg" className="bg-[#a51c30] text-white hover:bg-[#821626] rounded-none px-14 py-9 text-[14px] font-black uppercase tracking-[0.3em] transition-all group">
+                Our Courses <ChevronRight className="ml-3 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
             </div>
           </div>
         </section>
 
-        {/* New Course Slider Mimic */}
-        <section className="py-24 bg-white overflow-hidden">
-          <div className="container mx-auto px-6">
-            <div className="flex items-center justify-between mb-16">
-              <div>
-                <h2 className="text-4xl font-serif font-black text-[#1e1e1e] mb-4 italic">New Short Courses for Career Growth</h2>
-                <p className="text-gray-500 font-medium tracking-wide">Developed by leading Harvard faculty.</p>
-              </div>
-              <div className="flex gap-4">
-                <Button variant="outline" size="icon" className="rounded-full w-12 h-12 border-gray-200 hover:border-[#a51c30] hover:text-[#a51c30]">
-                  <ChevronRight className="w-6 h-6 rotate-180" />
-                </Button>
-                <Button variant="outline" size="icon" className="rounded-full w-12 h-12 border-gray-200 hover:border-[#a51c30] hover:text-[#a51c30]">
-                  <ChevronRight className="w-6 h-6" />
-                </Button>
-              </div>
+        {/* Horizontal Segmentation: Section 1 */}
+        <section className="py-24 bg-white border-b border-gray-100">
+          <div className="container-harvard">
+            <div className="flex flex-col md:flex-row items-baseline justify-between mb-16 gap-6">
+              <h2 className="text-[42px] font-serif font-black text-[#1e1e1e] leading-tight italic">New Short Courses for Career Growth</h2>
+              <div className="h-1 bg-[#a51c30] w-24" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
               {featuredCourses.map((course) => (
-                <div key={course.id} className="group cursor-pointer">
-                  <div className="relative aspect-[4/3] mb-8 overflow-hidden">
-                    <img src={course.image} alt="" className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700" />
-                    <div className="absolute top-0 left-0 bg-[#a51c30] text-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em]">
-                      {course.type}
+                <div key={course.id} className="group flex flex-col">
+                  <div className="relative aspect-[16/10] mb-8 overflow-hidden bg-gray-100">
+                    <img src={course.image} alt="" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" />
+                    <div className="absolute bottom-4 left-4">
+                      <Badge className="bg-[#a51c30] text-white rounded-none px-4 py-1.5 text-[10px] font-black tracking-widest uppercase">Featured</Badge>
                     </div>
                   </div>
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4 text-[11px] font-black uppercase tracking-[0.2em] text-[#a51c30]">
-                      <span>{course.time}</span>
-                      <span className="w-1 h-1 rounded-full bg-gray-300" />
-                      <span>Start Today</span>
-                    </div>
-                    <h3 className="text-2xl font-serif font-black leading-tight text-[#1e1e1e] group-hover:underline decoration-[#a51c30] underline-offset-8">
+                  <div className="space-y-4 px-2">
+                    <p className="text-[11px] font-black uppercase tracking-[0.25em] text-[#a51c30]">{course.time}</p>
+                    <h3 className="text-2xl font-serif font-black leading-tight text-[#1e1e1e] group-hover:underline decoration-[#a51c30] underline-offset-8 transition-all">
                       {course.title}
                     </h3>
                   </div>
@@ -173,135 +169,125 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Course Finder Section */}
-        <section className="bg-[#f4f4f4] py-24">
-          <div className="container mx-auto px-6">
-            <div className="max-w-6xl mx-auto bg-white shadow-2xl p-12 md:p-20 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#a51c30]/5 rounded-bl-full" />
-              
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-                <div>
-                  <h2 className="text-5xl font-serif font-black mb-8 italic">Carefully crafted to <br /><span className="text-[#a51c30] not-italic">meet your goals.</span></h2>
-                  <p className="text-gray-600 mb-10 leading-relaxed text-lg">
-                    Tell us what you want to learn, and we'll help you find the perfect course or program to advance your career.
-                  </p>
-                  <Button className="bg-[#1e1e1e] hover:bg-black text-white rounded-none px-10 py-7 text-[12px] font-black uppercase tracking-[0.3em]">
-                    Help Me Choose
-                  </Button>
+        {/* Section 2: Carefully Crafted Selector */}
+        <section className="py-32 bg-[#f9f9f9]">
+          <div className="container-harvard grid grid-cols-1 lg:grid-cols-12 gap-20 items-center">
+            <div className="lg:col-span-5 space-y-10">
+              <h2 className="text-5xl md:text-6xl font-serif font-black text-[#1e1e1e] leading-[1.1] italic">Carefully crafted to <br /><span className="text-[#a51c30] not-italic">meet your goals.</span></h2>
+              <p className="text-lg text-gray-600 font-medium leading-relaxed max-w-md">
+                Learn with a wide variety of courses designed to fit your schedule and professional needs.
+              </p>
+              <a href="#" className="inline-flex items-center gap-4 text-[#a51c30] font-black uppercase tracking-[0.3em] text-xs hover:gap-6 transition-all">
+                See All Courses <ChevronRight className="w-5 h-5" />
+              </a>
+            </div>
+
+            <div className="lg:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-8">
+              {catalogCourses.map((course) => (
+                <div key={course.id} className="bg-white p-2 group cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500">
+                   <div className="relative aspect-[16/10] overflow-hidden">
+                     <img src={course.image} alt="" className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all" />
+                     <div className="absolute top-0 right-0 flex flex-col">
+                        {course.tags.map(tag => (
+                          <span key={tag} className="bg-[#1e1e1e] text-white text-[9px] font-black uppercase tracking-widest px-3 py-1.5 mb-[1px]">{tag}</span>
+                        ))}
+                     </div>
+                   </div>
+                   <div className="p-8 space-y-4">
+                     <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">{course.time}</p>
+                     <h4 className="text-xl font-serif font-black text-[#1e1e1e] group-hover:text-[#a51c30] transition-colors">{course.title}</h4>
+                   </div>
                 </div>
-                
-                <div className="space-y-8">
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase tracking-[0.4em] text-[#a51c30]">I want to learn about</label>
-                    <select className="w-full bg-gray-50 border-b-2 border-gray-200 p-4 font-bold text-[#1e1e1e] focus:outline-none focus:border-[#a51c30] appearance-none cursor-pointer">
-                      <option>Any Topic</option>
-                      {courseCategories.map(cat => <option key={cat}>{cat}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase tracking-[0.4em] text-[#a51c30]">I can commit to</label>
-                    <select className="w-full bg-gray-50 border-b-2 border-gray-200 p-4 font-bold text-[#1e1e1e] focus:outline-none focus:border-[#a51c30] appearance-none cursor-pointer">
-                      <option>Any Length</option>
-                      <option>One Month or Less</option>
-                      <option>Two Months</option>
-                      <option>Three Months or More</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* Global Stats */}
-        <section className="bg-[#1e1e1e] py-32 border-t border-white/5">
-          <div className="container mx-auto px-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-24 text-center">
-              <div className="space-y-6 group">
-                <div className="text-8xl font-serif text-[#a51c30] font-black italic opacity-80 group-hover:opacity-100 transition-opacity">150+</div>
-                <div className="h-1 w-12 bg-[#a51c30] mx-auto" />
-                <div className="text-[11px] font-black uppercase tracking-[0.4em] text-white/60">Countries Represented</div>
+        {/* Global Impact Horizontal Strip */}
+        <section className="py-40 bg-[#1e1e1e] relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]" />
+          <div className="container-harvard grid grid-cols-1 md:grid-cols-3 gap-32 relative z-10">
+            {[
+              { num: "150+", label: "Countries Represented" },
+              { num: "500k+", label: "Learners Worldwide" },
+              { num: "200+", label: "Harvard Faculty" }
+            ].map((stat, i) => (
+              <div key={i} className="text-center space-y-8 group">
+                <div className="text-[120px] font-serif font-black text-[#a51c30] leading-none opacity-90 group-hover:opacity-100 transition-opacity drop-shadow-2xl italic">{stat.num}</div>
+                <div className="h-1.5 w-16 bg-[#a51c30] mx-auto scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
+                <p className="text-[12px] font-black uppercase tracking-[0.5em] text-white/50">{stat.label}</p>
               </div>
-              <div className="space-y-6 group">
-                <div className="text-8xl font-serif text-[#a51c30] font-black italic opacity-80 group-hover:opacity-100 transition-opacity">500k+</div>
-                <div className="h-1 w-12 bg-[#a51c30] mx-auto" />
-                <div className="text-[11px] font-black uppercase tracking-[0.4em] text-white/60">Learners Globally</div>
-              </div>
-              <div className="space-y-6 group">
-                <div className="text-8xl font-serif text-[#a51c30] font-black italic opacity-80 group-hover:opacity-100 transition-opacity">200+</div>
-                <div className="h-1 w-12 bg-[#a51c30] mx-auto" />
-                <div className="text-[11px] font-black uppercase tracking-[0.4em] text-white/60">Harvard Faculty</div>
-              </div>
-            </div>
+            ))}
           </div>
         </section>
       </main>
 
-      {/* Official Style Footer */}
-      <footer className="bg-white border-t border-gray-100 py-32 overflow-hidden">
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-20">
-            <div className="lg:col-span-4">
-              <div className="flex items-center gap-4 mb-10">
-                <div className="w-12 h-12 bg-[#a51c30] flex items-center justify-center">
-                  <GraduationCap className="text-white w-8 h-8" />
+      {/* Official Refined Footer */}
+      <footer className="bg-white border-t border-gray-100 pt-32 pb-20">
+        <div className="container-harvard">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-24 mb-32">
+            <div className="lg:col-span-5 space-y-12">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-[#a51c30] flex items-center justify-center">
+                  <GraduationCap className="text-white w-9 h-9" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-serif text-2xl font-black text-[#1e1e1e] uppercase">Harvard</span>
-                  <span className="text-[10px] tracking-[0.4em] font-black text-[#a51c30] uppercase">Online</span>
+                  <span className="font-serif text-[28px] font-black text-[#1e1e1e] uppercase leading-none">Harvard</span>
+                  <span className="text-[11px] tracking-[0.45em] font-black text-[#a51c30] uppercase mt-1">Online</span>
                 </div>
               </div>
-              <p className="text-gray-500 text-lg leading-relaxed font-medium mb-10">
-                Building the competence, curiosity, and confidence of learners everywhere.
+              <p className="text-xl text-gray-500 font-medium leading-relaxed max-w-sm italic">
+                "Learning, leading, transforming — building the competence and confidence of global learners."
               </p>
-              <div className="flex gap-4">
-                {['FB', 'TW', 'LI', 'IG'].map(s => (
-                  <button key={s} className="w-12 h-12 border-2 border-gray-100 flex items-center justify-center text-[10px] font-black hover:border-[#a51c30] hover:text-[#a51c30] transition-all">
-                    {s}
-                  </button>
-                ))}
-              </div>
             </div>
 
-            <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-16">
-              <div className="space-y-8">
-                <h4 className="text-[11px] font-black uppercase tracking-[0.4em] text-[#a51c30]">Learn</h4>
-                <ul className="space-y-4 text-sm font-bold text-[#1e1e1e]">
-                  <li><a href="#" className="hover:text-[#a51c30] transition-colors">Course Catalog</a></li>
-                  <li><a href="#" className="hover:text-[#a51c30] transition-colors">Programs</a></li>
-                  <li><a href="#" className="hover:text-[#a51c30] transition-colors">Organization Solutions</a></li>
-                </ul>
-              </div>
-              <div className="space-y-8">
-                <h4 className="text-[11px] font-black uppercase tracking-[0.4em] text-[#a51c30]">About</h4>
-                <ul className="space-y-4 text-sm font-bold text-[#1e1e1e]">
-                  <li><a href="#" className="hover:text-[#a51c30] transition-colors">Our Impact</a></li>
-                  <li><a href="#" className="hover:text-[#a51c30] transition-colors">Faculty</a></li>
-                  <li><a href="#" className="hover:text-[#a51c30] transition-colors">Newsletter</a></li>
-                </ul>
-              </div>
-              <div className="space-y-8">
-                <h4 className="text-[11px] font-black uppercase tracking-[0.4em] text-[#a51c30]">Legal</h4>
-                <ul className="space-y-4 text-sm font-bold text-[#1e1e1e]">
-                  <li><a href="#" className="hover:text-[#a51c30] transition-colors">Privacy Policy</a></li>
-                  <li><a href="#" className="hover:text-[#a51c30] transition-colors">Terms of Service</a></li>
-                  <li><a href="#" className="hover:text-[#a51c30] transition-colors">Accessibility</a></li>
-                </ul>
-              </div>
+            <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-16">
+              {[
+                { title: "Learn", links: ["Course Catalog", "Programs", "Solutions"] },
+                { title: "About", links: ["Our Impact", "Faculty", "Newsletter"] },
+                { title: "Legal", links: ["Privacy", "Terms", "Accessibility"] }
+              ].map(col => (
+                <div key={col.title} className="space-y-8">
+                  <h4 className="text-[12px] font-black uppercase tracking-[0.4em] text-[#a51c30]">{col.title}</h4>
+                  <ul className="space-y-5">
+                    {col.links.map(link => (
+                      <li key={link}>
+                        <a href="#" className="text-sm font-bold text-[#1e1e1e] hover:text-[#a51c30] transition-colors uppercase tracking-widest">{link}</a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </div>
           </div>
           
-          <div className="mt-32 pt-10 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-8">
-            <div className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">
+          <div className="pt-12 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-8">
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">
               © 2026 President and Fellows of Harvard College
             </div>
-            <div className="flex items-center gap-4">
-               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Veritas</span>
-               <div className="w-12 h-[2px] bg-gray-100" />
+            <div className="flex items-center gap-8 text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">
+              <span>Veritas</span>
+              <div className="w-16 h-[1px] bg-gray-200" />
+              <span>Cambridge, MA</span>
             </div>
           </div>
         </div>
       </footer>
+
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-[100] bg-[#1e1e1e] text-white p-8 flex flex-col animate-in fade-in slide-in-from-right duration-300">
+          <div className="flex justify-end mb-12">
+            <button onClick={() => setMobileMenuOpen(false)}><X className="w-10 h-10" /></button>
+          </div>
+          <div className="space-y-8">
+            {['Our Courses', 'Programs', 'Impact', 'Faculty'].map(item => (
+              <a key={item} href="#" className="block text-4xl font-serif font-black italic border-b border-white/10 pb-4">{item}</a>
+            ))}
+          </div>
+          <Button className="mt-12 bg-[#a51c30] h-20 text-xl font-black rounded-none">Explore Courses</Button>
+        </div>
+      )}
     </div>
   );
 }

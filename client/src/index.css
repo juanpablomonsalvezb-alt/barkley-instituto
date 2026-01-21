@@ -51,38 +51,26 @@
 }
 
 :root {
-  /* Harvard Brand Identity */
   --background: 0 0% 100%;
-  --foreground: 0 0% 11%; /* Very dark gray, almost black */
-
+  --foreground: 0 0% 11%;
   --card: 0 0% 100%;
   --card-foreground: 0 0% 11%;
-
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 11%;
-
-  /* Official Harvard Crimson */
-  --primary: 352 71% 37%; /* #a51c30 */
+  --primary: 352 71% 37%;
   --primary-foreground: 0 0% 100%;
-
   --secondary: 0 0% 96%;
   --secondary-foreground: 0 0% 11%;
-
   --muted: 0 0% 96%;
   --muted-foreground: 0 0% 45%;
-
   --accent: 352 71% 37%;
   --accent-foreground: 0 0% 100%;
-
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 0 0% 98%;
-
   --border: 0 0% 89.8%;
   --input: 0 0% 89.8%;
   --ring: 352 71% 37%;
-
-  --radius: 0rem; /* Harvard Online uses sharp corners */
-
+  --radius: 0rem;
   --sidebar: 0 0% 11%;
   --sidebar-foreground: 0 0% 98%;
   --sidebar-primary: 352 71% 37%;
@@ -101,15 +89,15 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-serif tracking-tight text-foreground font-bold;
+    @apply font-serif tracking-tight text-foreground font-black;
   }
 }
 
 @layer utilities {
-  .text-harvard-crimson {
-    color: #a51c30;
+  .container-harvard {
+    @apply max-w-[1240px] mx-auto px-6;
   }
-  .bg-harvard-crimson {
-    background-color: #a51c30;
+  .text-shadow-subtle {
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
   }
 }
