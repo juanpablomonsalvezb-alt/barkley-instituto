@@ -15,13 +15,19 @@ import {
   Calendar,
   AlertCircle,
   Lock,
-  CheckCircle2
+  CheckCircle2,
+  Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export default function Dashboard() {
   const [timeLeft, setTimeLeft] = useState(1200);
@@ -62,7 +68,14 @@ export default function Dashboard() {
       next: "OA3: Análisis de Narraciones", 
       category: "7° Básico", 
       color: "bg-blue-500",
-      accent: "#3b82f6"
+      objectives: [
+        { id: 1, title: "OA 3: Análisis de Narraciones", desc: "Conflictos, personajes y disposición temporal." },
+        { id: 2, title: "OA 4: Análisis de Poemas", desc: "Lenguaje poético, figuras y sonoridad." },
+        { id: 3, title: "OA 7: Interpretación Literaria", desc: "Dilemas y visión de mundo en obras." },
+        { id: 4, title: "OA 8: Textos Argumentativos", desc: "Hechos vs opiniones y postura del autor." },
+        { id: 5, title: "OA 9: Medios de Comunicación", desc: "Propósitos, estereotipos e imágenes." },
+        { id: 6, title: "OA 15: Escritura y Planificación", desc: "Coherencia, cohesión y adecuación al contexto." }
+      ]
     },
     { 
       id: "mate", 
@@ -72,7 +85,14 @@ export default function Dashboard() {
       next: "OA1: Números Enteros", 
       category: "7° Básico", 
       color: "bg-[#a51c30]",
-      accent: "#a51c30"
+      objectives: [
+        { id: 1, title: "OA 1: Números Enteros", desc: "Representación, orden y operaciones básicas." },
+        { id: 2, title: "OA 2: Fracciones y Decimales", desc: "Multiplicación y división en contextos reales." },
+        { id: 3, title: "OA 3: Porcentajes", desc: "Cálculos, aumentos y descuentos aplicados." },
+        { id: 4, title: "OA 8: Álgebra Básica", desc: "Expresiones, ecuaciones e inecuaciones." },
+        { id: 5, title: "OA 11: Geometría Plana", desc: "Áreas y perímetros de figuras compuestas." },
+        { id: 6, title: "OA 14: Datos y Probabilidades", desc: "Gráficos, promedios y azar simple." }
+      ]
     },
     { 
       id: "ciencias", 
@@ -82,7 +102,14 @@ export default function Dashboard() {
       next: "OA1: La Célula", 
       category: "7° Básico", 
       color: "bg-green-500",
-      accent: "#22c55e"
+      objectives: [
+        { id: 1, title: "OA 1: La Célula", desc: "Estructuras, funciones y tipos celulares." },
+        { id: 2, title: "OA 2: Sistemas del Cuerpo", desc: "Digestión, respiración y circulación." },
+        { id: 3, title: "OA 7: Microorganismos", desc: "Bacterias, virus y defensas del cuerpo." },
+        { id: 4, title: "OA 11: Fuerza y Movimiento", desc: "Leyes básicas y tipos de fuerzas." },
+        { id: 5, title: "OA 14: Capas de la Tierra", desc: "Litósfera, atmósfera e hidrósfera." },
+        { id: 6, title: "OA 16: Clima y Cambio Global", desc: "Variables climáticas y efectos humanos." }
+      ]
     },
   ];
 
@@ -140,10 +167,7 @@ export default function Dashboard() {
         </header>
 
         <div className="flex-1 overflow-y-auto p-10 space-y-10">
-          {/* Main Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-            
-            {/* Left Column: Learning Path */}
             <div className="lg:col-span-8 space-y-10">
               <section className="space-y-6">
                 <div className="flex items-baseline justify-between">
@@ -156,12 +180,39 @@ export default function Dashboard() {
                     <Card key={course.id} className="border border-gray-100 shadow-sm hover:shadow-md transition-all rounded-none overflow-hidden group bg-white">
                       <CardContent className="p-0">
                         <div className="flex flex-col">
-                          {/* Upper Section: Course Info */}
                           <div className="p-8 flex items-center justify-between gap-8 border-b border-gray-50">
                             <div className="space-y-3">
                               <div className="flex items-center gap-3">
                                 <Badge className="bg-gray-100 text-gray-500 rounded-none border-none text-[8px] font-black uppercase tracking-widest">{course.category}</Badge>
                                 <span className="text-[10px] font-black text-[#a51c30] uppercase tracking-widest">{course.progress}% Completado</span>
+                                
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <button className="flex items-center gap-1 text-[8px] font-black uppercase tracking-widest text-gray-400 hover:text-[#a51c30] transition-colors bg-gray-50 px-2 py-1 rounded-sm">
+                                      <Info className="w-3 h-3" /> Ver Objetivos
+                                    </button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-80 bg-white border border-gray-100 shadow-2xl p-6 rounded-none" side="right" align="start">
+                                    <div className="space-y-6">
+                                      <div className="flex items-center justify-between border-b border-gray-50 pb-3">
+                                        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#a51c30]">Plan de Estudios Anual</h4>
+                                        <Target className="w-4 h-4 text-[#a51c30]" />
+                                      </div>
+                                      <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                                        {course.objectives.map(obj => (
+                                          <div key={obj.id} className="space-y-1">
+                                            <p className="text-[10px] font-black uppercase tracking-wider text-[#1e1e1e]">{obj.title}</p>
+                                            <p className="text-[10px] text-gray-400 font-medium leading-relaxed italic">{obj.desc}</p>
+                                            <div className="h-px w-full bg-gray-50 mt-3" />
+                                          </div>
+                                        ))}
+                                      </div>
+                                      <p className="text-[8px] font-bold text-gray-300 uppercase tracking-[0.2em] text-center italic">
+                                        Estructura basada en Temario Mineduc 7° Básico
+                                      </p>
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
                               </div>
                               <h3 className="text-xl font-serif font-black">{course.title}</h3>
                               <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
@@ -173,7 +224,6 @@ export default function Dashboard() {
                             </Link>
                           </div>
 
-                          {/* Lower Section: Horizontal 33-Week Timeline */}
                           <div className="px-8 py-6 bg-gray-50/30">
                             <div className="flex items-center justify-between mb-4">
                               <span className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-400">Línea de Tiempo (33 Semanas)</span>
@@ -202,15 +252,10 @@ export default function Dashboard() {
                                       >
                                         {isCompleted ? <CheckCircle2 className="w-3 h-3" /> : isLocked ? <Lock className="w-3 h-3 opacity-50" /> : weekNum}
                                         
-                                        {/* Hover Tooltip (Simulated) */}
                                         <div className="absolute -top-8 bg-[#1e1e1e] text-white text-[7px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none uppercase tracking-widest">
                                           Semana {weekNum} {isMidterm ? '• Macro' : isFinal ? '• Final' : ''}
                                         </div>
                                       </div>
-                                      {/* Connection Line */}
-                                      {weekNum < totalWeeks && (
-                                        <div className="absolute right-[-4px] top-4 w-2 h-[1px] bg-gray-100 hidden" />
-                                      )}
                                     </div>
                                   );
                                 })}
@@ -225,7 +270,6 @@ export default function Dashboard() {
                 </div>
               </section>
 
-              {/* Weekly Habit Tracker */}
               <section className="bg-white border border-gray-100 p-10 space-y-8">
                 <div className="flex items-center gap-4">
                    <Calendar className="w-6 h-6 text-[#a51c30]" />
@@ -243,9 +287,7 @@ export default function Dashboard() {
               </section>
             </div>
 
-            {/* Right Column: Barkley Engine */}
             <div className="lg:col-span-4 space-y-10">
-              {/* The Visual Timer (Externalized Time) */}
               <Card className="bg-[#1e1e1e] text-white border-none rounded-none p-10 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-5">
                   <Clock className="w-32 h-32" />
@@ -265,7 +307,6 @@ export default function Dashboard() {
                 </div>
               </Card>
 
-              {/* Friday Deadline Alert */}
               <Card className="border-l-4 border-amber-500 bg-amber-50/50 p-8 space-y-4 rounded-none">
                  <div className="flex items-center gap-3 text-amber-600">
                     <AlertCircle className="w-5 h-5" />
@@ -276,7 +317,6 @@ export default function Dashboard() {
                  </p>
               </Card>
 
-              {/* Resource Center */}
               <section className="space-y-6">
                 <h4 className="text-[11px] font-black uppercase tracking-[0.3em]">Material de Apoyo</h4>
                 <div className="space-y-3">
@@ -288,7 +328,6 @@ export default function Dashboard() {
                 </div>
               </section>
             </div>
-
           </div>
         </div>
       </main>
