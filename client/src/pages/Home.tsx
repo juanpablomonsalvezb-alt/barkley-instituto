@@ -3,7 +3,7 @@ import { Search, Menu, GraduationCap, ChevronRight, X, Clock, Target, Brain, Arr
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-// Asset Imports (Keeping the Harvard-style generated images for consistent ADN)
+// Asset Imports
 import csThumbnail from "@assets/generated_images/computer_science_course_thumbnail.png";
 import artThumbnail from "@assets/generated_images/art_history_course_thumbnail.png";
 import mathThumbnail from "@assets/generated_images/mathematics_course_thumbnail.png";
@@ -24,50 +24,63 @@ export default function Home() {
       id: 1,
       title: "Plan Barkley FOCUS",
       subtitle: "Jóvenes (7° a 4° Medio)",
-      price: "Matrícula: $50.000 | Mensualidad: $75.000",
-      description: "Preparación Exámenes Libres: Foco en asignaturas oficiales (Lenguaje, Matemática, Ciencias, Historia e Inglés). Incluye Tutor Académico.",
+      price: "Matrícula: $50.000 Mensualidad: $75.000",
+      description: "Preparación Exámenes Libres: Foco en asignaturas oficiales (Lenguaje, Matemática, Ciencias, Historia e Inglés). Incluye un Tutor Académico para seguimiento y el uso del método de estudio Barkley para asegurar la aprobación.",
       image: csThumbnail,
-      category: "Académico"
+      category: "Área Académica",
+      linkText: "Más Información"
     },
     {
       id: 2,
       title: "Plan Barkley IMPULSO",
       subtitle: "Adultos (Básica y Media)",
-      price: "Matrícula: $35.000 | Mensualidad: $55.000",
-      description: "Nivelación 2x1 (Decreto 2272): Preparación intensiva para validación de adultos con acompañamiento de tutor.",
+      price: "Matrícula: $35.000 Mensualidad: $55.000",
+      description: "Nivelación 2x1 (Decreto 2272): Preparación intensiva para las pruebas de validación de adultos. Incluye Acompañamiento de Tutor, módulos de eficiencia cognitiva y gestión administrativa ante la Secreduc.",
       image: mathThumbnail,
-      category: "Adultos"
+      category: "Área Académica",
+      linkText: "Más Información"
     },
     {
       id: 3,
       title: "Plataforma STRATMORE",
       subtitle: "Temporada Completa (Marzo a Octubre)",
       price: "Pago Único: $150.000",
-      description: "Entrenamiento Autónomo: Herramienta 100% autogestionable que enseña a cumplir metas sin procrastinar.",
+      description: "Entrenamiento Autónomo: Acceso de marzo a octubre a la plataforma exclusiva de Stratmore Partners. Herramienta 100% autogestionable que enseña a externalizar el tiempo y cumplir metas sin procrastinar.",
       image: artThumbnail,
-      category: "Plataforma"
+      category: "Área de Entrenamiento",
+      linkText: "Obtener Acceso"
+    },
+    {
+      id: 4,
+      title: "Tutoría INDIVIDUAL",
+      subtitle: "Pack 4 Sesiones: $200.000",
+      price: "Instalación del Método",
+      description: "Sesiones personalizadas uno-a-uno con un experto. Se trabaja la responsabilidad frente a tareas, superación de crisis y el fortalecimiento de la voluntad mediante el entrenamiento conductual Barkley.",
+      image: heroBg,
+      category: "Área de Entrenamiento",
+      linkText: "Obtener Acceso"
     }
   ];
 
   const pillars = [
     {
       title: "Externalización del Tiempo",
-      description: "Sustituimos el reloj mental por cronómetros visuales. Si no puedes ver el tiempo, no puedes gestionarlo.",
+      description: "Sustituimos el reloj mental por cronómetros visuales y metas de corto plazo. Si no puedes ver el tiempo, no puedes gestionarlo.",
       icon: Clock
     },
     {
       title: "Fragmentación del Desempeño",
-      description: "Dividimos el currículo en ráfagas de 20 minutos. Éxito inmediato para mantener el compromiso.",
+      description: "Dividimos el denso currículo del Mineduc en ráfagas de 20 minutos de alta intensidad. Éxito inmediato para mantener el compromiso.",
       icon: Target
     },
     {
       title: "Apoyo en el Punto de Acción",
-      description: "Feedback instantáneo. Reducimos el espacio entre esfuerzo y recompensa para vencer la distracción.",
+      description: "Feedback instantáneo. Reducimos el espacio entre el esfuerzo y la recompensa, la clave científica para vencer la distracción.",
       icon: ArrowRight
     },
     {
       title: "Neurociencia Aplicada",
-      description: "Principios para optimizar el aprendizaje y superar barreras cognitivas de ejecución.",
+      description: "Nuestro método se basa en principios de neurociencia para optimizar el aprendizaje y la retención, y superar barreras cognitivas.",
       icon: Brain
     }
   ];
@@ -153,22 +166,27 @@ export default function Home() {
               <div className="h-1 bg-[#a51c30] w-24" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-x-16 lg:gap-y-20">
               {programs.map((prog) => (
                 <div key={prog.id} className="group flex flex-col">
-                  <div className="relative aspect-[16/10] mb-8 overflow-hidden bg-gray-100">
+                  <div className="relative aspect-[16/10] mb-8 overflow-hidden bg-gray-100 shadow-sm">
                     <img src={prog.image} alt="" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" />
-                    <div className="absolute bottom-4 left-4">
-                      <Badge className="bg-[#a51c30] text-white rounded-none px-4 py-1.5 text-[10px] font-black tracking-widest uppercase">{prog.category}</Badge>
+                    <div className="absolute top-0 right-0">
+                      <Badge className="bg-[#a51c30] text-white rounded-none px-4 py-2 text-[10px] font-black tracking-widest uppercase">{prog.category}</Badge>
                     </div>
                   </div>
-                  <div className="space-y-4 px-2">
-                    <p className="text-[11px] font-black uppercase tracking-[0.25em] text-[#a51c30]">{prog.price}</p>
-                    <h3 className="text-2xl font-serif font-black leading-tight text-[#1e1e1e] group-hover:underline decoration-[#a51c30] underline-offset-8 transition-all">
+                  <div className="space-y-4 px-2 flex-1 flex flex-col">
+                    <h3 className="text-3xl font-serif font-black leading-tight text-[#1e1e1e] group-hover:text-[#a51c30] transition-colors">
                       {prog.title}
                     </h3>
-                    <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">{prog.subtitle}</p>
-                    <p className="text-gray-600 text-sm leading-relaxed">{prog.description}</p>
+                    <p className="text-sm font-black text-gray-400 uppercase tracking-[0.3em]">{prog.subtitle}</p>
+                    <p className="text-[12px] font-black text-[#a51c30] uppercase tracking-[0.2em]">{prog.price}</p>
+                    <p className="text-gray-600 text-sm leading-relaxed mb-6">{prog.description}</p>
+                    <div className="mt-auto">
+                      <a href="#" className="inline-flex items-center gap-2 text-[#a51c30] font-black uppercase tracking-[0.3em] text-[11px] group-hover:gap-4 transition-all border-b-2 border-transparent hover:border-[#a51c30] pb-1">
+                        {prog.linkText} <ChevronRight className="w-4 h-4" />
+                      </a>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -182,13 +200,13 @@ export default function Home() {
             <div className="lg:col-span-5 space-y-10">
               <h2 className="text-5xl md:text-6xl font-serif font-black text-[#1e1e1e] leading-[1.1] italic">¿Qué es el <br /><span className="text-[#a51c30] not-italic">Método Barkley?</span></h2>
               <p className="text-lg text-gray-600 font-medium leading-relaxed">
-                Es un andamiaje externo para las funciones ejecutivas. Diseñamos un entorno digital que externaliza el tiempo, las metas y las recompensas.
+                El Método Barkley es un **andamiaje externo para las funciones ejecutivas**. No confiamos en la "fuerza de voluntad" del alumno; diseñamos un entorno digital que externaliza el tiempo, las metas y las recompensas. Es una estrategia de neurociencia aplicada para vencer la procrastinación.
               </p>
-              <p className="text-gray-600 leading-relaxed italic">
+              <p className="text-gray-600 leading-relaxed italic border-l-4 border-[#a51c30] pl-6 py-2">
                 "Mientras otros entregan contenido, nosotros entregamos capacidad de ejecución."
               </p>
               <Button className="bg-[#1e1e1e] hover:bg-black text-white rounded-none px-10 py-7 text-[12px] font-black uppercase tracking-[0.3em]">
-                Saber Más
+                Comienza tu Transformación
               </Button>
             </div>
 
@@ -210,7 +228,7 @@ export default function Home() {
             <div className="space-y-8">
               <h2 className="text-5xl font-serif font-black text-white italic">El Fundamento <br /><span className="text-[#a51c30] not-italic">de tu Éxito.</span></h2>
               <p className="text-white/60 text-xl font-light leading-relaxed max-w-md">
-                El conocimiento es saber qué hacer; el Método Barkley es hacer lo que sabes. Cerramos la brecha entre intención y resultado.
+                El conocimiento es saber qué hacer; el Método Barkley es hacer lo que sabes. En Barkley Instituto, cerramos la brecha entre la intención y el resultado.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-12 text-center">
