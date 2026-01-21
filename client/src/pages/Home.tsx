@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+
+// Import images
 import csThumbnail from "@assets/generated_images/computer_science_course_thumbnail.png";
 import artThumbnail from "@assets/generated_images/art_history_course_thumbnail.png";
 import mathThumbnail from "@assets/generated_images/mathematics_course_thumbnail.png";
@@ -43,41 +45,46 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-background flex flex-col font-sans">
+    <div className="min-h-screen bg-[#fcfcfc] flex flex-col font-sans text-[#1e1e1e]">
       {/* Navigation */}
-      <nav className="border-b border-border/50 sticky top-0 z-50 bg-white/80 backdrop-blur-md">
-        <div className="container mx-auto px-4 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-primary rounded-sm flex items-center justify-center">
-                <GraduationCap className="text-white w-6 h-6" />
+      <nav className="border-b border-gray-100 sticky top-0 z-50 bg-white/95 backdrop-blur-sm">
+        <div className="container mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-12">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-[#a51c30] rounded-sm flex items-center justify-center">
+                <GraduationCap className="text-white w-7 h-7" />
               </div>
-              <span className="font-serif text-2xl font-bold tracking-tighter uppercase text-primary">
-                Harvard<span className="text-foreground/80">Online</span>
-              </span>
+              <div className="flex flex-col leading-none">
+                <span className="font-serif text-xl font-bold tracking-tight text-[#a51c30] uppercase">
+                  Harvard
+                </span>
+                <span className="font-sans text-xs tracking-[0.3em] font-bold text-gray-500 uppercase">
+                  Online
+                </span>
+              </div>
             </div>
             
-            <div className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground uppercase tracking-widest">
-              <a href="#" className="hover:text-primary transition-colors">Courses</a>
-              <a href="#" className="hover:text-primary transition-colors">Programs</a>
-              <a href="#" className="hover:text-primary transition-colors">About</a>
+            <div className="hidden md:flex items-center gap-8 text-[11px] font-bold text-gray-600 uppercase tracking-[0.2em]">
+              <a href="#" className="hover:text-[#a51c30] transition-colors">Courses</a>
+              <a href="#" className="hover:text-[#a51c30] transition-colors">Programs</a>
+              <a href="#" className="hover:text-[#a51c30] transition-colors">About</a>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="hidden lg:flex relative w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <div className="flex items-center gap-6">
+            <div className="hidden lg:flex relative w-72">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input 
-                placeholder="Search courses..." 
-                className="pl-10 bg-muted/50 border-none focus-visible:ring-primary"
+                placeholder="SEARCH COURSES..." 
+                className="pl-12 bg-gray-50 border-none focus-visible:ring-1 focus-visible:ring-[#a51c30] rounded-none text-[10px] tracking-widest font-bold h-12"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Button variant="outline" className="hidden sm:flex border-primary text-primary hover:bg-primary/5 uppercase tracking-wider text-xs font-bold px-6">
+            <Button variant="ghost" className="hidden sm:flex text-gray-600 hover:text-[#a51c30] uppercase tracking-[0.2em] text-[11px] font-bold">
               Log In
             </Button>
-            <Button className="bg-primary hover:bg-primary/90 text-white uppercase tracking-wider text-xs font-bold px-6">
+            <Button className="bg-[#a51c30] hover:bg-[#821626] text-white rounded-none uppercase tracking-[0.2em] text-[11px] font-bold px-8 h-12 transition-all">
               Register
             </Button>
             <Button variant="ghost" size="icon" className="md:hidden">
@@ -89,25 +96,25 @@ export default function Home() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative py-24 overflow-hidden bg-primary">
-          <div className="absolute inset-0 opacity-20 mix-blend-overlay">
+        <section className="relative py-32 overflow-hidden bg-[#a51c30]">
+          <div className="absolute inset-0 opacity-15 mix-blend-overlay">
             <img src={heroBg} alt="" className="w-full h-full object-cover" />
           </div>
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="max-w-3xl">
-              <h1 className="text-5xl md:text-7xl font-serif text-white mb-6 leading-tight">
+          <div className="container mx-auto px-6 relative z-10">
+            <div className="max-w-4xl">
+              <h1 className="text-6xl md:text-8xl font-serif text-white mb-8 leading-[1.1]">
                 Advance Your <br />
-                <span className="italic">Perspective</span>.
+                <span className="italic font-light opacity-90">Perspective</span>.
               </h1>
-              <p className="text-xl text-white/90 mb-10 leading-relaxed font-light">
-                Learn from the world's leading experts with online courses and programs from Harvard University. 
+              <p className="text-xl md:text-2xl text-white/80 mb-12 leading-relaxed font-light max-w-2xl">
+                Online courses and programs from Harvard University. 
                 Experience a uniquely immersive way to learn.
               </p>
-              <div className="flex flex-wrap gap-4">
-                <Button size="lg" className="bg-white text-primary hover:bg-white/90 px-8 py-6 text-base font-bold uppercase tracking-widest">
+              <div className="flex flex-wrap gap-6">
+                <Button size="lg" className="bg-white text-[#a51c30] hover:bg-gray-100 rounded-none px-10 py-8 text-xs font-bold uppercase tracking-[0.3em] transition-all">
                   Explore Courses
                 </Button>
-                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8 py-6 text-base font-bold uppercase tracking-widest">
+                <Button size="lg" variant="outline" className="border-white/40 text-white hover:bg-white/10 rounded-none px-10 py-8 text-xs font-bold uppercase tracking-[0.3em] transition-all">
                   Our Story
                 </Button>
               </div>
@@ -116,44 +123,44 @@ export default function Home() {
         </section>
 
         {/* Course Catalog */}
-        <section className="py-24 container mx-auto px-4">
-          <div className="flex items-end justify-between mb-12">
-            <div>
-              <span className="text-primary font-bold uppercase tracking-[0.2em] text-xs mb-4 block">Catalog</span>
-              <h2 className="text-4xl font-serif text-foreground">Featured Courses</h2>
+        <section className="py-32 container mx-auto px-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
+            <div className="space-y-4">
+              <span className="text-[#a51c30] font-bold uppercase tracking-[0.4em] text-[10px] block">Catalog</span>
+              <h2 className="text-5xl font-serif text-[#1e1e1e]">Featured Courses</h2>
             </div>
-            <a href="#" className="hidden sm:flex items-center gap-2 text-primary font-bold uppercase tracking-widest text-sm hover:underline group">
-              View All <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <a href="#" className="flex items-center gap-3 text-[#a51c30] font-bold uppercase tracking-[0.3em] text-[11px] hover:underline group">
+              View All Courses <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </a>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
             {courses.map((course) => (
-              <Card key={course.id} className="group border-none shadow-none bg-transparent overflow-hidden">
-                <div className="relative aspect-[16/10] overflow-hidden mb-6">
+              <Card key={course.id} className="group border-none shadow-none bg-transparent overflow-hidden flex flex-col">
+                <div className="relative aspect-[16/10] overflow-hidden mb-8 shadow-sm">
                   <img 
                     src={course.image} 
                     alt={course.title} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                    className="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-105" 
                   />
-                  <Badge className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm text-primary font-bold uppercase tracking-wider px-3 py-1 text-[10px] rounded-none shadow-sm">
+                  <Badge className="absolute top-0 right-0 bg-[#a51c30] text-white font-bold uppercase tracking-[0.2em] px-4 py-2 text-[9px] rounded-none">
                     {course.category}
                   </Badge>
                 </div>
-                <CardContent className="p-0">
-                  <div className="text-muted-foreground uppercase tracking-widest text-[10px] font-bold mb-2">
+                <CardContent className="p-0 flex-1 flex flex-col">
+                  <div className="text-gray-400 uppercase tracking-[0.2em] text-[10px] font-bold mb-3">
                     {course.school}
                   </div>
-                  <h3 className="text-2xl font-serif text-foreground mb-4 group-hover:text-primary transition-colors cursor-pointer leading-snug">
+                  <h3 className="text-2xl font-serif text-[#1e1e1e] mb-6 group-hover:text-[#a51c30] transition-colors cursor-pointer leading-tight">
                     {course.title}
                   </h3>
-                  <div className="flex items-center gap-6 text-muted-foreground text-xs font-medium uppercase tracking-wider">
+                  <div className="mt-auto pt-6 border-t border-gray-100 flex items-center justify-between text-gray-500 text-[10px] font-bold uppercase tracking-[0.2em]">
                     <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-primary" />
+                      <Clock className="w-4 h-4 text-[#a51c30]/60" />
                       {course.duration}
                     </div>
                     <div className="flex items-center gap-2">
-                      <BookOpen className="w-4 h-4 text-primary" />
+                      <BookOpen className="w-4 h-4 text-[#a51c30]/60" />
                       {course.level}
                     </div>
                   </div>
@@ -163,21 +170,21 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Statistics Section */}
-        <section className="bg-muted py-24">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
+        {/* Stats Section */}
+        <section className="bg-white border-y border-gray-100 py-32">
+          <div className="container mx-auto px-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-16 text-center">
               <div className="space-y-4">
-                <div className="text-6xl font-serif text-primary">150+</div>
-                <div className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Countries Represented</div>
+                <div className="text-7xl font-serif text-[#a51c30] font-light">150+</div>
+                <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-400">Countries Represented</div>
               </div>
               <div className="space-y-4">
-                <div className="text-6xl font-serif text-primary">500k+</div>
-                <div className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Learners Worldwide</div>
+                <div className="text-7xl font-serif text-[#a51c30] font-light">500k+</div>
+                <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-400">Learners Worldwide</div>
               </div>
               <div className="space-y-4">
-                <div className="text-6xl font-serif text-primary">200+</div>
-                <div className="text-sm font-bold uppercase tracking-widest text-muted-foreground">World Class Instructors</div>
+                <div className="text-7xl font-serif text-[#a51c30] font-light">200+</div>
+                <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-400">Expert Instructors</div>
               </div>
             </div>
           </div>
@@ -185,50 +192,55 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-sidebar py-20 text-sidebar-foreground">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 border-b border-sidebar-border pb-16">
+      <footer className="bg-[#1e1e1e] py-24 text-white">
+        <div className="container mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-16 border-b border-white/10 pb-20">
             <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center gap-2 mb-6">
-                <div className="w-10 h-10 bg-primary rounded-sm flex items-center justify-center">
-                  <GraduationCap className="text-white w-6 h-6" />
+              <div className="flex items-center gap-3 mb-10">
+                <div className="w-12 h-12 bg-[#a51c30] rounded-sm flex items-center justify-center">
+                  <GraduationCap className="text-white w-7 h-7" />
                 </div>
-                <span className="font-serif text-2xl font-bold tracking-tighter uppercase">
-                  Harvard<span className="text-sidebar-foreground/60">Online</span>
-                </span>
+                <div className="flex flex-col leading-none">
+                  <span className="font-serif text-xl font-bold tracking-tight uppercase">
+                    Harvard
+                  </span>
+                  <span className="font-sans text-xs tracking-[0.3em] font-bold text-gray-500 uppercase">
+                    Online
+                  </span>
+                </div>
               </div>
-              <p className="text-sidebar-foreground/60 max-w-sm text-sm leading-relaxed mb-8">
-                Online courses and programs from Harvard University. Experience a uniquely immersive way to learn from anywhere in the world.
+              <p className="text-gray-400 max-w-sm text-sm leading-relaxed mb-10 font-light">
+                Harvard Online creates high-quality, engaging online learning experiences that help individuals and organizations achieve their goals.
               </p>
             </div>
             
-            <div>
-              <h4 className="font-bold uppercase tracking-widest text-xs mb-6">Courses</h4>
-              <ul className="space-y-4 text-sm text-sidebar-foreground/60">
-                <li><a href="#" className="hover:text-primary transition-colors">Computer Science</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Business</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Humanities</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Data Science</a></li>
+            <div className="space-y-8">
+              <h4 className="font-bold uppercase tracking-[0.3em] text-[10px] text-white">Quick Links</h4>
+              <ul className="space-y-4 text-xs font-bold uppercase tracking-[0.2em] text-gray-400">
+                <li><a href="#" className="hover:text-white transition-colors">Course Catalog</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Programs</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Our Approach</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">FAQ</a></li>
               </ul>
             </div>
 
-            <div>
-              <h4 className="font-bold uppercase tracking-widest text-xs mb-6">Connect</h4>
-              <ul className="space-y-4 text-sm text-sidebar-foreground/60">
-                <li><a href="#" className="hover:text-primary transition-colors">Facebook</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Twitter</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">LinkedIn</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Instagram</a></li>
+            <div className="space-y-8">
+              <h4 className="font-bold uppercase tracking-[0.3em] text-[10px] text-white">Connect</h4>
+              <ul className="space-y-4 text-xs font-bold uppercase tracking-[0.2em] text-gray-400">
+                <li><a href="#" className="hover:text-white transition-colors">LinkedIn</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Twitter</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Facebook</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Instagram</a></li>
               </ul>
             </div>
           </div>
           
-          <div className="pt-8 flex flex-col md:flex-row justify-between gap-4 text-[10px] uppercase tracking-widest font-bold text-sidebar-foreground/40">
-            <div>© 2024 Harvard Online. All Rights Reserved.</div>
-            <div className="flex gap-6">
-              <a href="#" className="hover:text-primary">Privacy Policy</a>
-              <a href="#" className="hover:text-primary">Terms of Service</a>
-              <a href="#" className="hover:text-primary">Cookie Policy</a>
+          <div className="pt-10 flex flex-col md:flex-row justify-between gap-6 text-[9px] uppercase tracking-[0.3em] font-bold text-gray-500">
+            <div>© 2026 Harvard University. All Rights Reserved.</div>
+            <div className="flex flex-wrap gap-8">
+              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+              <a href="#" className="hover:text-white transition-colors">Accessibility</a>
             </div>
           </div>
         </div>
