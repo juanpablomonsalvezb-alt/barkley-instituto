@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "wouter";
 import { Search, Menu, GraduationCap, ChevronRight, X, Clock, Target, Brain, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -124,9 +125,11 @@ export default function Home() {
               <Search className="w-5 h-5" />
               <span>Buscador</span>
             </button>
-            <Button className="bg-[#a51c30] hover:bg-[#821626] text-white rounded-none uppercase tracking-[0.25em] text-[12px] font-black px-10 h-14 transition-all">
-              Descubre el Método
-            </Button>
+            <Link href="/dashboard">
+              <Button className="bg-[#a51c30] hover:bg-[#821626] text-white rounded-none uppercase tracking-[0.25em] text-[12px] font-black px-10 h-14 transition-all">
+                Plataforma Barkley
+              </Button>
+            </Link>
             <button onClick={() => setMobileMenuOpen(true)} className="lg:hidden">
               <Menu className="w-8 h-8" />
             </button>
