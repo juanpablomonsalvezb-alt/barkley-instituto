@@ -14,6 +14,7 @@ import {
   Target,
   LayoutDashboard as LayoutIcon,
   ChevronRight,
+  ChevronLeft,
   Share2,
   Lock,
   ExternalLink,
@@ -31,14 +32,20 @@ import {
   PenTool,
   Activity,
   Layers,
-  Award
+  Award,
+  Maximize2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function CoursePlayer() {
   const [, params] = useRoute("/course/:id");
@@ -48,6 +55,9 @@ export default function CoursePlayer() {
   const levelCode = parts[0];
   const subjectLabel = parts.slice(1).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
 
+  const [currentWeek, setCurrentWeek] = useState(1);
+  const [selectedResource, setSelectedResource] = useState<null | { title: string, url: string }>(null);
+
   const levels: Record<string, string> = {
     "7b": "7° Básico", "8b": "8° Básico", "1m": "1° Medio", "2m": "2° Medio",
     "3m": "3° Medio", "4m": "4° Medio", "nb1": "NB1 (1-4)", "nb2": "NB2 (5-6)",
@@ -56,17 +66,21 @@ export default function CoursePlayer() {
 
   const levelName = levels[levelCode] || levelCode;
 
-  const steps = [
-    { id: 1, type: "video", title: "Video: Tu Impulso Inicial", icon: Video, color: "text-red-500", fundamental: "Activación Atencional (Barkley)", help: "Te permite entrar en sintonía visual rápida sin agobiarte.", objective: "Reducir la resistencia de funciones ejecutivas mediante dopamina y foco." },
-    { id: 2, type: "infografia", title: "Infografía: Tu Mapa de Ruta", icon: Map, color: "text-blue-500", fundamental: "Andamiaje Externo (Barkley)", help: "Te da una estructura visual clara, es tu brújula.", objective: "Memoria de trabajo externa, liberando espacio mental para procesar." },
-    { id: 3, type: "mapa", title: "Mapa Mental: Conectando Ideas", icon: Brain, color: "text-purple-500", fundamental: "Pensamiento Visible (Harvard)", help: "Ayuda a organizar pensamientos y ver el sentido de la red.", objective: "Externalizar razonamiento para aprendizaje profundo y consciente." },
-    { id: 4, type: "audio", title: "Resumen de Audio: Repaso en Movimiento", icon: Headphones, color: "text-orange-500", fundamental: "Protección del Canal Atencional (Barkley)", help: "Refuerza sin cansar, ideal para pausas activas.", objective: "Variar estímulo sensorial para prevenir fatiga y fortalecer retención." },
-    { id: 5, type: "presentacion", title: "Presentación: Paso a Paso", icon: Presentation, color: "text-emerald-500", fundamental: "Autocontrol y Autonomía (Barkley)", help: "Explica detalles técnicos a tu propio ritmo.", objective: "Fomentar autodirección ajustando flujo a tu velocidad de procesamiento." },
-    { id: 6, type: "flashcards", title: "Tarjetas (Flashcards): Desafía tu Memoria", icon: Layers, color: "text-amber-500", fundamental: "Feedback Inmediato (Barkley)", help: "Aprende de errores rápidos con respuesta inmediata.", objective: "Combatir miopía temporal mediante recompensas de logro instantáneas." },
-    { id: 7, type: "informe", title: "El Informe: Tu Voz Experta", icon: PenTool, color: "text-indigo-500", fundamental: "Síntesis y Comprensión (Harvard)", help: "Escribe lo comprendido para darte cuenta de lo que realmente sabes.", objective: "Transformar información en conocimiento propio con postura crítica." },
-    { id: 8, type: "cuestionario", title: "El Cuestionario: Valida tu Éxito", icon: Award, color: "text-[#A51C30]", fundamental: "Sentido de Autoeficacia (Barkley)", help: "Prueba final semanal para celebrar tus resultados.", objective: "Cerrar ciclo de función ejecutiva con validación objetiva del logro." },
-    { id: 9, type: "resumen", title: "Resumen Escrito: Reflexión Final", icon: StickyNote, color: "text-slate-500", fundamental: "Metacognición (Harvard)", help: "Piensa cómo cambió tu visión del tema desde el lunes.", objective: "Consolidar aprendizaje profundo mediante rutina 'Antes pensaba... ahora pienso...'." }
+  const resources = [
+    { id: "video", title: "Video: Tu Impulso Inicial", icon: Video, color: "text-red-500", url: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=2b533b66-1972-4f6c-bf79-2475461437f4", fundamental: "Activación Atencional (Barkley)", help: "Míralo para captar la esencia del tema sin esfuerzo.", objective: "Activación Atencional: Reducir resistencia de funciones ejecutivas." },
+    { id: "infografia", title: "La Infografía: Tu Mapa de Ruta", icon: Map, color: "text-blue-500", url: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=871937ff-1809-4637-a701-a5d404c47b71", fundamental: "Andamiaje Externo (Barkley)", help: "Observa cómo se organiza todo lo que viste en el video.", objective: "Memoria de Trabajo Externa: Liberar espacio mental." },
+    { id: "audio", title: "Resumen de Audio: Repaso en Movimiento", icon: Headphones, color: "text-orange-500", url: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=cff1485a-2441-49d0-aaa4-9bccd87e8429", fundamental: "Protección Canal Atencional (Barkley)", help: "Deja que la información entre por tus oídos y descansa la vista.", objective: "Variación Sensorial: Prevenir fatiga cognitiva." },
+    { id: "presentacion", title: "La Presentación: Paso a Paso", icon: Presentation, color: "text-emerald-500", url: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=7ca2abfb-f2ae-4ff3-bdf1-a502e81bfeeb", fundamental: "Autocontrol y Autonomía (Barkley)", help: "Avanza a tu propio ritmo por estas láminas.", objective: "Autodirección: Ajustar flujo a velocidad de procesamiento." },
+    { id: "flashcards", title: "Tarjetas Didácticas: Desafía tu Memoria", icon: Layers, color: "text-amber-500", url: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=5044c5b9-31af-4043-9e6a-73f8c529fe59", fundamental: "Feedback Inmediato (Barkley)", help: "Pon a prueba lo que recuerdas. El cerebro aprende del error.", objective: "Refuerzo Inmediato: Combatir miopía temporal." },
+    { id: "cuestionario", title: "El Cuestionario: Valida tu Éxito", icon: Award, color: "text-[#A51C30]", url: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=9ee506a5-f8c9-4b44-a33c-379056472528", fundamental: "Sentido de Autoeficacia (Barkley)", help: "Demuéstrate cuánto has avanzado y celebra tus resultados.", objective: "Cierre de Ciclo: Validación objetiva del logro." },
+    { id: "resumen", title: "Resumen Escrito: Reflexión Final", icon: PenTool, color: "text-indigo-500", url: "", fundamental: "Metacognición (Harvard)", help: "¿Cómo ha cambiado tu forma de ver este tema desde el lunes?", objective: "Aprendizaje Profundo: Consolidación mediante reflexión." }
   ];
+
+  const handleResourceClick = (res: any) => {
+    if (res.url) {
+      setSelectedResource({ title: res.title, url: res.url });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] flex flex-col font-sans text-[#0A192F]">
@@ -84,123 +98,144 @@ export default function CoursePlayer() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-           <Button className="bg-white/10 hover:bg-white/20 text-white rounded-none text-[9px] font-bold uppercase tracking-widest px-6 h-9">Vista Previa Alumno</Button>
            <Button className="bg-[#A51C30] hover:bg-[#821626] text-white rounded-none text-[9px] font-bold uppercase tracking-widest px-6 h-9">Publicar Cambios</Button>
         </div>
       </header>
 
       <div className="flex-1 overflow-y-auto p-12">
-        <div className="max-w-7xl mx-auto space-y-12">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-200 pb-8">
-            <div className="space-y-2">
+        <div className="max-w-7xl mx-auto space-y-10">
+          {/* Titulo y Fundamento */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+            <div className="lg:col-span-8 space-y-4">
               <h1 className="text-4xl font-serif font-bold text-[#0A192F]">{subjectLabel}</h1>
               <p className="text-[#A51C30] text-xs font-bold uppercase tracking-[0.3em]">Arquitectura Secuencial Barkley-Harvard</p>
-            </div>
-            <Card className="p-4 bg-[#0A192F] text-white rounded-none border-none flex items-center gap-4 shadow-xl">
-               <Brain className="w-8 h-8 text-[#A51C30]" />
-               <div>
-                 <p className="text-[8px] font-bold uppercase tracking-widest text-white/40">Fundamento del Modelo</p>
-                 <p className="text-[10px] font-serif italic font-bold">"Ruta Crítica: El alumno debe completar todos los recursos para activar la Evaluación Semanal."</p>
-               </div>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-            <div className="lg:col-span-8 space-y-8">
-              <div className="space-y-6 relative">
-                {/* Visual Connector Line */}
-                <div className="absolute left-10 top-10 bottom-10 w-px bg-slate-200 z-0"></div>
-
-                {steps.map((step, idx) => (
-                  <div key={step.id} className="relative z-10">
-                    <Card className="border border-slate-200 rounded-none overflow-hidden hover:border-[#A51C30]/40 transition-all duration-500 group">
-                      <div className="flex flex-col md:flex-row">
-                        <div className={cn("md:w-20 shrink-0 flex items-center justify-center p-6 border-b md:border-b-0 md:border-r border-slate-100 transition-colors group-hover:bg-slate-50", step.id === 8 && "bg-[#A51C30]/5")}>
-                          <div className="flex flex-col items-center gap-2">
-                            <span className="text-[10px] font-black text-slate-300 group-hover:text-[#A51C30]">{step.id}</span>
-                            <step.icon className={cn("w-6 h-6", step.color)} />
-                          </div>
-                        </div>
-                        
-                        <div className="flex-1 p-8 space-y-6">
-                          <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                            <div className="space-y-1">
-                              <h3 className="text-xl font-serif font-bold text-[#0A192F]">{step.title}</h3>
-                              <Badge variant="outline" className="bg-slate-50 border-slate-200 text-[#A51C30] text-[9px] font-bold tracking-widest uppercase rounded-none px-3 py-1">
-                                {step.fundamental}
-                              </Badge>
-                            </div>
-                            <div className="flex gap-2">
-                               <Button size="sm" variant="outline" className="rounded-none border-slate-200 text-[9px] font-bold uppercase tracking-widest h-8 px-4">
-                                 <Share2 className="w-3.5 h-3.5 mr-2" /> Enlazar NotebookLM
-                               </Button>
-                               <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-300 hover:text-[#0A192F]"><Settings className="w-4 h-4" /></Button>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-slate-50/50 p-6 border border-slate-100">
-                             <div className="space-y-2">
-                               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                 <MessageSquare className="w-3 h-3 text-[#A51C30]" /> Voz al Alumno
-                               </p>
-                               <p className="text-xs text-[#0A192F] font-serif italic leading-relaxed">"{step.help}"</p>
-                             </div>
-                             <div className="space-y-2">
-                               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                 <Target className="w-3 h-3 text-blue-500" /> Objetivo Pedagógico
-                               </p>
-                               <p className="text-[10px] text-slate-500 font-medium leading-relaxed">{step.objective}</p>
-                             </div>
-                          </div>
-
-                          {step.id === 8 && (
-                            <div className="bg-[#A51C30] text-white p-6 flex items-center justify-between">
-                               <div className="flex items-center gap-4">
-                                 <Lock className="w-5 h-5 opacity-50" />
-                                 <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Bloqueo Secuencial Activo: Viernes de Evaluación</p>
-                               </div>
-                               <Badge className="bg-white/10 text-white border-white/20 rounded-none text-[8px]">Hito de Cierre</Badge>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </Card>
-                  </div>
-                ))}
+              <div className="bg-white border-l-4 border-[#A51C30] p-6 shadow-sm">
+                <p className="text-sm font-serif italic font-bold text-[#0A192F]">
+                  "Base del Modelo: La ruta es mandatoria. El alumno debe agotar todos los recursos para activar la evaluación semanal. Solo la aprobación permite avanzar a la siguiente semana."
+                </p>
               </div>
             </div>
-
-            <div className="lg:col-span-4 space-y-8">
-              <Card className="p-8 bg-white border border-slate-200 rounded-none sticky top-12 shadow-sm">
-                <div className="space-y-8">
-                  <div className="space-y-4">
-                    <h3 className="text-xs font-bold uppercase tracking-[0.4em] text-[#A51C30] border-b border-slate-100 pb-4">Base del Modelo</h3>
-                    <p className="text-[11px] text-[#0A192F] leading-relaxed font-serif italic font-bold bg-slate-50 p-6 border-l-4 border-[#A51C30]">
-                      "La arquitectura Barkley-Harvard busca externalizar la memoria de trabajo y proporcionar feedback inmediato. La secuencia no es sugerida, es MANDATORIA para el éxito cognitivo."
-                    </p>
-                  </div>
-
-                  <div className="space-y-6">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Estado de Configuración</p>
-                    <div className="space-y-3">
-                       <div className="flex justify-between items-center text-[10px] font-bold">
-                          <span className="text-slate-500 uppercase">Recursos Enlazados</span>
-                          <span className="text-[#0A192F]">0 / 9</span>
-                       </div>
-                       <Progress value={0} className="h-1 rounded-none bg-slate-100" />
-                    </div>
-                  </div>
-
-                  <div className="pt-6 border-t border-slate-100">
-                    <Button className="w-full bg-[#0A192F] hover:bg-black text-white rounded-none h-14 text-[10px] font-bold uppercase tracking-[0.4em]">Guardar Estructura</Button>
-                    <p className="text-[8px] text-center text-slate-400 mt-4 uppercase tracking-widest">Sincronización segura con NotebookLM</p>
-                  </div>
+            <div className="lg:col-span-4">
+              <Card className="p-6 bg-[#0A192F] text-white rounded-none border-none shadow-xl">
+                <div className="flex items-center gap-4">
+                  <Brain className="w-8 h-8 text-[#A51C30]" />
+                  <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed">Externalización de Memoria de Trabajo y Feedback Inmediato</p>
                 </div>
               </Card>
             </div>
           </div>
+
+          {/* Carrusel Semanal */}
+          <div className="relative pt-10 pb-20">
+            <div className="flex items-center justify-center gap-8 mb-12">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="rounded-full border-slate-200 text-slate-400 hover:text-[#A51C30]"
+                onClick={() => setCurrentWeek(Math.max(1, currentWeek - 1))}
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </Button>
+              
+              <div className="bg-white shadow-2xl p-12 w-full max-w-4xl border border-slate-100 relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-full h-1 bg-[#A51C30]" />
+                
+                <div className="flex flex-col items-center text-center space-y-8">
+                  <Badge className="bg-[#F8F9FA] text-[#0A192F] border-slate-200 rounded-none px-6 py-2 text-[10px] font-bold tracking-[0.4em] uppercase">Semana {currentWeek}</Badge>
+                  
+                  <div className="space-y-4 max-w-2xl">
+                    <h2 className="text-3xl font-serif font-bold text-[#0A192F]">Narrativa y Comprensión Lectora</h2>
+                    <p className="text-sm text-slate-500 font-medium leading-relaxed italic">
+                      Foco: OA 3 (Analizar narraciones) y OA 7 (Interpretación). El conflicto narrativo e identificación de fuerzas en pugna.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4 w-full pt-8">
+                    {resources.map((res) => (
+                      <button 
+                        key={res.id}
+                        onClick={() => handleResourceClick(res)}
+                        className="flex flex-col items-center gap-3 group/btn relative"
+                      >
+                        <div className={cn(
+                          "w-14 h-14 rounded-none flex items-center justify-center border transition-all duration-300 relative",
+                          res.id === "cuestionario" ? "bg-[#A51C30]/5 border-[#A51C30]/20" : "bg-white border-slate-100 hover:border-[#A51C30] hover:shadow-lg"
+                        )}>
+                          <res.icon className={cn("w-6 h-6", res.color)} />
+                          {res.id === "cuestionario" && <Lock className="absolute -top-1 -right-1 w-3 h-3 text-[#A51C30]" />}
+                        </div>
+                        <span className="text-[8px] font-bold uppercase tracking-widest text-slate-400 text-center leading-tight group-hover/btn:text-[#0A192F] transition-colors">{res.title.split(":")[0]}</span>
+                        
+                        {/* Tooltip con fundamento */}
+                        <div className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 w-48 bg-[#0A192F] text-white p-3 text-[9px] opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none z-50 rounded-none shadow-2xl">
+                          <p className="font-bold text-[#A51C30] uppercase mb-1">{res.fundamental}</p>
+                          <p className="italic opacity-80 leading-relaxed">"{res.help}"</p>
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-[#0A192F]" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="rounded-full border-slate-200 text-slate-400 hover:text-[#A51C30]"
+                onClick={() => setCurrentWeek(currentWeek + 1)}
+              >
+                <ChevronRight className="w-6 h-6" />
+              </Button>
+            </div>
+
+            {/* Selector de semanas inferior */}
+            <div className="flex justify-center gap-2 overflow-x-auto pb-4 px-10">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentWeek(i + 1)}
+                  className={cn(
+                    "min-w-[40px] h-10 border text-[10px] font-bold transition-all",
+                    currentWeek === i + 1 
+                    ? "bg-[#0A192F] border-[#0A192F] text-white shadow-lg scale-110" 
+                    : "bg-white border-slate-100 text-slate-300 hover:text-[#0A192F] hover:border-slate-300"
+                  )}
+                >
+                  S{i + 1}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Resource Modal */}
+      <Dialog open={selectedResource !== null} onOpenChange={() => setSelectedResource(null)}>
+        <DialogContent className="max-w-6xl h-[85vh] p-0 rounded-none border-none bg-white">
+          <DialogHeader className="p-6 border-b border-slate-100 shrink-0 bg-[#F8F9FA]">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-xl font-serif font-bold text-[#0A192F] italic">{selectedResource?.title}</DialogTitle>
+              <Badge className="bg-[#A51C30] text-white border-none rounded-none px-4 py-1.5 text-[9px] font-bold tracking-widest uppercase">NotebookLM Integration</Badge>
+            </div>
+          </DialogHeader>
+          <div className="flex-1 w-full h-full min-h-0 bg-slate-50 relative overflow-hidden">
+            {selectedResource?.url ? (
+              <iframe 
+                src={selectedResource.url} 
+                className="w-full h-full border-none"
+                title={selectedResource.title}
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full space-y-4">
+                <PenTool className="w-12 h-12 text-slate-200" />
+                <p className="text-sm font-serif italic text-slate-400">Recurso de Reflexión en desarrollo...</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
