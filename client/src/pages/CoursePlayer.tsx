@@ -247,13 +247,40 @@ export default function CoursePlayer() {
           </DialogHeader>
           <div className="flex-1 w-full h-full min-h-0 bg-slate-50 relative overflow-hidden">
             {selectedResource?.url ? (
-              <iframe 
-                src={selectedResource.url} 
-                className="w-full h-full border-none"
-                title={selectedResource.title}
-                allow="autoplay; encrypted-media"
-                allowFullScreen
-              />
+              <div className="flex flex-col items-center justify-center h-full p-12 text-center space-y-8 animate-in fade-in zoom-in duration-500">
+                <div className="w-24 h-24 bg-[#0A192F] rounded-none flex items-center justify-center shadow-2xl relative">
+                  <div className="absolute inset-0 border-2 border-[#A51C30] scale-110 opacity-20 animate-pulse"></div>
+                  <Brain className="w-10 h-10 text-[#A51C30]" />
+                </div>
+                
+                <div className="space-y-4 max-w-md">
+                  <h3 className="text-3xl font-serif font-bold italic text-[#0A192F]">Acceso al Laboratorio</h3>
+                  <p className="text-sm text-slate-500 leading-relaxed font-medium">
+                    Para garantizar la mejor experiencia y evitar restricciones de seguridad de Google, este recurso se abrirá en una ventana dedicada de alto rendimiento.
+                  </p>
+                </div>
+
+                <div className="flex flex-col items-center gap-4">
+                  <Button 
+                    onClick={() => {
+                      if (selectedResource?.url) {
+                        window.open(selectedResource.url, "_blank", "noopener,noreferrer");
+                        setViewedResources(prev => new Set(prev).add(resources.find(r => r.title === selectedResource.title)?.id || ""));
+                      }
+                    }}
+                    className="bg-[#A51C30] hover:bg-[#821626] text-white rounded-none px-12 h-16 text-[10px] font-bold uppercase tracking-[0.4em] shadow-xl shadow-[#A51C30]/20 active:scale-95 transition-all"
+                  >
+                    Abrir NotebookLM <ExternalLink className="w-4 h-4 ml-3" />
+                  </Button>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <Lock className="w-3 h-3" /> Conexión Segura e Institucional
+                  </p>
+                </div>
+
+                <div className="pt-8 border-t border-slate-100 w-full max-w-sm">
+                   <p className="text-[10px] text-slate-400 italic">"Externalización cognitiva en proceso. La plataforma Barkley sigue activa para registrar tu avance."</p>
+                </div>
+              </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full space-y-4">
                 <PenTool className="w-12 h-12 text-slate-200" />
