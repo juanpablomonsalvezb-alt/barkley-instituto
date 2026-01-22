@@ -82,7 +82,8 @@ export default function CoursePlayer() {
   const handleResourceClick = (res: any) => {
     if (res.id !== "cuestionario" || viewedResources.size >= resources.length - 2) {
       if (res.url) {
-        setSelectedResource({ title: res.title, url: res.url });
+        // Abrir en una nueva pestaña para evitar restricciones de seguridad de Google (iframes)
+        window.open(res.url, "_blank", "noopener,noreferrer");
         setViewedResources(prev => new Set(prev).add(res.id));
       } else if (res.id === "resumen") {
          setViewedResources(prev => new Set(prev).add(res.id));
