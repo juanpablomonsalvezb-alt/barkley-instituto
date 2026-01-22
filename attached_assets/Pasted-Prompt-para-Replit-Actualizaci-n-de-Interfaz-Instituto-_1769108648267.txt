@@ -1,0 +1,27 @@
+Prompt para Replit: Actualización de Interfaz Instituto Barkley
+"Actúa como un Senior UX/UI Designer especializado en EdTech y Dashboard de Alto Rendimiento. Necesito actualizar la interfaz de mi aplicación de gestión curricular manteniendo intacta toda la lógica de semanas, objetivos de aprendizaje y asignaturas ya programada.
+
+Directrices Visuales:
+
+Estética: Minimalismo institucional con toques de modernidad (Estilo MasterClass/Linear). Usa bordes redondeados (12px-16px) y efectos de elevación sutiles (box-shadows suaves).
+
+Paleta de Colores: Mantén el azul profundo (#001f3f o similar) como color primario, blanco puro para fondos de tarjetas y un celeste sutil para acentos de progreso.
+
+Tipografía: Cambia a una fuente Sans Serif moderna (Inter o Montserrat). Títulos grandes, limpios y con buen espaciado.
+
+Lineamientos de UX (ADN Barkley/Harvard):
+
+Dashboard de Foco: Cada semana debe presentarse como una 'Misión'. Utiliza barras de progreso circulares o lineales muy estéticas para cada objetivo de aprendizaje.
+
+Andamiaje Externo (Barkley): El diseño debe estar libre de distracciones. Implementa un sistema de 'Cards' claras donde el alumno vea qué debe hacer 'Hoy' sin ruido visual.
+
+Visibilidad del Pensamiento (Harvard): Diseña un componente de 'Bitácora de Reflexión' al final de cada unidad de contenido, integrado visualmente de forma elegante.
+
+Instrucción de Código: Refactoriza solo el CSS/HTML de los componentes de la vista del estudiante y del panel de control. Asegúrate de que la navegación lateral sea colapsable para maximizar el espacio de trabajo. Mantén el mapeo de semanas y objetivos exactamente como está en el backend actual."
+
+Los Pilares que se mantienen en el código:
+Estructura Curricular: El conteo de semanas y la asignación de objetivos por nivel (ej. Séptimo Básico) no se toca, solo se "viste" de forma moderna.
+
+Contenido Semanal: El tipo de recurso (video, documento, externo) ahora se presentará en una lista visualmente atractiva con iconos minimalistas.
+
+Orden Macro: El sistema sigue siendo el mismo, pero ahora comunica seguridad, estructura y modernidad desde el primer clic.
