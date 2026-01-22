@@ -127,7 +127,7 @@ export default function Home() {
             </button>
             <Link href="/dashboard">
               <Button className="bg-[#a51c30] hover:bg-[#821626] text-white rounded-none uppercase tracking-[0.25em] text-[12px] font-black px-10 h-14 transition-all">
-                Plataforma Barkley
+                Plataforma (Intranet)
               </Button>
             </Link>
             <button onClick={() => setMobileMenuOpen(true)} className="lg:hidden">

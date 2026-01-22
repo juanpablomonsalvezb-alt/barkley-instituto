@@ -313,9 +313,9 @@ export default function Dashboard() {
                               </div>
                             </div>
                             
-                            <Link href={`/course/${course.id}`}>
-                              <Button className="bg-[#A51C30] hover:bg-[#821626] text-white rounded-none h-14 px-12 text-[10px] font-bold uppercase tracking-[0.3em] shadow-lg shadow-[#A51C30]/10 transition-transform active:scale-95">Ingresar</Button>
-                            </Link>
+            <Link href="/course/historia">
+              <Button className="bg-[#A51C30] hover:bg-[#821626] text-white rounded-none h-14 px-12 text-[10px] font-bold uppercase tracking-[0.3em] shadow-lg shadow-[#A51C30]/10 transition-transform active:scale-95">Configurar Curso</Button>
+            </Link>
                           </div>
 
                           {/* Learning Reel */}
