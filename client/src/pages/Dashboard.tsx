@@ -20,51 +20,26 @@ import {
   FileUp,
   Settings,
   Users,
-  Database
+  Database,
+  ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
-  const [timeLeft, setTimeLeft] = useState(1200);
-  const [isActive, setIsActive] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState("menores"); // menores | adultos
 
-  useEffect(() => {
-    let interval: any = null;
-    if (isActive && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft((time) => time - 1);
-      }, 1000);
-    } else if (timeLeft === 0) {
-      setIsActive(false);
-    }
-    return () => clearInterval(interval);
-  }, [isActive, timeLeft]);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
-  };
-
   const programmaticStructure = {
     menores: [
-      { id: "7b", label: "7° Básico", subjects: ["Lengua", "Matemática", "Ciencias", "Historia", "Inglés"], weeks: 30, oas: 45 },
-      { id: "8b", label: "8° Básico", subjects: ["Lengua", "Matemática", "Ciencias", "Historia", "Inglés"], weeks: 30, oas: 45 },
-      { id: "1m", label: "1° Medio", subjects: ["Lengua", "Matemática", "Ciencias", "Historia", "Inglés"], weeks: 30, oas: 60 },
-      { id: "2m", label: "2° Medio", subjects: ["Lengua", "Matemática", "Ciencias", "Historia", "Inglés"], weeks: 30, oas: 60 },
-      { id: "3m", label: "3° Medio", subjects: ["Lengua", "Matemática", "Ed. Ciudadana", "Filosofía", "Inglés"], weeks: 30, oas: 55 },
-      { id: "4m", label: "4° Medio", subjects: ["Lengua", "Matemática", "Ed. Ciudadana", "Filosofía", "Inglés"], weeks: 30, oas: 55 },
+      { id: "7b", label: "7° Básico", subjects: ["Lengua y Literatura", "Matemática", "Ciencias Naturales", "Historia", "Inglés"], weeks: 30, oas: 45 },
+      { id: "8b", label: "8° Básico", subjects: ["Lengua y Literatura", "Matemática", "Ciencias Naturales", "Historia", "Inglés"], weeks: 30, oas: 45 },
+      { id: "1m", label: "1° Medio", subjects: ["Lengua y Literatura", "Matemática", "Ciencias Naturales", "Historia", "Inglés"], weeks: 30, oas: 60 },
+      { id: "2m", label: "2° Medio", subjects: ["Lengua y Literatura", "Matemática", "Ciencias Naturales", "Historia", "Inglés"], weeks: 30, oas: 60 },
+      { id: "3m", label: "3° Medio", subjects: ["Lengua y Literatura", "Matemática", "Educación Ciudadana", "Filosofía", "Inglés"], weeks: 30, oas: 55 },
+      { id: "4m", label: "4° Medio", subjects: ["Lengua y Literatura", "Matemática", "Educación Ciudadana", "Filosofía", "Inglés"], weeks: 30, oas: 55 },
     ],
     adultos: [
       { id: "nb1", label: "NB1 (1-4)", subjects: ["Lenguaje", "Matemática"], weeks: 30, oas: 25 },
@@ -76,9 +51,13 @@ export default function Dashboard() {
     ]
   };
 
+  const getSubjectSlug = (subjectName: string) => {
+    return subjectName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-");
+  };
+
   return (
     <div className="min-h-screen bg-[#F8F9FA] flex font-sans text-[#0A192F]">
-      {/* Harvard Midnight Sidebar */}
+      {/* Sidebar */}
       <aside className={cn(
         "bg-[#0A192F] flex flex-col transition-all duration-500 border-r border-white/5 h-screen sticky top-0",
         isSidebarCollapsed ? "w-20" : "w-72"
@@ -132,72 +111,46 @@ export default function Dashboard() {
               </button>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <Badge className="bg-[#A51C30] text-white border-none rounded-none px-4 py-1.5 text-[10px] font-bold tracking-widest uppercase">Admin Mode</Badge>
-          </div>
+          <Badge className="bg-[#A51C30] text-white border-none rounded-none px-4 py-1.5 text-[10px] font-bold tracking-widest uppercase">Admin Mode</Badge>
         </header>
 
         <div className="flex-1 overflow-y-auto p-12 bg-[#F8F9FA]">
           <div className="max-w-7xl mx-auto space-y-12">
             <section className="space-y-8">
-              <div className="flex items-end justify-between border-b border-slate-200 pb-4">
-                <div>
-                  <h2 className="text-3xl font-serif font-bold italic text-[#0A192F]">Configuración de Niveles</h2>
-                  <p className="text-slate-500 text-xs mt-1 font-bold uppercase tracking-widest">Seleccione un curso para subir recursos y configurar OAs</p>
-                </div>
+              <div className="border-b border-slate-200 pb-4">
+                <h2 className="text-3xl font-serif font-bold italic text-[#0A192F]">Asignaturas por Nivel</h2>
+                <p className="text-slate-500 text-xs mt-1 font-bold uppercase tracking-widest">Seleccione la asignatura específica para configurar videos, documentos y rutas de aprendizaje</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 gap-12">
                 {(activeTab === "menores" ? programmaticStructure.menores : programmaticStructure.adultos).map((course) => (
-                  <Card key={course.id} className="border border-slate-200 rounded-none p-8 bg-white hover:border-[#0A192F]/20 transition-all group">
-                    <div className="flex justify-between items-start mb-6">
-                      <div>
-                        <h3 className="text-xl font-serif font-bold text-[#0A192F]">{course.label}</h3>
-                        <p className="text-[10px] font-bold text-[#A51C30] uppercase tracking-widest mt-1">{course.weeks} Semanas • {course.oas} OAs</p>
-                      </div>
-                      <Badge variant="outline" className="text-[8px] font-bold border-slate-200">ID: {course.id}</Badge>
+                  <div key={course.id} className="space-y-6">
+                    <div className="flex items-center gap-4">
+                      <h3 className="text-xl font-serif font-bold text-[#0A192F] bg-white px-4 py-2 border border-slate-200">{course.label}</h3>
+                      <div className="h-px flex-1 bg-slate-200"></div>
+                      <Badge variant="outline" className="text-[9px] font-bold tracking-widest uppercase py-1 border-slate-200 text-slate-400">{course.weeks} Semanas / {course.oas} OA</Badge>
                     </div>
 
-                    <div className="space-y-4 mb-8">
-                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Asignaturas Incluidas:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {course.subjects.map(sub => (
-                          <span key={sub} className="text-[9px] bg-slate-50 text-slate-600 px-2 py-1 border border-slate-100">{sub}</span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 pt-6 border-t border-slate-50">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className="rounded-none border-slate-200 text-[9px] font-bold uppercase tracking-widest h-10 group-hover:bg-[#0A192F] group-hover:text-white transition-all">
-                            <FileUp className="w-3.5 h-3.5 mr-2" /> Recursos
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80 p-6 rounded-none bg-white shadow-2xl">
-                          <div className="space-y-4">
-                            <h4 className="text-xs font-bold uppercase tracking-widest border-b pb-2">Gestor de Recursos: {course.label}</h4>
-                            <div className="space-y-3">
-                              <button className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 transition-all text-[10px] font-bold uppercase tracking-widest">
-                                <span className="flex items-center"><Video className="w-4 h-4 mr-2 text-[#A51C30]" /> Subir Video</span>
-                                <Plus className="w-3.5 h-3.5 text-slate-400" />
-                              </button>
-                              <button className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 transition-all text-[10px] font-bold uppercase tracking-widest">
-                                <span className="flex items-center"><FileUp className="w-4 h-4 mr-2 text-blue-500" /> Subir Documento</span>
-                                <Plus className="w-3.5 h-3.5 text-slate-400" />
-                              </button>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                      {course.subjects.map((sub) => (
+                        <Link key={sub} href={`/course/${course.id}-${getSubjectSlug(sub)}`}>
+                          <Card className="p-6 bg-white border border-slate-200 hover:border-[#A51C30] hover:shadow-md transition-all group cursor-pointer rounded-none">
+                            <div className="space-y-4">
+                              <div className="w-8 h-8 bg-slate-50 flex items-center justify-center group-hover:bg-[#A51C30]/5 transition-colors">
+                                <BookOpen className="w-4 h-4 text-slate-400 group-hover:text-[#A51C30]" />
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-bold text-[#0A192F] group-hover:text-[#A51C30] transition-colors leading-tight">{sub}</h4>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-2 flex items-center">
+                                  Configurar <ChevronRight className="w-3 h-3 ml-1" />
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                      
-                      <Link href={`/course/${course.id}`}>
-                        <Button className="w-full bg-[#0A192F] text-white rounded-none text-[9px] font-bold uppercase tracking-widest h-10">
-                          Configurar
-                        </Button>
-                      </Link>
+                          </Card>
+                        </Link>
+                      ))}
                     </div>
-                  </Card>
+                  </div>
                 ))}
               </div>
             </section>
@@ -205,14 +158,10 @@ export default function Dashboard() {
             <section className="bg-[#0A192F] text-white p-12 rounded-none space-y-8 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-8 opacity-10"><Database className="w-40 h-40" /></div>
               <div className="relative z-10 max-w-2xl space-y-4">
-                <h3 className="text-3xl font-serif font-bold italic">Panel de Control Maestro</h3>
+                <h3 className="text-3xl font-serif font-bold italic">Arquitectura de Configuración</h3>
                 <p className="text-sm text-slate-400 leading-relaxed font-medium">
-                  Desde este panel administrador, usted puede subir los materiales que los alumnos verán en su escritorio. La estructura respeta la cadencia Barkley (Semanas/OA) definida en su tabla maestra.
+                  Al entrar en cada asignatura, podrá gestionar la carga de videos, documentos anexos, y visualizar la ruta de aprendizaje basada en el método Barkley. Cada asignatura hereda la cadencia temporal del nivel correspondiente.
                 </p>
-                <div className="pt-4 flex gap-4">
-                   <Button className="bg-[#A51C30] hover:bg-[#821626] rounded-none px-8 py-6 text-[10px] font-bold uppercase tracking-widest">Sincronizar Todos los Cursos</Button>
-                   <Button variant="outline" className="border-white/20 hover:bg-white/10 text-white rounded-none px-8 py-6 text-[10px] font-bold uppercase tracking-widest">Reporte de Avance Masivo</Button>
-                </div>
               </div>
             </section>
           </div>
