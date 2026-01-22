@@ -76,11 +76,22 @@ export default function CoursePlayer() {
     { id: "resumen", title: "Resumen Escrito: Reflexión Final", icon: PenTool, color: "text-indigo-500", url: "", fundamental: "Metacognición (Harvard)", help: "¿Cómo ha cambiado tu forma de ver este tema desde el lunes?", objective: "Aprendizaje Profundo: Consolidación mediante reflexión." }
   ];
 
+  const [viewedResources, setViewedResources] = useState<Set<string>>(new Set());
+  const [examCompleted, setExamCompleted] = useState(false);
+
   const handleResourceClick = (res: any) => {
-    if (res.url) {
-      setSelectedResource({ title: res.title, url: res.url });
+    if (res.id !== "cuestionario" || viewedResources.size >= resources.length - 2) {
+      if (res.url) {
+        setSelectedResource({ title: res.title, url: res.url });
+        setViewedResources(prev => new Set(prev).add(res.id));
+      } else if (res.id === "resumen") {
+         setViewedResources(prev => new Set(prev).add(res.id));
+      }
     }
   };
+
+  const isExamUnlocked = viewedResources.size >= resources.length - 2; // All except questionnaire and resume
+
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] flex flex-col font-sans text-[#0A192F]">
@@ -151,29 +162,41 @@ export default function CoursePlayer() {
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4 w-full pt-8">
-                    {resources.map((res) => (
-                      <button 
-                        key={res.id}
-                        onClick={() => handleResourceClick(res)}
-                        className="flex flex-col items-center gap-3 group/btn relative"
-                      >
-                        <div className={cn(
-                          "w-14 h-14 rounded-none flex items-center justify-center border transition-all duration-300 relative",
-                          res.id === "cuestionario" ? "bg-[#A51C30]/5 border-[#A51C30]/20" : "bg-white border-slate-100 hover:border-[#A51C30] hover:shadow-lg"
-                        )}>
-                          <res.icon className={cn("w-6 h-6", res.color)} />
-                          {res.id === "cuestionario" && <Lock className="absolute -top-1 -right-1 w-3 h-3 text-[#A51C30]" />}
-                        </div>
-                        <span className="text-[8px] font-bold uppercase tracking-widest text-slate-400 text-center leading-tight group-hover/btn:text-[#0A192F] transition-colors">{res.title.split(":")[0]}</span>
-                        
-                        {/* Tooltip con fundamento */}
-                        <div className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 w-48 bg-[#0A192F] text-white p-3 text-[9px] opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none z-50 rounded-none shadow-2xl">
-                          <p className="font-bold text-[#A51C30] uppercase mb-1">{res.fundamental}</p>
-                          <p className="italic opacity-80 leading-relaxed">"{res.help}"</p>
-                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-[#0A192F]" />
-                        </div>
-                      </button>
-                    ))}
+                    {resources.map((res) => {
+                      const isLocked = res.id === "cuestionario" && !isExamUnlocked;
+                      return (
+                        <button 
+                          key={res.id}
+                          onClick={() => handleResourceClick(res)}
+                          disabled={isLocked}
+                          className={cn(
+                            "flex flex-col items-center gap-3 group/btn relative transition-opacity",
+                            isLocked && "opacity-50 cursor-not-allowed"
+                          )}
+                        >
+                          <div className={cn(
+                            "w-14 h-14 rounded-none flex items-center justify-center border transition-all duration-300 relative",
+                            res.id === "cuestionario" ? "bg-[#A51C30]/5 border-[#A51C30]/20" : "bg-white border-slate-100 hover:border-[#A51C30] hover:shadow-lg",
+                            viewedResources.has(res.id) && "bg-green-50 border-green-200"
+                          )}>
+                            {viewedResources.has(res.id) && res.id !== "cuestionario" ? (
+                              <CheckCircle2 className="w-6 h-6 text-green-500" />
+                            ) : (
+                              <res.icon className={cn("w-6 h-6", res.color)} />
+                            )}
+                            {isLocked && <Lock className="absolute -top-1 -right-1 w-3 h-3 text-[#A51C30]" />}
+                          </div>
+                          <span className="text-[8px] font-bold uppercase tracking-widest text-slate-400 text-center leading-tight group-hover/btn:text-[#0A192F] transition-colors">{res.title.split(":")[0]}</span>
+                          
+                          {/* Tooltip con fundamento */}
+                          <div className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 w-48 bg-[#0A192F] text-white p-3 text-[9px] opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none z-50 rounded-none shadow-2xl">
+                            <p className="font-bold text-[#A51C30] uppercase mb-1">{res.fundamental}</p>
+                            <p className="italic opacity-80 leading-relaxed">"{res.help}"</p>
+                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-[#0A192F]" />
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -182,7 +205,11 @@ export default function CoursePlayer() {
                 variant="outline" 
                 size="icon" 
                 className="rounded-full border-slate-200 text-slate-400 hover:text-[#A51C30]"
-                onClick={() => setCurrentWeek(currentWeek + 1)}
+                onClick={() => {
+                  if (examCompleted || currentWeek < 1) { // Logic for advancing week
+                     setCurrentWeek(currentWeek + 1);
+                  }
+                }}
               >
                 <ChevronRight className="w-6 h-6" />
               </Button>
