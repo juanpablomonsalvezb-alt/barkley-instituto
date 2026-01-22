@@ -272,8 +272,13 @@ export default function CoursePlayer() {
                   >
                     Abrir NotebookLM <ExternalLink className="w-4 h-4 ml-3" />
                   </Button>
+                  <div className="bg-blue-50 border border-blue-100 p-4 max-w-sm rounded-none">
+                    <p className="text-[10px] text-blue-800 font-medium leading-relaxed italic">
+                      "Para una experiencia integrada sin salir de la plataforma, asegúrate de estar logueado en tu cuenta institucional de Google. Esto permitirá que los recursos se sincronicen directamente con tu perfil Barkley."
+                    </p>
+                  </div>
                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <Lock className="w-3 h-3" /> Conexión Segura e Institucional
+                    <Lock className="w-3 h-3" /> Autenticación Google Activa
                   </p>
                 </div>
 
