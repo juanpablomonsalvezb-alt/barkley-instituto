@@ -16,20 +16,61 @@ import {
   ImageIcon,
   Presentation,
   FileSearch,
-  BookOpen
+  BookOpen,
+  TrendingUp,
+  Target,
+  PenTool,
+  Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import {
+  Chart as ChartJS,
+  RadialLinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Radar } from 'react-chartjs-2';
+
+ChartJS.register(
+  RadialLinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend
+);
 
 export default function CoursePlayer() {
   const [activeTab, setActiveTab] = useState("captacion");
   const [timeLeft, setTimeLeft] = useState(600); 
   const [isActive, setIsActive] = useState(false);
   const [showReward, setShowReward] = useState(false);
+  const [thought, setThought] = useState("");
+  
+  const placeholders = [
+    "¿Qué veo? ¿Qué pienso? ¿Qué me pregunto?",
+    "Conectar, Extender, Desafiar",
+    "Antes pensaba... ahora pienso...",
+    "¿Cuál es el núcleo de esta idea?"
+  ];
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPlaceholderIndex((prev) => (prev + 1) % placeholders.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     let interval: any = null;
@@ -51,6 +92,48 @@ export default function CoursePlayer() {
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
+  const radarData = {
+    labels: ['Análisis', 'Curiosidad', 'Conexión', 'Reflexión'],
+    datasets: [
+      {
+        label: 'Desempeño Cognitivo',
+        data: [85, 92, 78, 88],
+        backgroundColor: 'rgba(165, 28, 48, 0.2)',
+        borderColor: '#A51C30',
+        borderWidth: 2,
+        pointBackgroundColor: '#A51C30',
+        pointBorderColor: '#fff',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: '#A51C30',
+      },
+    ],
+  };
+
+  const radarOptions = {
+    scales: {
+      r: {
+        angleLines: { display: true, color: 'rgba(10, 25, 47, 0.1)' },
+        grid: { color: 'rgba(10, 25, 47, 0.1)' },
+        suggestedMin: 0,
+        suggestedMax: 100,
+        ticks: { display: false },
+        pointLabels: {
+          font: {
+            family: 'Inter',
+            size: 10,
+            weight: 'bold' as const,
+          },
+          color: '#0A192F'
+        }
+      }
+    },
+    plugins: {
+      legend: { display: false }
+    },
+    responsive: true,
+    maintainAspectRatio: false,
+  };
+
   const notebookResources = [
     { title: "Audio Síntesis", icon: Headphones, color: "text-[#0A192F]", bg: "bg-slate-50", desc: "Estructura auditiva del OA." },
     { title: "Mapa Conceptual", icon: Map, color: "text-[#0A192F]", bg: "bg-slate-50", desc: "Andamiaje visual de ideas." },
@@ -64,6 +147,13 @@ export default function CoursePlayer() {
     { id: "procesamiento", label: "Fase 2: Procesamiento", desc: "Estructuración IA", time: "15m" },
     { id: "sintesis", label: "Fase 3: Síntesis", desc: "Laboratorio Activo", time: "20m" },
     { id: "cierre", label: "Fase 4: Cierre", desc: "Validación Final", time: "5m" },
+  ];
+
+  const heatmap = [
+    [1, 2, 0, 4, 3, 2, 1],
+    [2, 4, 3, 1, 2, 4, 3],
+    [3, 1, 4, 2, 3, 1, 2],
+    [4, 3, 2, 4, 1, 2, 4]
   ];
 
   return (
@@ -158,7 +248,7 @@ export default function CoursePlayer() {
           </div>
         </div>
 
-        <div className="flex-1 p-16 max-w-6xl mx-auto w-full">
+        <div className="flex-1 p-16 max-w-6xl mx-auto w-full space-y-24">
           <Tabs value={activeTab} className="space-y-16">
             <TabsContent value="captacion" className="space-y-12 animate-in fade-in duration-700 m-0">
               <div className="space-y-5 border-l-4 border-[#A51C30] pl-8">
@@ -233,6 +323,99 @@ export default function CoursePlayer() {
                </Card>
             </TabsContent>
           </Tabs>
+
+          {/* New Bitácora Section */}
+          <section className="space-y-10 pt-16 border-t border-slate-200">
+            <div className="flex items-center gap-4">
+              <PenTool className="w-6 h-6 text-[#A51C30]" />
+              <h3 className="text-3xl font-serif font-bold italic text-[#0A192F]">Haciendo visible el pensamiento</h3>
+            </div>
+            <Card className="rounded-none border-slate-200 p-10 bg-white space-y-6">
+              <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-slate-400">Harvard Project Zero Lab</p>
+              <Textarea 
+                value={thought}
+                onChange={(e) => setThought(e.target.value)}
+                placeholder={placeholders[placeholderIndex]}
+                className="min-h-[200px] border-none focus-visible:ring-0 text-lg font-serif italic text-[#0A192F] placeholder:text-slate-200 p-0 resize-none transition-all duration-1000"
+              />
+              <div className="flex justify-end pt-6 border-t border-slate-50">
+                <Button className="bg-[#0A192F] text-white rounded-none px-10 text-[9px] font-bold uppercase tracking-widest">Registrar Reflexión</Button>
+              </div>
+            </Card>
+          </section>
+
+          {/* New Analytics Section */}
+          <section className="space-y-12 pb-24">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-6">
+              <div className="flex items-center gap-4">
+                <Activity className="w-6 h-6 text-[#A51C30]" />
+                <h3 className="text-3xl font-serif font-bold italic text-[#0A192F]">Métricas de Alto Rendimiento</h3>
+              </div>
+              <Badge className="bg-[#F8F9FA] text-[#0A192F] border-slate-200 rounded-none px-4 py-1.5 font-bold text-[9px] uppercase tracking-widest italic">Análisis en Tiempo Real Barkley</Badge>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              <Card className="rounded-none border-slate-200 p-12 bg-white flex flex-col items-center justify-center min-h-[450px]">
+                <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-slate-300 mb-10">Huella Cognitiva (Radar)</p>
+                <div className="w-full h-full relative">
+                  <Radar data={radarData} options={radarOptions} />
+                </div>
+              </Card>
+
+              <div className="space-y-12">
+                <Card className="rounded-none border-slate-200 p-10 bg-white space-y-8">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-slate-300">Dominio Curricular OA</p>
+                    <span className="text-[10px] font-bold text-[#A51C30] uppercase tracking-widest italic">Nivel 7° Básico</span>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex justify-between text-xs font-bold text-[#0A192F]">
+                      <span className="uppercase tracking-widest">Progreso de Unidades</span>
+                      <span>82%</span>
+                    </div>
+                    <Progress value={82} className="h-2 rounded-none bg-slate-100 overflow-hidden">
+                      <div className="h-full bg-[#A51C30] transition-all" style={{ width: '82%' }} />
+                    </Progress>
+                    <p className="text-[10px] text-slate-400 italic">Has conquistado 12 de 15 objetivos fundamentales para este periodo.</p>
+                  </div>
+                </Card>
+
+                <Card className="rounded-none border-slate-200 p-10 bg-white space-y-8">
+                   <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-slate-300">Mapa de Calor de Enfoque</p>
+                   <div className="flex gap-2">
+                      {heatmap.map((row, i) => (
+                        <div key={i} className="flex flex-col gap-2">
+                           {row.map((val, j) => (
+                             <div 
+                               key={j} 
+                               className={cn(
+                                 "w-6 h-6 border border-slate-50",
+                                 val === 0 ? "bg-slate-50" :
+                                 val === 1 ? "bg-[#A51C30]/10" :
+                                 val === 2 ? "bg-[#A51C30]/30" :
+                                 val === 3 ? "bg-[#A51C30]/60" :
+                                 "bg-[#A51C30]"
+                               )}
+                               title={`Intensidad: ${val}/4`}
+                             />
+                           ))}
+                        </div>
+                      ))}
+                   </div>
+                   <div className="flex items-center justify-between text-[8px] font-bold uppercase tracking-[0.3em] text-slate-300">
+                      <span>Baja Actividad</span>
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 bg-[#A51C30]/10" />
+                        <div className="w-2 h-2 bg-[#A51C30]/30" />
+                        <div className="w-2 h-2 bg-[#A51C30]/60" />
+                        <div className="w-2 h-2 bg-[#A51C30]" />
+                      </div>
+                      <span>Alta Intensidad</span>
+                   </div>
+                </Card>
+              </div>
+            </div>
+          </section>
         </div>
 
         {showReward && (
