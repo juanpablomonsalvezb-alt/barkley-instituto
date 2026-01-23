@@ -44,6 +44,13 @@ export default function CoursePlayer() {
   const parts = courseId.split("-");
   const levelCode = parts[0];
   const subjectLabel = parts.slice(1).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
+  
+  const levelNames: Record<string, string> = {
+    "7b": "7° Básico", "8b": "8° Básico",
+    "1m": "1° Medio", "2m": "2° Medio", "3m": "3° Medio", "4m": "4° Medio",
+    "nm1": "NM1", "nm2": "NM2"
+  };
+  const levelSubjectName = `${levelNames[levelCode] || levelCode} - ${subjectLabel}`;
 
   const [currentModule] = useState(1);
   const [currentEvaluation, setCurrentEvaluation] = useState(0);
@@ -787,21 +794,31 @@ export default function CoursePlayer() {
 
       {/* Resource Modal */}
       <Dialog open={selectedResource !== null} onOpenChange={() => setSelectedResource(null)}>
-        <DialogContent className="max-w-5xl w-[90vw] h-[85vh] p-0 border-none bg-white flex flex-col overflow-hidden">
+        <DialogContent className="max-w-5xl w-[90vw] h-[85vh] p-0 border-none bg-white flex flex-col overflow-hidden [&>button]:text-white [&>button]:hover:bg-white/20 [&>button]:top-4 [&>button]:right-4">
           {/* Institutional Header with accent bar */}
           <div className="shrink-0">
             <div className="h-1 bg-gradient-to-r from-[#A51C30] via-[#C41E3A] to-[#A51C30]" />
             <DialogHeader className="px-6 py-4 bg-[#0A192F]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#A51C30] flex items-center justify-center shrink-0">
-                  {selectedResource?.embedType === "video" && <Video className="w-5 h-5 text-white" />}
-                  {selectedResource?.embedType === "audio" && <Headphones className="w-5 h-5 text-white" />}
-                  {selectedResource?.embedType === "presentacion" && <Presentation className="w-5 h-5 text-white" />}
-                  {selectedResource?.embedType === "infografia" && <Map className="w-5 h-5 text-white" />}
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-lg bg-[#A51C30] flex items-center justify-center shrink-0">
+                  {selectedResource?.embedType === "video" && <Video className="w-6 h-6 text-white" />}
+                  {selectedResource?.embedType === "audio" && <Headphones className="w-6 h-6 text-white" />}
+                  {selectedResource?.embedType === "presentacion" && <Presentation className="w-6 h-6 text-white" />}
+                  {selectedResource?.embedType === "infografia" && <Map className="w-6 h-6 text-white" />}
                 </div>
-                <div>
-                  <DialogTitle className="text-lg font-serif font-bold text-white">{selectedResource?.title}</DialogTitle>
-                  <p className="text-xs text-slate-300 mt-0.5">Módulo {currentModule} • Instituto Barkley</p>
+                <div className="flex-1 min-w-0 pr-8">
+                  <DialogTitle className="text-xl font-serif font-bold text-white">{selectedResource?.title}</DialogTitle>
+                  <p className="text-sm text-slate-300 mt-1">
+                    {(currentModuleData as any)?.objective?.title || `Módulo ${currentModule}`}
+                    {moduleInfo?.moduleContents && (
+                      <span className="block text-xs text-slate-400 mt-0.5 truncate">
+                        {moduleInfo.moduleContents.split('\n')[0]}
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-xs text-[#A51C30] font-medium mt-1">
+                    {levelSubjectName} • Instituto Barkley
+                  </p>
                 </div>
               </div>
               <DialogDescription className="sr-only">
