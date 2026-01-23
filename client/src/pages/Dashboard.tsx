@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { 
   GraduationCap, 
   LayoutDashboard, 
@@ -21,16 +21,54 @@ import {
   Settings,
   Users,
   Database,
-  ChevronRight
+  ChevronRight,
+  LogOut,
+  Loader2,
+  User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { useProfile } from "@/hooks/use-profile";
 
 export default function Dashboard() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState("menores"); // menores | adultos
+  const { user, isLoading, isAuthenticated, logout } = useAuth();
+  const { isAdmin } = useProfile();
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      toast({
+        title: "Acceso Requerido",
+        description: "Ingresa con tu cuenta para acceder al panel...",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/api/login";
+      }, 500);
+    }
+  }, [isLoading, isAuthenticated, toast]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-12 h-12 animate-spin text-[#A51C30] mx-auto" />
+          <p className="text-[#0A192F] font-serif italic">Cargando Barkley Instituto...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   const programmaticStructure = {
     menores: [
@@ -111,7 +149,30 @@ export default function Dashboard() {
               </button>
             </div>
           </div>
-          <Badge className="bg-[#A51C30] text-white border-none rounded-none px-4 py-1.5 text-[10px] font-bold tracking-widest uppercase">Admin Mode</Badge>
+          <div className="flex items-center gap-4">
+            {user && (
+              <div className="flex items-center gap-3">
+                {user.profileImageUrl ? (
+                  <img src={user.profileImageUrl} alt="" className="w-8 h-8 rounded-full" />
+                ) : (
+                  <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
+                    <User className="w-4 h-4 text-slate-400" />
+                  </div>
+                )}
+                <span className="text-xs font-bold text-slate-600" data-testid="text-user-name">
+                  {user.firstName || user.email || "Usuario"}
+                </span>
+              </div>
+            )}
+            <a href="/api/logout" data-testid="btn-logout">
+              <Button variant="outline" size="sm" className="text-[9px] font-bold uppercase tracking-widest gap-2">
+                <LogOut className="w-3 h-3" /> Salir
+              </Button>
+            </a>
+            {isAdmin && (
+              <Badge className="bg-[#A51C30] text-white border-none rounded-none px-4 py-1.5 text-[10px] font-bold tracking-widest uppercase" data-testid="badge-admin">Admin Mode</Badge>
+            )}
+          </div>
         </header>
 
         <div className="flex-1 overflow-y-auto p-12 bg-[#F8F9FA]">

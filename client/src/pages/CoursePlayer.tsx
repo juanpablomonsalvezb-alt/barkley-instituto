@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useRoute, Link } from "wouter";
+import { useRoute, Link, useLocation } from "wouter";
 import { 
   ArrowLeft, 
   Play, 
@@ -33,7 +33,8 @@ import {
   Activity,
   Layers,
   Award,
-  Maximize2
+  Maximize2,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -46,10 +47,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CoursePlayer() {
   const [, params] = useRoute("/course/:id");
   const courseId = params?.id || "";
+  const { user, isLoading, isAuthenticated } = useAuth();
+  const { toast } = useToast();
   
   const parts = courseId.split("-");
   const levelCode = parts[0];
@@ -57,6 +62,34 @@ export default function CoursePlayer() {
 
   const [currentWeek, setCurrentWeek] = useState(1);
   const [selectedResource, setSelectedResource] = useState<null | { title: string, url: string }>(null);
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      toast({
+        title: "Acceso Requerido",
+        description: "Ingresa con tu cuenta para acceder al curso...",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/api/login";
+      }, 500);
+    }
+  }, [isLoading, isAuthenticated, toast]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-12 h-12 animate-spin text-[#A51C30] mx-auto" />
+          <p className="text-[#0A192F] font-serif italic">Cargando curso...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   const levels: Record<string, string> = {
     "7b": "7° Básico", "8b": "8° Básico", "1m": "1° Medio", "2m": "2° Medio",
