@@ -22,16 +22,22 @@ import {
 } from "lucide-react";
 
 interface Level {
-  id: number;
+  id: string;
   name: string;
-  code: string;
   programType: string;
 }
 
 interface Subject {
-  id: number;
+  id: string;
   name: string;
-  code: string;
+  slug: string;
+}
+
+interface LevelSubjectWithSubject {
+  id: string;
+  levelId: string;
+  subjectId: string;
+  subject: Subject;
 }
 
 interface LearningObjective {
@@ -87,7 +93,7 @@ export default function TextbookConfig() {
     }
   });
 
-  const { data: subjects } = useQuery<Subject[]>({
+  const { data: levelSubjectsData } = useQuery<LevelSubjectWithSubject[]>({
     queryKey: ['/api/levels', selectedLevelId, 'subjects'],
     queryFn: async () => {
       const res = await fetch(`/api/levels/${selectedLevelId}/subjects`, { credentials: 'include' });
@@ -97,10 +103,12 @@ export default function TextbookConfig() {
     enabled: !!selectedLevelId
   });
 
-  const selectedLevel = levels?.find(l => l.id === parseInt(selectedLevelId));
-  const selectedSubject = subjects?.find(s => s.id === parseInt(selectedSubjectId));
-  const levelSubjectId = selectedLevelId && selectedSubjectId && selectedLevel?.code && selectedSubject?.code
-    ? `${selectedLevel.code}-${selectedSubject.code}`
+  const subjects = levelSubjectsData?.map(ls => ls.subject);
+
+  const selectedLevel = levels?.find(l => l.id === selectedLevelId);
+  const selectedSubject = subjects?.find(s => s.id === selectedSubjectId);
+  const levelSubjectId = selectedLevelId && selectedSubjectId && selectedLevel && selectedSubject
+    ? `${selectedLevel.id}-${selectedSubject.slug}`
     : null;
 
   const { data: textbookData, isLoading: isLoadingTextbook } = useQuery<{
