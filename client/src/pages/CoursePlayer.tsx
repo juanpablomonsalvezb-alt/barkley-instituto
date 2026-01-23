@@ -373,6 +373,44 @@ export default function CoursePlayer() {
             <p className="text-[#A51C30] text-xs font-bold uppercase tracking-[0.3em]">{levelName}</p>
           </div>
 
+          {/* Subir documento Word - Solo admin */}
+          {isAdmin && (
+            <div className="bg-white border border-slate-200 p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-[#0A192F]">Planificación del Programa</h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Sube un documento Word con la tabla de módulos, fechas, OAs y contenidos
+                  </p>
+                </div>
+                <label 
+                  className="flex items-center gap-2 px-4 py-2 bg-[#A51C30] hover:bg-[#821626] text-white cursor-pointer transition-colors text-sm"
+                  data-testid="word-upload-button"
+                >
+                  {isUploadingWord ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Procesando...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      Subir Word
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept=".docx,.doc"
+                    onChange={handleWordUpload}
+                    disabled={isUploadingWord}
+                    className="hidden"
+                    data-testid="word-upload-input"
+                  />
+                </label>
+              </div>
+            </div>
+          )}
+
           {/* INDICADOR DE PROGRESO - 15 MÓDULOS */}
           <div className="bg-white border border-slate-200 p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
@@ -444,37 +482,6 @@ export default function CoursePlayer() {
                 </div>
               )}
               
-              {isAdmin && (
-                <div className="mt-6 pt-4 border-t border-slate-200">
-                  <label 
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 cursor-pointer transition-colors text-sm"
-                    data-testid="word-upload-button"
-                  >
-                    {isUploadingWord ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Procesando...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-4 h-4" />
-                        Subir documento Word
-                      </>
-                    )}
-                    <input
-                      type="file"
-                      accept=".docx,.doc"
-                      onChange={handleWordUpload}
-                      disabled={isUploadingWord}
-                      className="hidden"
-                      data-testid="word-upload-input"
-                    />
-                  </label>
-                  <p className="text-xs text-slate-500 mt-2">
-                    Sube un documento Word con: número de módulo, fechas, OAs y contenidos
-                  </p>
-                </div>
-              )}
             </div>
           </Card>
 
