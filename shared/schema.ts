@@ -58,15 +58,48 @@ export const levelSubjects = pgTable("level_subjects", {
   totalOAs: integer("total_oas").default(0),
 });
 
-// Learning Objectives (OAs - Objetivos de Aprendizaje)
+// Learning Objectives (OAs - Objetivos de Aprendizaje) / Módulos
 export const learningObjectives = pgTable("learning_objectives", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   levelSubjectId: varchar("level_subject_id").notNull().references(() => levelSubjects.id),
   code: text("code").notNull(), // "OA 3"
   title: text("title").notNull(),
   description: text("description"),
-  weekNumber: integer("week_number").notNull(),
+  weekNumber: integer("week_number").notNull(), // Actually module number (1-15)
   sortOrder: integer("sort_order").default(0).notNull(),
+});
+
+// Program Calendar Configuration
+export const programCalendar = pgTable("program_calendar", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  levelId: varchar("level_id").notNull().references(() => levels.id),
+  startDate: timestamp("start_date").notNull(), // March 9, 2026
+  moduleDurationWeeks: integer("module_duration_weeks").default(2).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Module Evaluations (2 per module)
+export const moduleEvaluations = pgTable("module_evaluations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  learningObjectiveId: varchar("learning_objective_id").notNull().references(() => learningObjectives.id),
+  evaluationNumber: integer("evaluation_number").notNull(), // 1 or 2
+  title: text("title").notNull(),
+  description: text("description"),
+  releaseDay: integer("release_day").default(5).notNull(), // Day of week (5 = Friday)
+  releaseWeek: integer("release_week").notNull(), // 1 or 2 (which week of the module)
+  formUrl: text("form_url"), // Google Form URL
+  isRequired: boolean("is_required").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Student Evaluation Progress
+export const evaluationProgress = pgTable("evaluation_progress", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  evaluationId: varchar("evaluation_id").notNull().references(() => moduleEvaluations.id),
+  completedAt: timestamp("completed_at"),
+  score: integer("score"),
+  passed: boolean("passed").default(false),
 });
 
 // Weekly Resources (7 tipos por semana)
@@ -140,6 +173,33 @@ export const learningObjectivesRelations = relations(learningObjectives, ({ one,
     references: [levelSubjects.id],
   }),
   resources: many(weeklyResources),
+  evaluations: many(moduleEvaluations),
+}));
+
+export const programCalendarRelations = relations(programCalendar, ({ one }) => ({
+  level: one(levels, {
+    fields: [programCalendar.levelId],
+    references: [levels.id],
+  }),
+}));
+
+export const moduleEvaluationsRelations = relations(moduleEvaluations, ({ one, many }) => ({
+  learningObjective: one(learningObjectives, {
+    fields: [moduleEvaluations.learningObjectiveId],
+    references: [learningObjectives.id],
+  }),
+  progress: many(evaluationProgress),
+}));
+
+export const evaluationProgressRelations = relations(evaluationProgress, ({ one }) => ({
+  user: one(users, {
+    fields: [evaluationProgress.userId],
+    references: [users.id],
+  }),
+  evaluation: one(moduleEvaluations, {
+    fields: [evaluationProgress.evaluationId],
+    references: [moduleEvaluations.id],
+  }),
 }));
 
 export const weeklyResourcesRelations = relations(weeklyResources, ({ one }) => ({
@@ -158,6 +218,9 @@ export const insertWeeklyResourceSchema = createInsertSchema(weeklyResources).om
 export const insertEnrollmentSchema = createInsertSchema(enrollments).omit({ id: true, enrolledAt: true });
 export const insertStudentProgressSchema = createInsertSchema(studentProgress).omit({ id: true, completedAt: true });
 export const insertUserProfileSchema = createInsertSchema(userProfiles).omit({ id: true, createdAt: true });
+export const insertProgramCalendarSchema = createInsertSchema(programCalendar).omit({ id: true, createdAt: true });
+export const insertModuleEvaluationSchema = createInsertSchema(moduleEvaluations).omit({ id: true, createdAt: true });
+export const insertEvaluationProgressSchema = createInsertSchema(evaluationProgress).omit({ id: true });
 
 // Types
 export type Level = typeof levels.$inferSelect;
@@ -176,3 +239,9 @@ export type StudentProgress = typeof studentProgress.$inferSelect;
 export type InsertStudentProgress = z.infer<typeof insertStudentProgressSchema>;
 export type UserProfile = typeof userProfiles.$inferSelect;
 export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
+export type ProgramCalendar = typeof programCalendar.$inferSelect;
+export type InsertProgramCalendar = z.infer<typeof insertProgramCalendarSchema>;
+export type ModuleEvaluation = typeof moduleEvaluations.$inferSelect;
+export type InsertModuleEvaluation = z.infer<typeof insertModuleEvaluationSchema>;
+export type EvaluationProgress = typeof evaluationProgress.$inferSelect;
+export type InsertEvaluationProgress = z.infer<typeof insertEvaluationProgressSchema>;
