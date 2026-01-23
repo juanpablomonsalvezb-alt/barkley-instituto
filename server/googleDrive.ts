@@ -58,6 +58,7 @@ export interface ModuleResource {
 
 export interface ModuleContent {
   moduleNumber: number;
+  folderId: string;
   folderName: string;
   resources: ModuleResource[];
 }
@@ -130,6 +131,7 @@ export async function listModuleFolders(parentFolderId: string): Promise<ModuleC
 
     modules.push({
       moduleNumber,
+      folderId: folder.id!,
       folderName: folder.name!,
       resources
     });

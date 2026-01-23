@@ -37,6 +37,7 @@ interface DriveResource {
 
 interface ModuleContent {
   moduleNumber: number;
+  folderId: string;
   folderName: string;
   resources: DriveResource[];
 }
@@ -185,11 +186,9 @@ export default function DriveSync() {
       });
       return;
     }
-
-    const moduleFolderId = modules?.find(m => m.moduleNumber === moduleContent.moduleNumber)?.folderName;
     
     syncMutation.mutate({
-      folderId: selectedFolderId,
+      folderId: moduleContent.folderId,
       learningObjectiveId: objective.id,
       moduleNumber: moduleContent.moduleNumber
     });

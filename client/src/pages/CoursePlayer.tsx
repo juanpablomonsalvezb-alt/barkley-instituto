@@ -162,11 +162,32 @@ export default function CoursePlayer() {
     enabled: !!currentObjectiveId && isAuthenticated
   });
 
+  const { data: objectiveResources } = useQuery<Array<{
+    id: string;
+    resourceType: string;
+    title: string;
+    notebookLmUrl: string | null;
+  }>>({
+    queryKey: ['/api/objectives', currentObjectiveId, 'resources'],
+    queryFn: async () => {
+      if (!currentObjectiveId) return [];
+      const res = await fetch(`/api/objectives/${currentObjectiveId}/resources`, { credentials: 'include' });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!currentObjectiveId && isAuthenticated
+  });
+
+  const getResourceUrl = (type: string): string => {
+    const resource = objectiveResources?.find(r => r.resourceType === type);
+    return resource?.notebookLmUrl || "";
+  };
+
   const resources = [
-    { id: "video", title: "Video", icon: Video, color: "bg-red-500", embedUrl: "" },
-    { id: "infografia", title: "Infografía", icon: Map, color: "bg-blue-500", embedUrl: "" },
-    { id: "presentacion", title: "Presentación", icon: Presentation, color: "bg-emerald-500", embedUrl: "" },
-    { id: "audio", title: "Audio", icon: Headphones, color: "bg-orange-500", embedUrl: "" },
+    { id: "video", title: "Video", icon: Video, color: "bg-red-500", embedUrl: getResourceUrl("video") },
+    { id: "infografia", title: "Infografía", icon: Map, color: "bg-blue-500", embedUrl: getResourceUrl("infografia") },
+    { id: "presentacion", title: "Presentación", icon: Presentation, color: "bg-emerald-500", embedUrl: getResourceUrl("presentacion") },
+    { id: "audio", title: "Audio", icon: Headphones, color: "bg-orange-500", embedUrl: getResourceUrl("audio") },
   ];
 
   const getEvaluationDates = (moduleStartDate: string) => {
