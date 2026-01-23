@@ -50,6 +50,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { ModuleCalendarCompact } from "@/components/ModuleCalendar";
+import { EvaluationTracker } from "@/components/EvaluationTracker";
 
 export default function CoursePlayer() {
   const [, params] = useRoute("/course/:id");
@@ -275,6 +276,14 @@ export default function CoursePlayer() {
               levelSubjectId={courseId}
               currentModule={currentModule}
               onModuleSelect={setCurrentModule}
+            />
+          </div>
+
+          {/* Evaluaciones del módulo actual */}
+          <div className="max-w-4xl mx-auto">
+            <EvaluationTracker
+              levelSubjectId={courseId}
+              moduleNumber={currentModule}
             />
           </div>
         </div>
