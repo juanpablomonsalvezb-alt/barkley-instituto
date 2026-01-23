@@ -1,25 +1,26 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { Document, Page, pdfjs } from "react-pdf";
 import { 
   ChevronLeft, 
   ChevronRight, 
-  ZoomIn, 
-  ZoomOut, 
   BookOpen,
   Loader2,
   AlertCircle,
   Maximize2,
-  Minimize2
+  Minimize2,
+  ZoomIn,
+  ZoomOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface TextbookViewerProps {
   pdfUrl: string;
@@ -29,37 +30,27 @@ interface TextbookViewerProps {
   moduleNumber: number;
 }
 
-function convertToEmbedUrl(url: string, page: number): string {
+function convertToProxyUrl(url: string): string {
   if (!url) return "";
   
-  if (url.includes("drive.google.com/file/d/")) {
-    const fileId = url.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1];
-    if (fileId) {
-      return `https://drive.google.com/file/d/${fileId}/preview#page=${page}`;
-    }
+  // Use our server-side proxy to fetch the PDF (bypasses CORS)
+  if (url.includes("drive.google.com")) {
+    return `/api/pdf-proxy?url=${encodeURIComponent(url)}`;
   }
   
-  if (url.includes("drive.google.com/open?id=")) {
-    const fileId = url.match(/id=([a-zA-Z0-9_-]+)/)?.[1];
-    if (fileId) {
-      return `https://drive.google.com/file/d/${fileId}/preview#page=${page}`;
-    }
-  }
-  
-  if (url.includes("#page=")) {
-    return url.replace(/#page=\d+/, `#page=${page}`);
-  }
-  
-  return `${url}#page=${page}`;
+  return url;
 }
 
 export function TextbookViewer({ pdfUrl, title, startPage, endPage, moduleNumber }: TextbookViewerProps) {
   const [currentPage, setCurrentPage] = useState(startPage);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [scale, setScale] = useState(1.0);
   
   const totalPages = endPage - startPage + 1;
   const relativeCurrentPage = currentPage - startPage + 1;
+  const proxyUrl = convertToProxyUrl(pdfUrl);
   
   useEffect(() => {
     setCurrentPage(startPage);
@@ -67,20 +58,33 @@ export function TextbookViewer({ pdfUrl, title, startPage, endPage, moduleNumber
 
   const handlePrevPage = () => {
     if (currentPage > startPage) {
-      setIsLoading(true);
       setCurrentPage(currentPage - 1);
     }
   };
 
   const handleNextPage = () => {
     if (currentPage < endPage) {
-      setIsLoading(true);
       setCurrentPage(currentPage + 1);
     }
   };
 
-  const handleIframeLoad = () => {
+  const handleDocumentLoadSuccess = useCallback(() => {
     setIsLoading(false);
+    setError(null);
+  }, []);
+
+  const handleDocumentLoadError = useCallback((err: Error) => {
+    console.error("PDF load error:", err);
+    setIsLoading(false);
+    setError("No se pudo cargar el PDF. Verifica que el archivo esté compartido públicamente.");
+  }, []);
+
+  const handleZoomIn = () => {
+    setScale(prev => Math.min(prev + 0.25, 2.5));
+  };
+
+  const handleZoomOut = () => {
+    setScale(prev => Math.max(prev - 0.25, 0.5));
   };
 
   if (!pdfUrl) {
@@ -105,8 +109,6 @@ export function TextbookViewer({ pdfUrl, title, startPage, endPage, moduleNumber
     );
   }
 
-  const embedUrl = convertToEmbedUrl(pdfUrl, currentPage);
-
   const ViewerContent = () => (
     <>
       <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-[#F8F9FA]">
@@ -118,6 +120,27 @@ export function TextbookViewer({ pdfUrl, title, startPage, endPage, moduleNumber
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={handleZoomOut}
+            disabled={scale <= 0.5}
+            data-testid="zoom-out"
+          >
+            <ZoomOut className="w-4 h-4" />
+          </Button>
+          <span className="text-xs text-slate-500 w-12 text-center">{Math.round(scale * 100)}%</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={handleZoomIn}
+            disabled={scale >= 2.5}
+            data-testid="zoom-in"
+          >
+            <ZoomIn className="w-4 h-4" />
+          </Button>
           <Badge className="bg-[#0A192F] text-white rounded-none text-[9px] px-3">
             Página {relativeCurrentPage} de {totalPages}
           </Badge>
@@ -134,8 +157,8 @@ export function TextbookViewer({ pdfUrl, title, startPage, endPage, moduleNumber
       </div>
       
       <div className={cn(
-        "relative bg-slate-100",
-        isFullscreen ? "flex-1" : "h-[500px]"
+        "relative bg-slate-100 overflow-auto flex justify-center",
+        isFullscreen ? "flex-1" : "h-[600px]"
       )}>
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-slate-100 z-10">
@@ -145,13 +168,34 @@ export function TextbookViewer({ pdfUrl, title, startPage, endPage, moduleNumber
             </div>
           </div>
         )}
-        <iframe
-          src={embedUrl}
-          className="w-full h-full border-0"
-          onLoad={handleIframeLoad}
-          title={`${title || "Texto Escolar"} - Página ${currentPage}`}
-          allow="autoplay"
-        />
+        {error ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center p-8">
+              <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+              <p className="text-sm text-slate-600 mb-2">{error}</p>
+              <p className="text-xs text-slate-400">
+                Asegúrate de que el PDF de Google Drive esté configurado como "Cualquier persona con el enlace puede ver"
+              </p>
+            </div>
+          </div>
+        ) : (
+          <Document
+            file={proxyUrl}
+            onLoadSuccess={handleDocumentLoadSuccess}
+            onLoadError={handleDocumentLoadError}
+            loading={null}
+            className="py-4"
+          >
+            <Page
+              pageNumber={currentPage}
+              scale={scale}
+              loading={null}
+              className="shadow-lg"
+              renderTextLayer={false}
+              renderAnnotationLayer={false}
+            />
+          </Document>
+        )}
       </div>
 
       <div className="flex items-center justify-between p-4 border-t border-slate-100 bg-white">
@@ -167,7 +211,7 @@ export function TextbookViewer({ pdfUrl, title, startPage, endPage, moduleNumber
           Anterior
         </Button>
         
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 overflow-x-auto max-w-[300px]">
           {Array.from({ length: Math.min(totalPages, 10) }).map((_, i) => {
             const pageNum = startPage + i;
             const showEllipsis = totalPages > 10 && i === 9;
@@ -179,12 +223,9 @@ export function TextbookViewer({ pdfUrl, title, startPage, endPage, moduleNumber
             return (
               <button
                 key={pageNum}
-                onClick={() => {
-                  setIsLoading(true);
-                  setCurrentPage(pageNum);
-                }}
+                onClick={() => setCurrentPage(pageNum)}
                 className={cn(
-                  "w-7 h-7 text-[10px] font-bold transition-all",
+                  "w-7 h-7 text-[10px] font-bold transition-all flex-shrink-0",
                   currentPage === pageNum
                     ? "bg-[#0A192F] text-white"
                     : "bg-slate-100 text-slate-500 hover:bg-slate-200"

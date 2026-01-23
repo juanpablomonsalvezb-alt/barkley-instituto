@@ -673,5 +673,51 @@ export async function registerRoutes(
     }
   });
 
+  // PDF Proxy - fetches PDF from Google Drive to bypass CORS
+  app.get("/api/pdf-proxy", isAuthenticated, async (req: any, res) => {
+    try {
+      const { url } = req.query;
+      if (!url || typeof url !== 'string') {
+        return res.status(400).json({ message: "URL parameter required" });
+      }
+
+      // Extract file ID from Google Drive URL
+      let fileId = null;
+      if (url.includes("drive.google.com/file/d/")) {
+        fileId = url.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1];
+      } else if (url.includes("drive.google.com/open?id=")) {
+        fileId = url.match(/id=([a-zA-Z0-9_-]+)/)?.[1];
+      }
+
+      if (!fileId) {
+        return res.status(400).json({ message: "Invalid Google Drive URL" });
+      }
+
+      // Use Google Drive direct download URL
+      const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+      
+      const response = await fetch(downloadUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+
+      if (!response.ok) {
+        return res.status(response.status).json({ message: "Failed to fetch PDF from Google Drive" });
+      }
+
+      // Set appropriate headers for PDF
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      
+      // Stream the response
+      const arrayBuffer = await response.arrayBuffer();
+      res.send(Buffer.from(arrayBuffer));
+    } catch (error) {
+      console.error("Error proxying PDF:", error);
+      res.status(500).json({ message: "Failed to proxy PDF" });
+    }
+  });
+
   return httpServer;
 }
