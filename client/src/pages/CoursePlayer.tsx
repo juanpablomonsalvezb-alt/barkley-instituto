@@ -49,6 +49,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { ModuleCalendarCompact } from "@/components/ModuleCalendar";
 
 export default function CoursePlayer() {
   const [, params] = useRoute("/course/:id");
@@ -269,23 +270,12 @@ export default function CoursePlayer() {
               </Button>
             </div>
 
-            {/* Selector de módulos inferior */}
-            <div className="flex justify-center gap-2 overflow-x-auto pb-4 px-10">
-              {Array.from({ length: 15 }).map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentModule(i + 1)}
-                  className={cn(
-                    "min-w-[40px] h-10 border text-[10px] font-bold transition-all",
-                    currentModule === i + 1 
-                    ? "bg-[#0A192F] border-[#0A192F] text-white shadow-lg scale-110" 
-                    : "bg-white border-slate-100 text-slate-300 hover:text-[#0A192F] hover:border-slate-300"
-                  )}
-                >
-                  M{i + 1}
-                </button>
-              ))}
-            </div>
+            {/* Selector de módulos inferior con calendario */}
+            <ModuleCalendarCompact 
+              levelSubjectId={courseId}
+              currentModule={currentModule}
+              onModuleSelect={setCurrentModule}
+            />
           </div>
         </div>
       </div>
