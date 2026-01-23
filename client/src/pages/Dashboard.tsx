@@ -72,20 +72,19 @@ export default function Dashboard() {
 
   const programmaticStructure = {
     menores: [
-      { id: "7b", label: "7° Básico", subjects: ["Lengua y Literatura", "Matemática", "Ciencias Naturales", "Historia", "Inglés"], weeks: 30, oas: 45 },
-      { id: "8b", label: "8° Básico", subjects: ["Lengua y Literatura", "Matemática", "Ciencias Naturales", "Historia", "Inglés"], weeks: 30, oas: 45 },
-      { id: "1m", label: "1° Medio", subjects: ["Lengua y Literatura", "Matemática", "Ciencias Naturales", "Historia", "Inglés"], weeks: 30, oas: 60 },
-      { id: "2m", label: "2° Medio", subjects: ["Lengua y Literatura", "Matemática", "Ciencias Naturales", "Historia", "Inglés"], weeks: 30, oas: 60 },
-      { id: "3m", label: "3° Medio", subjects: ["Lengua y Literatura", "Matemática", "Educación Ciudadana", "Filosofía", "Inglés"], weeks: 30, oas: 55 },
-      { id: "4m", label: "4° Medio", subjects: ["Lengua y Literatura", "Matemática", "Educación Ciudadana", "Filosofía", "Inglés"], weeks: 30, oas: 55 },
+      { id: "7b", label: "7° Básico", subjects: ["Lengua y Literatura", "Matemática", "Ciencias Naturales", "Historia", "Inglés"], sessions: 15 },
+      { id: "8b", label: "8° Básico", subjects: ["Lengua y Literatura", "Matemática", "Ciencias Naturales", "Historia", "Inglés"], sessions: 15 },
+      { id: "1m", label: "1° Medio", subjects: ["Lengua y Literatura", "Matemática", "Ciencias Naturales", "Historia", "Inglés"], sessions: 15 },
+      { id: "2m", label: "2° Medio", subjects: ["Lengua y Literatura", "Matemática", "Ciencias Naturales", "Historia", "Inglés"], sessions: 15 },
+      { id: "3m", label: "3° Medio", subjects: ["Lengua y Literatura", "Matemática", "Educación Ciudadana", "Filosofía", "Inglés"], sessions: 15 },
+      { id: "4m", label: "4° Medio", subjects: ["Lengua y Literatura", "Matemática", "Educación Ciudadana", "Filosofía", "Inglés"], sessions: 15 },
     ],
     adultos: [
-      { id: "nb1", label: "NB1 (1-4)", subjects: ["Lenguaje", "Matemática"], weeks: 30, oas: 25 },
-      { id: "nb2", label: "NB2 (5-6)", subjects: ["Lenguaje", "Matemática", "Ciencias", "Sociales"], weeks: 30, oas: 50 },
-      { id: "nb3", label: "NB3 (7-8)", subjects: ["Lenguaje", "Matemática", "Ciencias", "Sociales"], weeks: 30, oas: 55 },
-      { id: "nm1", label: "NM1 (1-2 Media)", subjects: ["Lenguaje", "Matemática", "Ciencias", "Sociales", "Inglés"], weeks: 30, oas: 70 },
-      { id: "nm2", label: "NM2 (3-4 Media)", subjects: ["Lenguaje", "Matemática", "Ciencias", "Sociales", "Inglés"], weeks: 30, oas: 65 },
-      { id: "nm2i", label: "NM2 Intensivo", subjects: ["Lenguaje", "Matemática", "Ciencias", "Sociales", "Inglés"], weeks: 13, oas: 65, special: true },
+      { id: "nb1", label: "NB1 (1-4)", subjects: ["Lenguaje", "Matemática"], sessions: 15 },
+      { id: "nb2", label: "NB2 (5-6)", subjects: ["Lenguaje", "Matemática", "Ciencias", "Sociales"], sessions: 15 },
+      { id: "nb3", label: "NB3 (7-8)", subjects: ["Lenguaje", "Matemática", "Ciencias", "Sociales"], sessions: 15 },
+      { id: "nm1", label: "NM1 (1-2 Media)", subjects: ["Lenguaje", "Matemática", "Ciencias", "Sociales", "Inglés"], sessions: 15 },
+      { id: "nm2", label: "NM2 (3-4 Media)", subjects: ["Lenguaje", "Matemática", "Ciencias", "Sociales", "Inglés"], sessions: 15 },
     ]
   };
 
@@ -189,7 +188,7 @@ export default function Dashboard() {
                     <div className="flex items-center gap-4">
                       <h3 className="text-xl font-serif font-bold text-[#0A192F] bg-white px-4 py-2 border border-slate-200">{course.label}</h3>
                       <div className="h-px flex-1 bg-slate-200"></div>
-                      <Badge variant="outline" className="text-[9px] font-bold tracking-widest uppercase py-1 border-slate-200 text-slate-400">{course.weeks} Semanas / {course.oas} OA</Badge>
+                      <Badge variant="outline" className="text-[9px] font-bold tracking-widest uppercase py-1 border-slate-200 text-slate-400">{course.sessions} Sesiones (2 sem/sesión)</Badge>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">

@@ -254,19 +254,19 @@ export async function registerRoutes(
   // Seed initial data endpoint (admin only - for development)
   app.post("/api/admin/seed", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
-      // Seed levels
+      // Seed levels (15 sesiones, cada sesión planificada para 2 semanas)
       const levelsData = [
-        { id: "7b", name: "7° Básico", programType: "menores" as const, totalWeeks: 30, cadencePerOA: "2.18 sem/OA", sortOrder: 1 },
-        { id: "8b", name: "8° Básico", programType: "menores" as const, totalWeeks: 30, cadencePerOA: "2.18 sem/OA", sortOrder: 2 },
-        { id: "1m", name: "1° Medio", programType: "menores" as const, totalWeeks: 30, cadencePerOA: "2.31 sem/OA", sortOrder: 3 },
-        { id: "2m", name: "2° Medio", programType: "menores" as const, totalWeeks: 30, cadencePerOA: "2.31 sem/OA", sortOrder: 4 },
-        { id: "3m", name: "3° Medio", programType: "menores" as const, totalWeeks: 30, cadencePerOA: "2.50 sem/OA", sortOrder: 5 },
-        { id: "4m", name: "4° Medio", programType: "menores" as const, totalWeeks: 30, cadencePerOA: "2.50 sem/OA", sortOrder: 6 },
-        { id: "nb1", name: "NB1 (1-4)", programType: "adultos" as const, totalWeeks: 30, cadencePerOA: "2.73 sem/OA", sortOrder: 7 },
-        { id: "nb2", name: "NB2 (5-6)", programType: "adultos" as const, totalWeeks: 30, cadencePerOA: "2.73 sem/OA", sortOrder: 8 },
-        { id: "nb3", name: "NB3 (7-8)", programType: "adultos" as const, totalWeeks: 30, cadencePerOA: "2.50 sem/OA", sortOrder: 9 },
-        { id: "nm1", name: "NM1 (1-2 Media)", programType: "adultos" as const, totalWeeks: 30, cadencePerOA: "2.31 sem/OA", sortOrder: 10 },
-        { id: "nm2", name: "NM2 (3-4 Media)", programType: "adultos" as const, totalWeeks: 30, cadencePerOA: "2.31 sem/OA", sortOrder: 11 },
+        { id: "7b", name: "7° Básico", programType: "menores" as const, totalWeeks: 15, cadencePerOA: "2 sem/sesión", sortOrder: 1 },
+        { id: "8b", name: "8° Básico", programType: "menores" as const, totalWeeks: 15, cadencePerOA: "2 sem/sesión", sortOrder: 2 },
+        { id: "1m", name: "1° Medio", programType: "menores" as const, totalWeeks: 15, cadencePerOA: "2 sem/sesión", sortOrder: 3 },
+        { id: "2m", name: "2° Medio", programType: "menores" as const, totalWeeks: 15, cadencePerOA: "2 sem/sesión", sortOrder: 4 },
+        { id: "3m", name: "3° Medio", programType: "menores" as const, totalWeeks: 15, cadencePerOA: "2 sem/sesión", sortOrder: 5 },
+        { id: "4m", name: "4° Medio", programType: "menores" as const, totalWeeks: 15, cadencePerOA: "2 sem/sesión", sortOrder: 6 },
+        { id: "nb1", name: "NB1 (1-4)", programType: "adultos" as const, totalWeeks: 15, cadencePerOA: "2 sem/sesión", sortOrder: 7 },
+        { id: "nb2", name: "NB2 (5-6)", programType: "adultos" as const, totalWeeks: 15, cadencePerOA: "2 sem/sesión", sortOrder: 8 },
+        { id: "nb3", name: "NB3 (7-8)", programType: "adultos" as const, totalWeeks: 15, cadencePerOA: "2 sem/sesión", sortOrder: 9 },
+        { id: "nm1", name: "NM1 (1-2 Media)", programType: "adultos" as const, totalWeeks: 15, cadencePerOA: "2 sem/sesión", sortOrder: 10 },
+        { id: "nm2", name: "NM2 (3-4 Media)", programType: "adultos" as const, totalWeeks: 15, cadencePerOA: "2 sem/sesión", sortOrder: 11 },
       ];
 
       for (const level of levelsData) {
