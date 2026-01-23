@@ -110,3 +110,38 @@ Files are automatically classified based on MIME type and filename:
 
 ### Admin UI
 - `/admin/drive-sync` - Visual interface for Drive synchronization
+
+## Calendar & Module Access Control
+
+### Academic Calendar
+- **Program Start**: March 9, 2026
+- **Module Duration**: 2 weeks each (15 modules total = 30 weeks)
+- **Total Program Duration**: March 9, 2026 - October 4, 2026
+
+### Module Schedule Calculation
+The calendar system automatically calculates dates for each module:
+- **Module Start**: (moduleNumber - 1) * 14 days from program start
+- **Evaluation 1 Release**: First Friday of the module (day 5)
+- **Evaluation 2 Release**: Second Friday of the module (day 12)
+- **Module End**: 14 days after module start
+
+### Access Control Rules
+Students must meet both conditions to access a module:
+1. **Date Availability**: The current date must be >= module start date
+2. **Prerequisite Completion**: The previous module's Evaluation 2 must be passed
+
+### Module Status
+- **locked**: Not yet available (future date or prerequisite not met)
+- **available**: Ready to access but not started
+- **in_progress**: Currently active module
+- **completed**: Both evaluations passed
+
+### API Endpoints
+- `GET /api/level-subjects/:id/calendar` - Get full module schedule with availability status
+- `GET /api/modules/:moduleNumber/evaluations` - Get evaluation status for a module
+- `POST /api/evaluations/:id/complete` - Mark an evaluation as completed
+
+### Key Files
+- `server/calendarUtils.ts` - Calendar calculation utilities
+- `client/src/components/ModuleCalendar.tsx` - Calendar UI component
+- `client/src/components/EvaluationTracker.tsx` - Evaluation progress tracker
