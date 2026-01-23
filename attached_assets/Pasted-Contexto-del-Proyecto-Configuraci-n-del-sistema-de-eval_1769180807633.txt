@@ -1,0 +1,45 @@
+Contexto del Proyecto: Configuración del sistema de evaluaciones para la plataforma de aprendizaje "Barkley Instituto".
+
+Instrucciones de Desarrollo: Configura el módulo de generación de evaluaciones utilizando la API de Gemini 1.5 Pro (Free Tier) y PostgreSQL para el almacenamiento persistente, ajustándote estrictamente a los siguientes parámetros:
+
+1. Interfaz de Usuario y Experiencia (UX/UI):
+
+Formato Carrusel Obligatorio: Las evaluaciones deben presentarse como un carrusel interactivo. Se debe mostrar estrictamente una sola pregunta a la vez con sus 4 alternativas.
+
+Navegación Bloqueada: El usuario no puede avanzar a la siguiente pregunta sin haber respondido la actual. El botón "Siguiente" solo se habilita tras la respuesta.
+
+Diseño: Estilo moderno, limpio, responsivo y optimizado para evitar la sobrecarga sensorial, utilizando componentes de tarjetas (cards).
+
+2. Lógica de Contenido y Generación (Regla 60/40): Cada vez que se procese un módulo (basado en páginas específicas de un PDF), se deben generar 4 evaluaciones con la siguiente estructura:
+
+Extensión: - Evaluaciones 1, 2 y 3: 15 preguntas cada una.
+
+Evaluación 4 (Final de módulo): 20 preguntas.
+
+Composición de la Prueba:
+
+60% de las preguntas: Basadas estrictamente en el contenido explícito y literal de las páginas del PDF proporcionadas.
+
+40% de las preguntas: Basadas en habilidades transversales (Vocabulario en contexto, inferencias, conectores y coherencia) relacionadas con el tema del módulo, pero que no figuran de forma textual en el PDF.
+
+Nivel de Exigencia: Nivel de dificultad Alto (enfocado en Análisis y Evaluación).
+
+3. Retroalimentación e Interacción:
+
+Feedback Inmediato: Al marcar una alternativa, el sistema debe indicar instantáneamente si es correcta o incorrecta.
+
+Explicación (Rationale): Se debe mostrar una explicación breve y clara de por qué la respuesta es la correcta y por qué los distractores no lo son.
+
+4. Pantalla de Resultados y Resumen: Al finalizar la evaluación, el sistema debe calcular y mostrar:
+
+Estado Final: "Aprobado" (si alcanza el 60% de éxito o más) o "Reprobado".
+
+Métricas: Porcentaje exacto de respuestas correctas e incorrectas.
+
+Conteo: Total de aciertos sobre el total de preguntas.
+
+5. Optimización Técnica:
+
+El contenido debe generarse una sola vez mediante la IA y guardarse inmediatamente en la base de datos PostgreSQL.
+
+Las visualizaciones posteriores de los alumnos deben cargarse desde la base de datos para no consumir tokens adicionales ni solicitudes a la API.
