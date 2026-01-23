@@ -126,23 +126,14 @@ export default function CoursePlayer() {
     return null;
   }
 
-  const openNotebookLMPopup = (url: string, title: string) => {
-    const popupWidth = 900;
-    const popupHeight = 600;
-    const left = window.screen.width - popupWidth - 50;
-    const top = 100;
-    
-    window.open(
-      url,
-      title,
-      `width=${popupWidth},height=${popupHeight},left=${left},top=${top},resizable=yes,scrollbars=yes`
-    );
+  const openNotebookLMSplitScreen = (url: string) => {
+    window.open(url, '_blank');
   };
 
   const handleResourceClick = (res: typeof resources[0]) => {
     if (res.id !== "cuestionario" || viewedResources.size >= resources.length - 2) {
       if (res.embedType === "notebooklm-popup" && res.embedUrl) {
-        openNotebookLMPopup(res.embedUrl, res.title);
+        openNotebookLMSplitScreen(res.embedUrl);
         setSidePanel({
           title: res.title,
           help: res.help,
@@ -384,17 +375,27 @@ export default function CoursePlayer() {
                   placeholder="Escribe aquí tus reflexiones mientras estudias..."
                 />
               </div>
+              
+              <div className="h-px bg-slate-100"></div>
+              
+              <div className="bg-blue-50 border border-blue-200 p-4 rounded-none">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-blue-600 mb-2">Tip: Dividir Pantalla</p>
+                <p className="text-xs text-blue-700 leading-relaxed">
+                  <strong>Windows:</strong> Arrastra la pestaña al borde izquierdo o derecho.<br/>
+                  <strong>Mac:</strong> Mantén el botón verde y elige "Mosaico".
+                </p>
+              </div>
             </div>
             
             <div className="p-4 border-t border-slate-200 shrink-0 space-y-3">
               <Button 
                 onClick={() => {
                   const res = resources.find(r => r.id === sidePanel.resourceId);
-                  if (res) openNotebookLMPopup(res.embedUrl, res.title);
+                  if (res) openNotebookLMSplitScreen(res.embedUrl);
                 }}
                 className="w-full bg-[#A51C30] hover:bg-[#8B1728] text-white rounded-none text-[10px] font-bold uppercase tracking-widest"
               >
-                <ExternalLink className="w-4 h-4 mr-2" /> Reabrir NotebookLM
+                <ExternalLink className="w-4 h-4 mr-2" /> Abrir en Nueva Pestaña
               </Button>
               <Button 
                 onClick={() => {
@@ -443,14 +444,14 @@ export default function CoursePlayer() {
                   </p>
                   <div className="bg-emerald-50 border border-emerald-200 p-6 rounded-none mt-6">
                     <p className="text-sm text-emerald-700 font-medium leading-relaxed">
-                      El recurso se ha abierto en una <strong>ventana lateral</strong>. Puedes verlo junto a esta plataforma.
+                      El recurso se abrió en una <strong>nueva pestaña</strong>. Usa la función de dividir pantalla de tu sistema para verlo junto a esta plataforma.
                     </p>
                   </div>
                   <Button 
-                    onClick={() => openNotebookLMPopup(selectedResource.embedUrl, selectedResource.title)}
+                    onClick={() => openNotebookLMSplitScreen(selectedResource.embedUrl)}
                     className="mt-4 bg-[#A51C30] hover:bg-[#8B1728] text-white rounded-none px-6 py-3"
                   >
-                    <ExternalLink className="w-4 h-4 mr-2" /> Abrir Nuevamente
+                    <ExternalLink className="w-4 h-4 mr-2" /> Abrir en Nueva Pestaña
                   </Button>
                 </div>
 
