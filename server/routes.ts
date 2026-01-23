@@ -299,6 +299,50 @@ export async function registerRoutes(
     }
   });
 
+  // Create all 15 modules for a level-subject (admin only)
+  app.post("/api/admin/level-subjects/:id/create-modules", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Check if level-subject exists
+      const levelSubject = await storage.getLevelSubjectById(id);
+      if (!levelSubject) {
+        return res.status(404).json({ message: "Level-subject not found" });
+      }
+
+      // Check if modules already exist
+      const existingObjectives = await storage.getLearningObjectives(id);
+      if (existingObjectives.length > 0) {
+        return res.status(400).json({ 
+          message: "Modules already exist", 
+          count: existingObjectives.length 
+        });
+      }
+
+      // Create 15 modules
+      const createdModules = [];
+      for (let moduleNum = 1; moduleNum <= 15; moduleNum++) {
+        const objective = await storage.createLearningObjective({
+          levelSubjectId: id,
+          weekNumber: moduleNum,
+          code: `M${moduleNum}`,
+          title: `Módulo ${moduleNum}`,
+          sortOrder: moduleNum
+        });
+        createdModules.push(objective);
+      }
+
+      res.json({ 
+        message: "Modules created successfully",
+        count: createdModules.length,
+        modules: createdModules
+      });
+    } catch (error) {
+      console.error("Error creating modules:", error);
+      res.status(500).json({ message: "Failed to create modules" });
+    }
+  });
+
   // Create resource (admin only)
   app.post("/api/admin/resources", isAuthenticated, isAdmin, async (req: any, res) => {
     try {

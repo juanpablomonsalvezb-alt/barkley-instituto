@@ -18,7 +18,8 @@ import {
   RefreshCw,
   CloudDownload,
   Check,
-  AlertCircle
+  AlertCircle,
+  Plus
 } from "lucide-react";
 
 interface DriveFolder {
@@ -58,10 +59,8 @@ function getResourceIcon(type: string) {
   switch (type) {
     case 'video': return <FileVideo className="h-4 w-4 text-red-500" />;
     case 'audio': return <FileAudio className="h-4 w-4 text-purple-500" />;
-    case 'image': return <FileImage className="h-4 w-4 text-green-500" />;
-    case 'slides': return <Presentation className="h-4 w-4 text-orange-500" />;
-    case 'document': return <FileText className="h-4 w-4 text-blue-500" />;
-    case 'form': return <FileText className="h-4 w-4 text-yellow-500" />;
+    case 'infografia': return <FileImage className="h-4 w-4 text-green-500" />;
+    case 'presentacion': return <Presentation className="h-4 w-4 text-orange-500" />;
     default: return <FileText className="h-4 w-4 text-gray-500" />;
   }
 }
@@ -70,10 +69,8 @@ function getResourceTypeName(type: string) {
   const names: Record<string, string> = {
     'video': 'Video',
     'audio': 'Audio',
-    'image': 'Infografía',
-    'slides': 'Presentación',
-    'document': 'Documento',
-    'form': 'Cuestionario'
+    'infografia': 'Infografía',
+    'presentacion': 'Presentación'
   };
   return names[type] || type;
 }
@@ -146,6 +143,41 @@ export default function DriveSync() {
       });
     }
   });
+
+  const createModulesMutation = useMutation({
+    mutationFn: async (levelSubjectId: string) => {
+      const res = await fetch(`/api/admin/level-subjects/${levelSubjectId}/create-modules`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Failed to create modules');
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Módulos creados",
+        description: `Se crearon ${data.count} módulos correctamente`
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/level-subjects', selectedLevelSubjectId, 'objectives'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error al crear módulos",
+        description: String(error),
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleCreateModules = () => {
+    if (selectedLevelSubjectId) {
+      createModulesMutation.mutate(selectedLevelSubjectId);
+    }
+  };
 
   const handleSync = (moduleContent: ModuleContent) => {
     const objective = objectives?.find(o => o.moduleNumber === moduleContent.moduleNumber);
@@ -263,6 +295,35 @@ export default function DriveSync() {
                   ))}
                 </SelectContent>
               </Select>
+              
+              {selectedLevelSubjectId && objectives?.length === 0 && (
+                <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800 mb-3">
+                    No hay módulos creados para esta materia. Debes crearlos antes de sincronizar recursos.
+                  </p>
+                  <Button 
+                    onClick={handleCreateModules}
+                    disabled={createModulesMutation.isPending}
+                    data-testid="button-create-modules"
+                  >
+                    {createModulesMutation.isPending ? (
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Plus className="h-4 w-4 mr-2" />
+                    )}
+                    Crear 15 Módulos
+                  </Button>
+                </div>
+              )}
+
+              {selectedLevelSubjectId && objectives && objectives.length > 0 && (
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-800 flex items-center gap-2">
+                    <Check className="h-4 w-4" />
+                    {objectives.length} módulos disponibles para sincronizar
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
