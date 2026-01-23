@@ -13,6 +13,73 @@ import {
   getAllModulesSchedule, getModuleSchedule, getCalendarSummary, 
   isModuleAvailable, isEvaluationAvailable, DEFAULT_CONFIG, formatModuleDates 
 } from "./calendarUtils";
+import mammoth from "mammoth";
+import multer from "multer";
+
+// Multer configuration for Word document uploads
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+        file.mimetype === 'application/msword') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only Word documents are allowed'));
+    }
+  }
+});
+
+// Helper function to parse Word document and extract module info
+function parseModuleInfoFromText(text: string): { moduleOAs: string; moduleContents: string; moduleDateRange: string } {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+  
+  let moduleOAs = "";
+  let moduleContents = "";
+  let moduleDateRange = "";
+  
+  let currentSection = "";
+  
+  for (const line of lines) {
+    const lowerLine = line.toLowerCase();
+    
+    // Detect section headers
+    if (lowerLine.includes("objetivo") || lowerLine.includes("oa ") || lowerLine.includes("oa:")) {
+      currentSection = "oas";
+      if (!lowerLine.includes("objetivo") && !lowerLine.match(/^oa\s*\d/i)) {
+        moduleOAs += line + "\n";
+      }
+      continue;
+    }
+    if (lowerLine.includes("contenido") || lowerLine.includes("tema")) {
+      currentSection = "contents";
+      continue;
+    }
+    if (lowerLine.includes("fecha") || lowerLine.includes("semana") || lowerLine.includes("módulo")) {
+      // Check if this line contains a date range
+      if (line.match(/\d{1,2}/) && (line.includes("-") || line.includes("al") || line.includes("a"))) {
+        moduleDateRange = line;
+      }
+      currentSection = "date";
+      continue;
+    }
+    
+    // Add content to appropriate section
+    if (currentSection === "oas" && line) {
+      moduleOAs += line + "\n";
+    } else if (currentSection === "contents" && line) {
+      moduleContents += line + "\n";
+    } else if (currentSection === "date" && line.match(/\d{1,2}/)) {
+      moduleDateRange = line;
+    }
+  }
+  
+  return {
+    moduleOAs: moduleOAs.trim(),
+    moduleContents: moduleContents.trim(),
+    moduleDateRange: moduleDateRange.trim()
+  };
+}
 
 // Admin authorization middleware - must be used after isAuthenticated
 const isAdmin: RequestHandler = async (req: any, res, next) => {
@@ -620,6 +687,66 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error getting evaluation HTML:", error);
       res.status(500).json({ message: "Failed to get evaluation HTML" });
+    }
+  });
+
+  // Upload Word document for module info (admin only)
+  app.post("/api/admin/objectives/:objectiveId/word-upload", isAdmin, upload.single('wordDoc'), async (req: any, res) => {
+    try {
+      const { objectiveId } = req.params;
+      
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Verify the objective exists
+      const objective = await storage.getLearningObjectiveById(objectiveId);
+      if (!objective) {
+        return res.status(404).json({ message: "Learning objective not found" });
+      }
+
+      // Parse Word document using mammoth
+      const result = await mammoth.extractRawText({ buffer: req.file.buffer });
+      const text = result.value;
+      
+      // Extract module info from the text
+      const moduleInfo = parseModuleInfoFromText(text);
+      
+      // Update the learning objective with the extracted info
+      const updated = await storage.updateLearningObjectiveModuleInfo(objectiveId, {
+        moduleOAs: moduleInfo.moduleOAs || null,
+        moduleContents: moduleInfo.moduleContents || null,
+        moduleDateRange: moduleInfo.moduleDateRange || null,
+      });
+
+      res.json({
+        success: true,
+        objective: updated,
+        extractedInfo: moduleInfo,
+        rawText: text
+      });
+    } catch (error) {
+      console.error("Error processing Word document:", error);
+      res.status(500).json({ message: "Failed to process Word document" });
+    }
+  });
+
+  // Get module info for a learning objective
+  app.get("/api/objectives/:objectiveId/module-info", isAuthenticated, async (req: any, res) => {
+    try {
+      const { objectiveId } = req.params;
+      const objective = await storage.getLearningObjectiveById(objectiveId);
+      if (!objective) {
+        return res.status(404).json({ message: "Learning objective not found" });
+      }
+      res.json({
+        moduleOAs: objective.moduleOAs,
+        moduleContents: objective.moduleContents,
+        moduleDateRange: objective.moduleDateRange,
+      });
+    } catch (error) {
+      console.error("Error getting module info:", error);
+      res.status(500).json({ message: "Failed to get module info" });
     }
   });
 

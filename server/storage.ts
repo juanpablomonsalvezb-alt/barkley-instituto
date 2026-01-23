@@ -372,6 +372,18 @@ export class DatabaseStorage implements IStorage {
     const [created] = await db.insert(evaluationProgress).values(progress).returning();
     return created;
   }
+
+  async updateLearningObjectiveModuleInfo(
+    id: string, 
+    data: { moduleOAs?: string | null; moduleContents?: string | null; moduleDateRange?: string | null; wordDocUrl?: string | null }
+  ): Promise<LearningObjective | undefined> {
+    const [updated] = await db
+      .update(learningObjectives)
+      .set(data)
+      .where(eq(learningObjectives.id, id))
+      .returning();
+    return updated;
+  }
 }
 
 export const storage = new DatabaseStorage();
