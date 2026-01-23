@@ -429,9 +429,9 @@ export default function CoursePlayer() {
     if (url.includes("drive.google.com/file/d/")) {
       const fileId = url.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1];
       if (fileId) {
-        // For images (infografia), use direct view URL instead of preview
+        // For images (infografia), use thumbnail URL which works better
         if (resourceType === "infografia") {
-          return `https://drive.google.com/uc?export=view&id=${fileId}`;
+          return `https://lh3.googleusercontent.com/d/${fileId}`;
         }
         return `https://drive.google.com/file/d/${fileId}/preview`;
       }
@@ -787,33 +787,40 @@ export default function CoursePlayer() {
 
       {/* Resource Modal */}
       <Dialog open={selectedResource !== null} onOpenChange={() => setSelectedResource(null)}>
-        <DialogContent className="max-w-5xl h-[80vh] p-0 rounded-none border-none bg-white">
-          <DialogHeader className="p-6 border-b border-slate-100 shrink-0 bg-[#F8F9FA]">
-            <DialogTitle className="text-xl font-serif font-bold text-[#0A192F]">{selectedResource?.title}</DialogTitle>
+        <DialogContent className="max-w-5xl w-[90vw] h-[85vh] p-0 border-none bg-white flex flex-col overflow-hidden">
+          <DialogHeader className="px-4 py-3 border-b border-slate-200 shrink-0 bg-white">
+            <DialogTitle className="text-lg font-serif font-bold text-[#0A192F]">{selectedResource?.title}</DialogTitle>
             <DialogDescription className="sr-only">
               Recurso didáctico del módulo {currentModule}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 w-full min-h-0 bg-slate-50 relative overflow-auto flex items-center justify-center">
+          <div className="flex-1 w-full bg-black relative overflow-hidden">
             {selectedResource?.embedUrl ? (
               selectedResource.embedType === "infografia" ? (
-                <img 
-                  src={convertToEmbedUrl(selectedResource.embedUrl, "infografia")}
-                  alt={selectedResource.title}
-                  className="max-w-full max-h-full object-contain"
-                />
+                <div className="w-full h-full flex items-center justify-center bg-slate-100 p-4">
+                  <img 
+                    src={convertToEmbedUrl(selectedResource.embedUrl, "infografia")}
+                    alt={selectedResource.title}
+                    className="max-w-full max-h-full object-contain"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      target.parentElement!.innerHTML = '<iframe src="' + convertToEmbedUrl(selectedResource.embedUrl) + '" class="w-full h-full border-0" allowFullScreen></iframe>';
+                    }}
+                  />
+                </div>
               ) : (
                 <iframe 
                   src={convertToEmbedUrl(selectedResource.embedUrl, selectedResource.embedType)}
-                  className="w-full h-full border-0 absolute inset-0"
+                  className="w-full h-full border-0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                   allowFullScreen
                   title={selectedResource.title}
                 />
               )
             ) : (
-              <div className="flex flex-col items-center justify-center p-12 text-center space-y-6">
-                <div className="w-20 h-20 bg-slate-200 flex items-center justify-center">
+              <div className="flex flex-col items-center justify-center h-full p-12 text-center space-y-6 bg-slate-50">
+                <div className="w-20 h-20 bg-slate-200 flex items-center justify-center rounded-lg">
                   {selectedResource?.embedType === "video" && <Video className="w-10 h-10 text-slate-400" />}
                   {selectedResource?.embedType === "audio" && <Headphones className="w-10 h-10 text-slate-400" />}
                   {selectedResource?.embedType === "presentacion" && <Presentation className="w-10 h-10 text-slate-400" />}
