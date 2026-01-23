@@ -63,11 +63,12 @@ export default function CoursePlayer() {
   const [currentWeek, setCurrentWeek] = useState(1);
   const [selectedResource, setSelectedResource] = useState<null | { 
     title: string, 
-    url: string, 
-    embedType: "youtube" | "image" | "audio" | "slides" | "interactive" | "quiz" | "text" | "notebooklm",
+    embedUrl: string, 
+    embedType: "drive-video" | "drive-image" | "drive-audio" | "drive-slides" | "drive-interactive" | "google-forms" | "reflection",
     id: string,
     help: string,
-    fundamental: string
+    fundamental: string,
+    instructions: string
   }>(null);
   const [viewedResources, setViewedResources] = useState<Set<string>>(new Set());
   const [examCompleted, setExamCompleted] = useState(false);
@@ -81,13 +82,13 @@ export default function CoursePlayer() {
   const levelName = levels[levelCode] || levelCode;
 
   const resources = [
-    { id: "video", title: "Video: Tu Impulso Inicial", icon: Video, color: "text-red-500", url: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=2b533b66-1972-4f6c-bf79-2475461437f4", embedType: "notebooklm" as const, fundamental: "Activación Atencional (Barkley)", help: "Míralo para captar la esencia del tema sin esfuerzo.", objective: "Activación Atencional: Reducir resistencia de funciones ejecutivas." },
-    { id: "infografia", title: "La Infografía: Tu Mapa de Ruta", icon: Map, color: "text-blue-500", url: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=871937ff-1809-4637-a701-a5d404c47b71", embedType: "notebooklm" as const, fundamental: "Andamiaje Externo (Barkley)", help: "Observa cómo se organiza todo lo que viste en el video.", objective: "Memoria de Trabajo Externa: Liberar espacio mental." },
-    { id: "audio", title: "Resumen de Audio: Repaso en Movimiento", icon: Headphones, color: "text-orange-500", url: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=cff1485a-2441-49d0-aaa4-9bccd87e8429", embedType: "notebooklm" as const, fundamental: "Protección Canal Atencional (Barkley)", help: "Deja que la información entre por tus oídos y descansa la vista.", objective: "Variación Sensorial: Prevenir fatiga cognitiva." },
-    { id: "presentacion", title: "La Presentación: Paso a Paso", icon: Presentation, color: "text-emerald-500", url: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=7ca2abfb-f2ae-4ff3-bdf1-a502e81bfeeb", embedType: "notebooklm" as const, fundamental: "Autocontrol y Autonomía (Barkley)", help: "Avanza a tu propio ritmo por estas láminas.", objective: "Autodirección: Ajustar flujo a velocidad de procesamiento." },
-    { id: "flashcards", title: "Tarjetas Didácticas: Desafía tu Memoria", icon: Layers, color: "text-amber-500", url: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=5044c5b9-31af-4043-9e6a-73f8c529fe59", embedType: "notebooklm" as const, fundamental: "Feedback Inmediato (Barkley)", help: "Pon a prueba lo que recuerdas. El cerebro aprende del error.", objective: "Refuerzo Inmediato: Combatir miopía temporal." },
-    { id: "cuestionario", title: "El Cuestionario: Valida tu Éxito", icon: Award, color: "text-[#A51C30]", url: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=9ee506a5-f8c9-4b44-a33c-379056472528", embedType: "notebooklm" as const, fundamental: "Sentido de Autoeficacia (Barkley)", help: "Demuéstrate cuánto has avanzado y celebra tus resultados.", objective: "Cierre de Ciclo: Validación objetiva del logro." },
-    { id: "resumen", title: "Resumen Escrito: Reflexión Final", icon: PenTool, color: "text-indigo-500", url: "", embedType: "text" as const, fundamental: "Metacognición (Harvard)", help: "¿Cómo ha cambiado tu forma de ver este tema desde el lunes?", objective: "Aprendizaje Profundo: Consolidación mediante reflexión." }
+    { id: "video", title: "Video: Tu Impulso Inicial", icon: Video, color: "text-red-500", embedUrl: "", embedType: "drive-video" as const, fundamental: "Activación Atencional (Barkley)", help: "Míralo para captar la esencia del tema sin esfuerzo.", objective: "Activación Atencional: Reducir resistencia de funciones ejecutivas.", instructions: "Sube el video a Google Drive, compártelo como 'Cualquiera con el link', y pega la URL aquí." },
+    { id: "infografia", title: "La Infografía: Tu Mapa de Ruta", icon: Map, color: "text-blue-500", embedUrl: "", embedType: "drive-image" as const, fundamental: "Andamiaje Externo (Barkley)", help: "Observa cómo se organiza todo lo que viste en el video.", objective: "Memoria de Trabajo Externa: Liberar espacio mental.", instructions: "Sube la infografía a Google Drive o usa Google Slides, comparte y pega la URL." },
+    { id: "audio", title: "Resumen de Audio: Repaso en Movimiento", icon: Headphones, color: "text-orange-500", embedUrl: "", embedType: "drive-audio" as const, fundamental: "Protección Canal Atencional (Barkley)", help: "Deja que la información entre por tus oídos y descansa la vista.", objective: "Variación Sensorial: Prevenir fatiga cognitiva.", instructions: "Descarga el Audio Overview de NotebookLM, súbelo a Google Drive, comparte y pega la URL." },
+    { id: "presentacion", title: "La Presentación: Paso a Paso", icon: Presentation, color: "text-emerald-500", embedUrl: "", embedType: "drive-slides" as const, fundamental: "Autocontrol y Autonomía (Barkley)", help: "Avanza a tu propio ritmo por estas láminas.", objective: "Autodirección: Ajustar flujo a velocidad de procesamiento.", instructions: "Usa Google Slides, publica en la web y pega el link de embed." },
+    { id: "flashcards", title: "Tarjetas Didácticas: Desafía tu Memoria", icon: Layers, color: "text-amber-500", embedUrl: "", embedType: "drive-interactive" as const, fundamental: "Feedback Inmediato (Barkley)", help: "Pon a prueba lo que recuerdas. El cerebro aprende del error.", objective: "Refuerzo Inmediato: Combatir miopía temporal.", instructions: "Crea las flashcards en una herramienta embebible o Google Slides." },
+    { id: "cuestionario", title: "El Cuestionario: Valida tu Éxito", icon: Award, color: "text-[#A51C30]", embedUrl: "", embedType: "google-forms" as const, fundamental: "Sentido de Autoeficacia (Barkley)", help: "Demuéstrate cuánto has avanzado y celebra tus resultados.", objective: "Cierre de Ciclo: Validación objetiva del logro.", instructions: "Crea el cuestionario en Google Forms y pega el link de embed." },
+    { id: "resumen", title: "Resumen Escrito: Reflexión Final", icon: PenTool, color: "text-indigo-500", embedUrl: "", embedType: "reflection" as const, fundamental: "Metacognición (Harvard)", help: "¿Cómo ha cambiado tu forma de ver este tema desde el lunes?", objective: "Aprendizaje Profundo: Consolidación mediante reflexión.", instructions: "" }
   ];
 
   useEffect(() => {
@@ -120,9 +121,32 @@ export default function CoursePlayer() {
 
   const handleResourceClick = (res: typeof resources[0]) => {
     if (res.id !== "cuestionario" || viewedResources.size >= resources.length - 2) {
-      setSelectedResource({ title: res.title, url: res.url || "", embedType: res.embedType, id: res.id, help: res.help, fundamental: res.fundamental });
+      setSelectedResource({ 
+        title: res.title, 
+        embedUrl: res.embedUrl || "", 
+        embedType: res.embedType, 
+        id: res.id, 
+        help: res.help, 
+        fundamental: res.fundamental,
+        instructions: res.instructions || ""
+      });
       setViewedResources(prev => new Set(prev).add(res.id));
     }
+  };
+  
+  const convertToEmbedUrl = (url: string, type: string): string => {
+    if (!url) return "";
+    if (url.includes("drive.google.com/file/d/")) {
+      const fileId = url.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1];
+      if (fileId) return `https://drive.google.com/file/d/${fileId}/preview`;
+    }
+    if (url.includes("docs.google.com/presentation")) {
+      return url.replace("/edit", "/embed").replace("/pub", "/embed");
+    }
+    if (url.includes("docs.google.com/forms")) {
+      return url.replace("/viewform", "/viewform?embedded=true");
+    }
+    return url;
   };
 
   const isExamUnlocked = viewedResources.size >= resources.length - 2; // All except questionnaire and resume
@@ -278,75 +302,27 @@ export default function CoursePlayer() {
             <div className="flex items-center justify-between">
               <DialogTitle className="text-xl font-serif font-bold text-[#0A192F] italic">{selectedResource?.title}</DialogTitle>
               <Badge className="bg-[#A51C30] text-white border-none rounded-none px-4 py-1.5 text-[9px] font-bold tracking-widest uppercase">
-                {selectedResource?.embedType === "notebooklm" ? "NotebookLM" : 
-                 selectedResource?.embedType === "youtube" ? "Video" :
-                 selectedResource?.embedType === "audio" ? "Audio" :
-                 selectedResource?.embedType === "slides" ? "Presentación" :
-                 selectedResource?.embedType === "quiz" ? "Evaluación" : "Recurso Barkley"}
+                {selectedResource?.embedType === "drive-video" ? "Video" : 
+                 selectedResource?.embedType === "drive-audio" ? "Audio" :
+                 selectedResource?.embedType === "drive-slides" ? "Presentación" :
+                 selectedResource?.embedType === "drive-image" ? "Infografía" :
+                 selectedResource?.embedType === "google-forms" ? "Evaluación" :
+                 selectedResource?.embedType === "drive-interactive" ? "Interactivo" : "Reflexión"}
               </Badge>
             </div>
           </DialogHeader>
           <div className="flex-1 w-full h-full min-h-0 bg-slate-50 relative overflow-hidden">
-            {selectedResource?.embedType === "notebooklm" && selectedResource?.url ? (
+            {selectedResource?.embedUrl ? (
               <div className="w-full h-full flex flex-col">
                 <iframe 
-                  src={selectedResource.url}
+                  src={convertToEmbedUrl(selectedResource.embedUrl, selectedResource.embedType)}
                   className="w-full flex-1 border-0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                   allowFullScreen
                   title={selectedResource.title}
-                  sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
                 />
-                <div className="p-4 bg-white border-t border-slate-200 flex items-center justify-between">
-                  <p className="text-xs text-slate-500 italic">
-                    Si el contenido no carga, <button onClick={() => window.open(selectedResource.url, "_blank")} className="text-[#A51C30] underline font-medium">abre en nueva pestaña</button>
-                  </p>
-                  <Button 
-                    onClick={() => window.open(selectedResource.url, "_blank")}
-                    variant="outline"
-                    size="sm"
-                    className="text-[9px] font-bold uppercase tracking-widest gap-2"
-                  >
-                    <ExternalLink className="w-3 h-3" /> Abrir en Nueva Pestaña
-                  </Button>
-                </div>
               </div>
-            ) : selectedResource?.url ? (
-              <div className="w-full h-full">
-                {selectedResource.embedType === "youtube" && (
-                  <iframe 
-                    src={selectedResource.url}
-                    className="w-full h-full border-0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    title={selectedResource.title}
-                  />
-                )}
-                {selectedResource.embedType === "slides" && (
-                  <iframe 
-                    src={selectedResource.url}
-                    className="w-full h-full border-0"
-                    allowFullScreen
-                    title={selectedResource.title}
-                  />
-                )}
-                {selectedResource.embedType === "image" && (
-                  <div className="w-full h-full flex items-center justify-center p-8">
-                    <img src={selectedResource.url} alt={selectedResource.title} className="max-w-full max-h-full object-contain" />
-                  </div>
-                )}
-                {selectedResource.embedType === "audio" && (
-                  <div className="w-full h-full flex flex-col items-center justify-center p-12 space-y-8">
-                    <Headphones className="w-24 h-24 text-[#A51C30]" />
-                    <audio controls className="w-full max-w-xl">
-                      <source src={selectedResource.url} type="audio/mpeg" />
-                      Tu navegador no soporta el elemento de audio.
-                    </audio>
-                    <p className="text-sm text-slate-500 italic max-w-md text-center">{selectedResource.help}</p>
-                  </div>
-                )}
-              </div>
-            ) : (
+            ) : selectedResource?.embedType === "reflection" ? (
               <div className="flex flex-col items-center justify-center h-full p-12 text-center space-y-8 animate-in fade-in zoom-in duration-500">
                 <div className="w-24 h-24 bg-[#0A192F] rounded-none flex items-center justify-center shadow-2xl relative">
                   <div className="absolute inset-0 border-2 border-[#A51C30] scale-110 opacity-20 animate-pulse"></div>
@@ -362,6 +338,37 @@ export default function CoursePlayer() {
                     <p className="text-sm text-blue-800 font-medium leading-relaxed">
                       Este es un espacio para que reflexiones sobre lo aprendido esta semana. 
                       Escribe tus pensamientos en tu cuaderno o documento personal.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-center gap-4 mt-4">
+                  <p className="text-[10px] text-slate-400 italic max-w-sm">
+                    Fundamento: <strong>{selectedResource?.fundamental}</strong>
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full p-12 text-center space-y-8 animate-in fade-in zoom-in duration-500">
+                <div className="w-24 h-24 bg-[#0A192F] rounded-none flex items-center justify-center shadow-2xl relative">
+                  <div className="absolute inset-0 border-2 border-[#A51C30] scale-110 opacity-20 animate-pulse"></div>
+                  {selectedResource?.embedType === "drive-video" && <Video className="w-10 h-10 text-[#A51C30]" />}
+                  {selectedResource?.embedType === "drive-audio" && <Headphones className="w-10 h-10 text-[#A51C30]" />}
+                  {selectedResource?.embedType === "drive-slides" && <Presentation className="w-10 h-10 text-[#A51C30]" />}
+                  {selectedResource?.embedType === "drive-image" && <Map className="w-10 h-10 text-[#A51C30]" />}
+                  {selectedResource?.embedType === "drive-interactive" && <Layers className="w-10 h-10 text-[#A51C30]" />}
+                  {selectedResource?.embedType === "google-forms" && <Award className="w-10 h-10 text-[#A51C30]" />}
+                </div>
+                
+                <div className="space-y-4 max-w-lg">
+                  <h3 className="text-3xl font-serif font-bold italic text-[#0A192F]">Recurso Pendiente</h3>
+                  <p className="text-sm text-slate-500 leading-relaxed font-medium">
+                    {selectedResource?.help}
+                  </p>
+                  <div className="bg-amber-50 border border-amber-200 p-6 rounded-none mt-6">
+                    <p className="text-sm text-amber-700 font-medium leading-relaxed">
+                      <strong>Instrucciones para Admin:</strong><br/>
+                      {selectedResource?.instructions}
                     </p>
                   </div>
                 </div>
