@@ -71,6 +71,10 @@ export const learningObjectives = pgTable("learning_objectives", {
   sortOrder: integer("sort_order").default(0).notNull(),
   textbookStartPage: integer("textbook_start_page"),
   textbookEndPage: integer("textbook_end_page"),
+  moduleOAs: text("module_oas"), // OAs del módulo extraídos del Word
+  moduleContents: text("module_contents"), // Contenidos del módulo extraídos del Word
+  moduleDateRange: text("module_date_range"), // Rango de fechas del módulo
+  wordDocUrl: text("word_doc_url"), // URL del documento Word original
 });
 
 // Program Calendar Configuration
