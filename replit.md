@@ -93,13 +93,11 @@ The platform integrates with Google Drive to automatically detect and import edu
 3. Sync resources automatically to learning objectives
 
 ### Resource Type Detection
-Files are automatically classified based on MIME type and filename:
+Files are automatically classified based on MIME type and filename. Only 4 resource types are supported:
 - **video**: Video files (.mp4, .webm, etc.)
 - **audio**: Audio files (.mp3, .wav, etc.)
-- **image/infografia**: PDF and image files
-- **slides/presentacion**: Google Slides, PowerPoint
-- **document/resumen**: Google Docs, text files
-- **form/cuestionario**: Google Forms
+- **infografia**: PDF and image files
+- **presentacion**: Google Slides, PowerPoint, Google Docs
 
 ### Admin Routes
 - `GET /api/admin/drive/folders` - List all Drive folders

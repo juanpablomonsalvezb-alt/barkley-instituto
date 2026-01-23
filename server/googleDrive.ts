@@ -51,7 +51,7 @@ async function getUncachableGoogleDriveClient() {
 export interface ModuleResource {
   id: string;
   name: string;
-  type: 'video' | 'audio' | 'image' | 'slides' | 'document' | 'form' | 'unknown';
+  type: 'video' | 'audio' | 'infografia' | 'presentacion';
   embedUrl: string;
   mimeType: string;
 }
@@ -65,19 +65,17 @@ export interface ModuleContent {
 function getResourceType(mimeType: string, name: string): ModuleResource['type'] {
   if (mimeType.includes('video')) return 'video';
   if (mimeType.includes('audio')) return 'audio';
-  if (mimeType.includes('image') || mimeType.includes('pdf')) return 'image';
-  if (mimeType.includes('presentation') || mimeType.includes('slides')) return 'slides';
-  if (mimeType.includes('document') || mimeType.includes('text')) return 'document';
-  if (mimeType.includes('form')) return 'form';
+  if (mimeType.includes('image') || mimeType.includes('pdf')) return 'infografia';
+  if (mimeType.includes('presentation') || mimeType.includes('slides')) return 'presentacion';
+  if (mimeType.includes('document') || mimeType.includes('text')) return 'presentacion';
   
   const lowerName = name.toLowerCase();
   if (lowerName.includes('video')) return 'video';
   if (lowerName.includes('audio') || lowerName.includes('podcast')) return 'audio';
-  if (lowerName.includes('infograf') || lowerName.includes('imagen')) return 'image';
-  if (lowerName.includes('presentaci') || lowerName.includes('slides')) return 'slides';
-  if (lowerName.includes('cuestionario') || lowerName.includes('quiz')) return 'form';
+  if (lowerName.includes('infograf') || lowerName.includes('imagen')) return 'infografia';
+  if (lowerName.includes('presentaci') || lowerName.includes('slides')) return 'presentacion';
   
-  return 'unknown';
+  return 'infografia';
 }
 
 function getEmbedUrl(fileId: string, mimeType: string): string {

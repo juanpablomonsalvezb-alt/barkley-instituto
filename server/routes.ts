@@ -446,12 +446,9 @@ export async function registerRoutes(
 
       const resourceTypeOrder: Record<string, number> = {
         'video': 1,
-        'image': 2,
+        'infografia': 2,
         'audio': 3,
-        'slides': 4,
-        'document': 5,
-        'form': 6,
-        'unknown': 7
+        'presentacion': 4
       };
 
       const sortedResources = [...resources].sort((a, b) => {
@@ -460,19 +457,10 @@ export async function registerRoutes(
 
       for (let i = 0; i < sortedResources.length; i++) {
         const resource = sortedResources[i];
-        
-        const resourceTypeMap: Record<string, string> = {
-          'video': 'video',
-          'audio': 'audio',
-          'image': 'infografia',
-          'slides': 'presentacion',
-          'document': 'resumen',
-          'form': 'cuestionario'
-        };
 
         const created = await storage.createResource({
           learningObjectiveId: learningObjectiveId,
-          resourceType: resourceTypeMap[resource.type] as any || 'resumen',
+          resourceType: resource.type as any,
           title: resource.name,
           notebookLmUrl: resource.embedUrl,
           sortOrder: i + 1

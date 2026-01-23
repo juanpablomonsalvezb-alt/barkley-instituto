@@ -14,10 +14,7 @@ export const resourceTypeEnum = pgEnum("resource_type", [
   "video", 
   "infografia", 
   "audio", 
-  "presentacion", 
-  "flashcards", 
-  "cuestionario", 
-  "resumen"
+  "presentacion"
 ]);
 export const userRoleEnum = pgEnum("user_role", ["admin", "student", "tutor"]);
 
