@@ -51,7 +51,7 @@ interface LevelSubject {
 interface LearningObjective {
   id: string;
   levelSubjectId: string;
-  moduleNumber: number;
+  weekNumber: number;
   title: string;
 }
 
@@ -176,7 +176,7 @@ export default function DriveSync() {
   };
 
   const handleSync = (moduleContent: ModuleContent) => {
-    const objective = objectives?.find(o => o.moduleNumber === moduleContent.moduleNumber);
+    const objective = objectives?.find(o => o.weekNumber === moduleContent.moduleNumber);
     if (!objective) {
       toast({
         title: "Objetivo no encontrado",
