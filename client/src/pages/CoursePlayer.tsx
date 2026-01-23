@@ -64,7 +64,7 @@ export default function CoursePlayer() {
   const [selectedResource, setSelectedResource] = useState<null | { 
     title: string, 
     embedUrl: string, 
-    embedType: "drive-video" | "drive-image" | "drive-audio" | "drive-slides" | "drive-interactive" | "google-forms" | "reflection",
+    embedType: "drive-video" | "drive-image" | "drive-audio" | "drive-slides" | "drive-interactive" | "google-forms" | "reflection" | "notebooklm-popup",
     id: string,
     help: string,
     fundamental: string,
@@ -82,12 +82,12 @@ export default function CoursePlayer() {
   const levelName = levels[levelCode] || levelCode;
 
   const resources = [
-    { id: "video", title: "Video: Tu Impulso Inicial", icon: Video, color: "text-red-500", embedUrl: "", embedType: "drive-video" as const, fundamental: "Activación Atencional (Barkley)", help: "Míralo para captar la esencia del tema sin esfuerzo.", objective: "Activación Atencional: Reducir resistencia de funciones ejecutivas.", instructions: "Sube el video a Google Drive, compártelo como 'Cualquiera con el link', y pega la URL aquí." },
-    { id: "infografia", title: "La Infografía: Tu Mapa de Ruta", icon: Map, color: "text-blue-500", embedUrl: "", embedType: "drive-image" as const, fundamental: "Andamiaje Externo (Barkley)", help: "Observa cómo se organiza todo lo que viste en el video.", objective: "Memoria de Trabajo Externa: Liberar espacio mental.", instructions: "Sube la infografía a Google Drive o usa Google Slides, comparte y pega la URL." },
-    { id: "audio", title: "Resumen de Audio: Repaso en Movimiento", icon: Headphones, color: "text-orange-500", embedUrl: "", embedType: "drive-audio" as const, fundamental: "Protección Canal Atencional (Barkley)", help: "Deja que la información entre por tus oídos y descansa la vista.", objective: "Variación Sensorial: Prevenir fatiga cognitiva.", instructions: "Descarga el Audio Overview de NotebookLM, súbelo a Google Drive, comparte y pega la URL." },
-    { id: "presentacion", title: "La Presentación: Paso a Paso", icon: Presentation, color: "text-emerald-500", embedUrl: "", embedType: "drive-slides" as const, fundamental: "Autocontrol y Autonomía (Barkley)", help: "Avanza a tu propio ritmo por estas láminas.", objective: "Autodirección: Ajustar flujo a velocidad de procesamiento.", instructions: "Usa Google Slides, publica en la web y pega el link de embed." },
-    { id: "flashcards", title: "Tarjetas Didácticas: Desafía tu Memoria", icon: Layers, color: "text-amber-500", embedUrl: "", embedType: "drive-interactive" as const, fundamental: "Feedback Inmediato (Barkley)", help: "Pon a prueba lo que recuerdas. El cerebro aprende del error.", objective: "Refuerzo Inmediato: Combatir miopía temporal.", instructions: "Crea las flashcards en una herramienta embebible o Google Slides." },
-    { id: "cuestionario", title: "El Cuestionario: Valida tu Éxito", icon: Award, color: "text-[#A51C30]", embedUrl: "", embedType: "google-forms" as const, fundamental: "Sentido de Autoeficacia (Barkley)", help: "Demuéstrate cuánto has avanzado y celebra tus resultados.", objective: "Cierre de Ciclo: Validación objetiva del logro.", instructions: "Crea el cuestionario en Google Forms y pega el link de embed." },
+    { id: "video", title: "Video: Tu Impulso Inicial", icon: Video, color: "text-red-500", embedUrl: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=2b533b66-1972-4f6c-bf79-2475461437f4", embedType: "notebooklm-popup" as const, fundamental: "Activación Atencional (Barkley)", help: "Míralo para captar la esencia del tema sin esfuerzo.", objective: "Activación Atencional: Reducir resistencia de funciones ejecutivas.", instructions: "" },
+    { id: "infografia", title: "La Infografía: Tu Mapa de Ruta", icon: Map, color: "text-blue-500", embedUrl: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=871937ff-1809-4637-a701-a5d404c47b71", embedType: "notebooklm-popup" as const, fundamental: "Andamiaje Externo (Barkley)", help: "Observa cómo se organiza todo lo que viste en el video.", objective: "Memoria de Trabajo Externa: Liberar espacio mental.", instructions: "" },
+    { id: "audio", title: "Resumen de Audio: Repaso en Movimiento", icon: Headphones, color: "text-orange-500", embedUrl: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=cff1485a-2441-49d0-aaa4-9bccd87e8429", embedType: "notebooklm-popup" as const, fundamental: "Protección Canal Atencional (Barkley)", help: "Deja que la información entre por tus oídos y descansa la vista.", objective: "Variación Sensorial: Prevenir fatiga cognitiva.", instructions: "" },
+    { id: "presentacion", title: "La Presentación: Paso a Paso", icon: Presentation, color: "text-emerald-500", embedUrl: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=7ca2abfb-f2ae-4ff3-bdf1-a502e81bfeeb", embedType: "notebooklm-popup" as const, fundamental: "Autocontrol y Autonomía (Barkley)", help: "Avanza a tu propio ritmo por estas láminas.", objective: "Autodirección: Ajustar flujo a velocidad de procesamiento.", instructions: "" },
+    { id: "flashcards", title: "Tarjetas Didácticas: Desafía tu Memoria", icon: Layers, color: "text-amber-500", embedUrl: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=5044c5b9-31af-4043-9e6a-73f8c529fe59", embedType: "notebooklm-popup" as const, fundamental: "Feedback Inmediato (Barkley)", help: "Pon a prueba lo que recuerdas. El cerebro aprende del error.", objective: "Refuerzo Inmediato: Combatir miopía temporal.", instructions: "" },
+    { id: "cuestionario", title: "El Cuestionario: Valida tu Éxito", icon: Award, color: "text-[#A51C30]", embedUrl: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=9ee506a5-f8c9-4b44-a33c-379056472528", embedType: "notebooklm-popup" as const, fundamental: "Sentido de Autoeficacia (Barkley)", help: "Demuéstrate cuánto has avanzado y celebra tus resultados.", objective: "Cierre de Ciclo: Validación objetiva del logro.", instructions: "" },
     { id: "resumen", title: "Resumen Escrito: Reflexión Final", icon: PenTool, color: "text-indigo-500", embedUrl: "", embedType: "reflection" as const, fundamental: "Metacognición (Harvard)", help: "¿Cómo ha cambiado tu forma de ver este tema desde el lunes?", objective: "Aprendizaje Profundo: Consolidación mediante reflexión.", instructions: "" }
   ];
 
@@ -119,17 +119,45 @@ export default function CoursePlayer() {
     return null;
   }
 
+  const openNotebookLMPopup = (url: string, title: string) => {
+    const screenWidth = window.screen.width;
+    const screenHeight = window.screen.height;
+    const popupWidth = Math.floor(screenWidth * 0.45);
+    const popupHeight = screenHeight;
+    const left = screenWidth - popupWidth;
+    const top = 0;
+    
+    window.open(
+      url,
+      title,
+      `width=${popupWidth},height=${popupHeight},left=${left},top=${top},resizable=yes,scrollbars=yes`
+    );
+  };
+
   const handleResourceClick = (res: typeof resources[0]) => {
     if (res.id !== "cuestionario" || viewedResources.size >= resources.length - 2) {
-      setSelectedResource({ 
-        title: res.title, 
-        embedUrl: res.embedUrl || "", 
-        embedType: res.embedType, 
-        id: res.id, 
-        help: res.help, 
-        fundamental: res.fundamental,
-        instructions: res.instructions || ""
-      });
+      if (res.embedType === "notebooklm-popup" && res.embedUrl) {
+        openNotebookLMPopup(res.embedUrl, res.title);
+        setSelectedResource({ 
+          title: res.title, 
+          embedUrl: res.embedUrl, 
+          embedType: res.embedType, 
+          id: res.id, 
+          help: res.help, 
+          fundamental: res.fundamental,
+          instructions: res.instructions || ""
+        });
+      } else {
+        setSelectedResource({ 
+          title: res.title, 
+          embedUrl: res.embedUrl || "", 
+          embedType: res.embedType, 
+          id: res.id, 
+          help: res.help, 
+          fundamental: res.fundamental,
+          instructions: res.instructions || ""
+        });
+      }
       setViewedResources(prev => new Set(prev).add(res.id));
     }
   };
@@ -302,7 +330,8 @@ export default function CoursePlayer() {
             <div className="flex items-center justify-between">
               <DialogTitle className="text-xl font-serif font-bold text-[#0A192F] italic">{selectedResource?.title}</DialogTitle>
               <Badge className="bg-[#A51C30] text-white border-none rounded-none px-4 py-1.5 text-[9px] font-bold tracking-widest uppercase">
-                {selectedResource?.embedType === "drive-video" ? "Video" : 
+                {selectedResource?.embedType === "notebooklm-popup" ? "NotebookLM" :
+                 selectedResource?.embedType === "drive-video" ? "Video" : 
                  selectedResource?.embedType === "drive-audio" ? "Audio" :
                  selectedResource?.embedType === "drive-slides" ? "Presentación" :
                  selectedResource?.embedType === "drive-image" ? "Infografía" :
@@ -312,7 +341,38 @@ export default function CoursePlayer() {
             </div>
           </DialogHeader>
           <div className="flex-1 w-full h-full min-h-0 bg-slate-50 relative overflow-hidden">
-            {selectedResource?.embedUrl ? (
+            {selectedResource?.embedType === "notebooklm-popup" ? (
+              <div className="flex flex-col items-center justify-center h-full p-12 text-center space-y-8 animate-in fade-in zoom-in duration-500">
+                <div className="w-24 h-24 bg-[#0A192F] rounded-none flex items-center justify-center shadow-2xl relative">
+                  <div className="absolute inset-0 border-2 border-[#A51C30] scale-110 opacity-20 animate-pulse"></div>
+                  <ExternalLink className="w-10 h-10 text-[#A51C30]" />
+                </div>
+                
+                <div className="space-y-4 max-w-lg">
+                  <h3 className="text-3xl font-serif font-bold italic text-[#0A192F]">Recurso Abierto</h3>
+                  <p className="text-sm text-slate-500 leading-relaxed font-medium">
+                    {selectedResource?.help}
+                  </p>
+                  <div className="bg-emerald-50 border border-emerald-200 p-6 rounded-none mt-6">
+                    <p className="text-sm text-emerald-700 font-medium leading-relaxed">
+                      El recurso se ha abierto en una <strong>ventana lateral</strong>. Puedes verlo junto a esta plataforma.
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => openNotebookLMPopup(selectedResource.embedUrl, selectedResource.title)}
+                    className="mt-4 bg-[#A51C30] hover:bg-[#8B1728] text-white rounded-none px-6 py-3"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" /> Abrir Nuevamente
+                  </Button>
+                </div>
+
+                <div className="flex flex-col items-center gap-4 mt-4">
+                  <p className="text-[10px] text-slate-400 italic max-w-sm">
+                    Fundamento: <strong>{selectedResource?.fundamental}</strong>
+                  </p>
+                </div>
+              </div>
+            ) : selectedResource?.embedUrl ? (
               <div className="w-full h-full flex flex-col">
                 <iframe 
                   src={convertToEmbedUrl(selectedResource.embedUrl, selectedResource.embedType)}
