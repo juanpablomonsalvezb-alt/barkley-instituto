@@ -82,16 +82,17 @@ export const programCalendar = pgTable("program_calendar", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Module Evaluations (2 per module)
+// Module Evaluations (4 per module - Wed/Fri for 2 weeks)
 export const moduleEvaluations = pgTable("module_evaluations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   learningObjectiveId: varchar("learning_objective_id").notNull().references(() => learningObjectives.id),
-  evaluationNumber: integer("evaluation_number").notNull(), // 1 or 2
+  evaluationNumber: integer("evaluation_number").notNull(), // 1, 2, 3, or 4
   title: text("title").notNull(),
   description: text("description"),
-  releaseDay: integer("release_day").default(5).notNull(), // Day of week (5 = Friday)
+  releaseDay: integer("release_day").default(5).notNull(), // Day of week (3 = Wed, 5 = Fri)
   releaseWeek: integer("release_week").notNull(), // 1 or 2 (which week of the module)
-  formUrl: text("form_url"), // Google Form URL
+  formUrl: text("form_url"), // Google Form URL (legacy)
+  htmlContent: text("html_content"), // Gemini-generated HTML content
   isRequired: boolean("is_required").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });

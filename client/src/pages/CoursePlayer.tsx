@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
 import { 
   ArrowLeft, 
@@ -54,7 +54,11 @@ export default function CoursePlayer() {
     number: number;
     title: string;
     htmlContent: string;
+    objectiveId: string;
   }>(null);
+  const [htmlInputValue, setHtmlInputValue] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const queryClient = useQueryClient();
 
   const levels: Record<string, string> = {
     "7b": "7° Básico", "8b": "8° Básico", "1m": "1° Medio", "2m": "2° Medio",
@@ -102,6 +106,19 @@ export default function CoursePlayer() {
   });
 
   const currentModuleData = calendarData?.modules?.find(m => m.moduleNumber === currentModule);
+  const currentObjectiveId = (currentModuleData as any)?.objective?.id || "";
+
+  const { data: profileData } = useQuery<{ role: string }>({
+    queryKey: ['/api/profile'],
+    queryFn: async () => {
+      const res = await fetch('/api/profile', { credentials: 'include' });
+      if (!res.ok) return { role: 'student' };
+      return res.json();
+    },
+    enabled: isAuthenticated
+  });
+
+  const isAdmin = profileData?.role === 'admin';
 
   const resources = [
     { id: "video", title: "Video", icon: Video, color: "bg-red-500", embedUrl: "" },
@@ -180,12 +197,72 @@ export default function CoursePlayer() {
     });
   };
 
-  const handleEvaluationClick = (evaluation: typeof evaluations[0]) => {
+  const handleEvaluationClick = async (evaluation: typeof evaluations[0]) => {
+    let htmlContent = evaluation.htmlContent;
+    
+    if (currentObjectiveId) {
+      try {
+        const res = await fetch(`/api/evaluations/${currentObjectiveId}/${evaluation.number}/html`, {
+          credentials: 'include'
+        });
+        if (res.ok) {
+          const data = await res.json();
+          htmlContent = data.htmlContent || "";
+        }
+      } catch (e) {
+        console.error("Error fetching evaluation HTML:", e);
+      }
+    }
+    
     setSelectedEvaluation({
       number: evaluation.number,
       title: evaluation.title,
-      htmlContent: evaluation.htmlContent
+      htmlContent,
+      objectiveId: currentObjectiveId
     });
+    setHtmlInputValue("");
+  };
+
+  const handleSaveEvaluationHtml = async () => {
+    if (!selectedEvaluation || !htmlInputValue.trim() || !currentObjectiveId) {
+      toast({
+        title: "Error",
+        description: "Debes ingresar el código HTML",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      const res = await fetch(`/api/admin/evaluations/${currentObjectiveId}/${selectedEvaluation.number}/html`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ htmlContent: htmlInputValue })
+      });
+      
+      if (!res.ok) throw new Error('Failed to save');
+      
+      toast({
+        title: "Guardado",
+        description: "El HTML de la evaluación ha sido guardado correctamente"
+      });
+      
+      setSelectedEvaluation({
+        ...selectedEvaluation,
+        htmlContent: htmlInputValue
+      });
+      setHtmlInputValue("");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el HTML",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
   
   const convertToEmbedUrl = (url: string): string => {
@@ -486,22 +563,35 @@ export default function CoursePlayer() {
                   </p>
                 </div>
                 
-                <div className="bg-slate-50 border border-slate-200 p-6 max-w-lg mx-auto text-left">
-                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-2">
-                    Pegar código HTML de Gemini aquí:
-                  </label>
-                  <textarea 
-                    className="w-full h-32 border border-slate-300 p-3 text-sm font-mono resize-none focus:outline-none focus:border-[#A51C30]"
-                    placeholder="<div>...</div>"
-                    data-testid="evaluation-html-input"
-                  />
-                  <Button 
-                    className="mt-3 bg-[#A51C30] hover:bg-[#821626] text-white rounded-none text-xs"
-                    data-testid="save-evaluation-html"
-                  >
-                    Guardar Evaluación
-                  </Button>
-                </div>
+                {isAdmin && (
+                  <div className="bg-slate-50 border border-slate-200 p-6 max-w-lg mx-auto text-left">
+                    <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-2">
+                      Pegar código HTML de Gemini aquí:
+                    </label>
+                    <textarea 
+                      className="w-full h-32 border border-slate-300 p-3 text-sm font-mono resize-none focus:outline-none focus:border-[#A51C30]"
+                      placeholder="<div>...</div>"
+                      value={htmlInputValue}
+                      onChange={(e) => setHtmlInputValue(e.target.value)}
+                      data-testid="evaluation-html-input"
+                    />
+                    <Button 
+                      className="mt-3 bg-[#A51C30] hover:bg-[#821626] text-white rounded-none text-xs"
+                      onClick={handleSaveEvaluationHtml}
+                      disabled={isSaving || !htmlInputValue.trim()}
+                      data-testid="save-evaluation-html"
+                    >
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                          Guardando...
+                        </>
+                      ) : (
+                        "Guardar Evaluación"
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -586,6 +586,43 @@ export async function registerRoutes(
     }
   });
 
+  // Save evaluation HTML content (admin only)
+  app.put("/api/admin/evaluations/:objectiveId/:evaluationNumber/html", isAdmin, async (req: any, res) => {
+    try {
+      const { objectiveId, evaluationNumber } = req.params;
+      const { htmlContent } = req.body;
+
+      if (!htmlContent || typeof htmlContent !== 'string') {
+        return res.status(400).json({ message: "htmlContent is required" });
+      }
+
+      const evalNum = parseInt(evaluationNumber);
+      if (isNaN(evalNum) || evalNum < 1 || evalNum > 4) {
+        return res.status(400).json({ message: "evaluationNumber must be 1, 2, 3, or 4" });
+      }
+
+      const evaluation = await storage.upsertEvaluationHtml(objectiveId, evalNum, htmlContent);
+      res.json(evaluation);
+    } catch (error) {
+      console.error("Error saving evaluation HTML:", error);
+      res.status(500).json({ message: "Failed to save evaluation HTML" });
+    }
+  });
+
+  // Get evaluation HTML content
+  app.get("/api/evaluations/:objectiveId/:evaluationNumber/html", isAuthenticated, async (req: any, res) => {
+    try {
+      const { objectiveId, evaluationNumber } = req.params;
+      const evalNum = parseInt(evaluationNumber);
+
+      const evaluation = await storage.getEvaluationHtml(objectiveId, evalNum);
+      res.json({ htmlContent: evaluation?.htmlContent || null });
+    } catch (error) {
+      console.error("Error getting evaluation HTML:", error);
+      res.status(500).json({ message: "Failed to get evaluation HTML" });
+    }
+  });
+
   // Update textbook PDF for a level-subject
   app.put("/api/admin/level-subjects/:id/textbook", isAdmin, async (req: any, res) => {
     try {

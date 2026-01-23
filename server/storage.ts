@@ -60,6 +60,8 @@ export interface IStorage {
   // Module Evaluations
   getModuleEvaluations(learningObjectiveId: string): Promise<ModuleEvaluation[]>;
   createModuleEvaluation(evaluation: InsertModuleEvaluation): Promise<ModuleEvaluation>;
+  upsertEvaluationHtml(objectiveId: string, evaluationNumber: number, htmlContent: string): Promise<ModuleEvaluation>;
+  getEvaluationHtml(objectiveId: string, evaluationNumber: number): Promise<ModuleEvaluation | undefined>;
   
   // Evaluation Progress
   getEvaluationProgressByUser(userId: string, evaluationIds?: string[]): Promise<EvaluationProgress[]>;
@@ -268,6 +270,46 @@ export class DatabaseStorage implements IStorage {
   async createModuleEvaluation(evaluation: InsertModuleEvaluation): Promise<ModuleEvaluation> {
     const [created] = await db.insert(moduleEvaluations).values(evaluation).returning();
     return created;
+  }
+
+  async upsertEvaluationHtml(objectiveId: string, evaluationNumber: number, htmlContent: string): Promise<ModuleEvaluation> {
+    const existing = await db.select().from(moduleEvaluations)
+      .where(and(
+        eq(moduleEvaluations.learningObjectiveId, objectiveId),
+        eq(moduleEvaluations.evaluationNumber, evaluationNumber)
+      ))
+      .limit(1);
+    
+    if (existing.length > 0) {
+      const [updated] = await db.update(moduleEvaluations)
+        .set({ htmlContent })
+        .where(eq(moduleEvaluations.id, existing[0].id))
+        .returning();
+      return updated;
+    } else {
+      const releaseDay = evaluationNumber % 2 === 1 ? 3 : 5;
+      const releaseWeek = evaluationNumber <= 2 ? 1 : 2;
+      
+      const [created] = await db.insert(moduleEvaluations).values({
+        learningObjectiveId: objectiveId,
+        evaluationNumber,
+        title: `Evaluación Formativa ${evaluationNumber}`,
+        releaseDay,
+        releaseWeek,
+        htmlContent,
+      }).returning();
+      return created;
+    }
+  }
+
+  async getEvaluationHtml(objectiveId: string, evaluationNumber: number): Promise<ModuleEvaluation | undefined> {
+    const [evaluation] = await db.select().from(moduleEvaluations)
+      .where(and(
+        eq(moduleEvaluations.learningObjectiveId, objectiveId),
+        eq(moduleEvaluations.evaluationNumber, evaluationNumber)
+      ))
+      .limit(1);
+    return evaluation;
   }
 
   // Evaluation Progress
