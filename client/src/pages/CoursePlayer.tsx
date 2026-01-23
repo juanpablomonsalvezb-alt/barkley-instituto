@@ -280,7 +280,7 @@ export default function CoursePlayer() {
   
   const handleWordUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !currentObjectiveId) {
+    if (!file || !courseId) {
       toast({
         title: "Error",
         description: "Selecciona un archivo Word válido",
@@ -294,7 +294,7 @@ export default function CoursePlayer() {
       const formData = new FormData();
       formData.append('wordDoc', file);
 
-      const res = await fetch(`/api/admin/objectives/${currentObjectiveId}/word-upload`, {
+      const res = await fetch(`/api/admin/level-subjects/${courseId}/word-upload`, {
         method: 'POST',
         credentials: 'include',
         body: formData
@@ -306,7 +306,7 @@ export default function CoursePlayer() {
       
       toast({
         title: "Documento procesado",
-        description: "La información del módulo ha sido extraída y guardada"
+        description: `Se actualizaron ${data.modulesUpdated} módulos correctamente`
       });
       
       queryClient.invalidateQueries({ queryKey: ['/api/objectives', currentObjectiveId, 'module-info'] });

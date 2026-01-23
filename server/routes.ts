@@ -30,55 +30,57 @@ const upload = multer({
   }
 });
 
-// Helper function to parse Word document and extract module info
-function parseModuleInfoFromText(text: string): { moduleOAs: string; moduleContents: string; moduleDateRange: string } {
-  const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+// Helper function to parse Word document and extract info for ALL modules
+interface ModuleInfo {
+  moduleNumber: number;
+  dateRange: string;
+  oas: string;
+  contents: string;
+}
+
+function parseAllModulesFromText(text: string): ModuleInfo[] {
+  const modules: ModuleInfo[] = [];
   
-  let moduleOAs = "";
-  let moduleContents = "";
-  let moduleDateRange = "";
+  // Split by "Módulo X:" pattern to get each module's content
+  const modulePattern = /Módulo\s+(\d+)\s*:\s*([^\n]+)/gi;
+  const parts = text.split(/(?=Módulo\s+\d+\s*:)/i);
   
-  let currentSection = "";
-  
-  for (const line of lines) {
-    const lowerLine = line.toLowerCase();
+  for (const part of parts) {
+    if (!part.trim()) continue;
     
-    // Detect section headers
-    if (lowerLine.includes("objetivo") || lowerLine.includes("oa ") || lowerLine.includes("oa:")) {
-      currentSection = "oas";
-      if (!lowerLine.includes("objetivo") && !lowerLine.match(/^oa\s*\d/i)) {
-        moduleOAs += line + "\n";
-      }
-      continue;
-    }
-    if (lowerLine.includes("contenido") || lowerLine.includes("tema")) {
-      currentSection = "contents";
-      continue;
-    }
-    if (lowerLine.includes("fecha") || lowerLine.includes("semana") || lowerLine.includes("módulo")) {
-      // Check if this line contains a date range
-      if (line.match(/\d{1,2}/) && (line.includes("-") || line.includes("al") || line.includes("a"))) {
-        moduleDateRange = line;
-      }
-      currentSection = "date";
-      continue;
+    // Extract module number and date range
+    const headerMatch = part.match(/Módulo\s+(\d+)\s*:\s*([^\n]+)/i);
+    if (!headerMatch) continue;
+    
+    const moduleNumber = parseInt(headerMatch[1]);
+    const dateRange = headerMatch[2].trim();
+    
+    // Extract OAs
+    let oas = "";
+    const oaMatches = Array.from(part.matchAll(/OA\s*\d+\s*:\s*([^\n]+)/gi));
+    for (const match of oaMatches) {
+      oas += match[0] + "\n";
     }
     
-    // Add content to appropriate section
-    if (currentSection === "oas" && line) {
-      moduleOAs += line + "\n";
-    } else if (currentSection === "contents" && line) {
-      moduleContents += line + "\n";
-    } else if (currentSection === "date" && line.match(/\d{1,2}/)) {
-      moduleDateRange = line;
+    // Extract contents (everything after "Contenidos:")
+    let contents = "";
+    const contentsMatch = part.match(/Contenidos?\s*:\s*([\s\S]*?)(?=Módulo\s+\d+|HITO|$)/i);
+    if (contentsMatch) {
+      const contentLines = contentsMatch[1].split('\n')
+        .map(l => l.trim())
+        .filter(l => l && !l.match(/^Objetivos?|^OA\s*\d/i));
+      contents = contentLines.join('\n');
     }
+    
+    modules.push({
+      moduleNumber,
+      dateRange: `Módulo ${moduleNumber}: ${dateRange}`,
+      oas: oas.trim(),
+      contents: contents.trim()
+    });
   }
   
-  return {
-    moduleOAs: moduleOAs.trim(),
-    moduleContents: moduleContents.trim(),
-    moduleDateRange: moduleDateRange.trim()
-  };
+  return modules;
 }
 
 // Admin authorization middleware - must be used after isAuthenticated
@@ -690,40 +692,51 @@ export async function registerRoutes(
     }
   });
 
-  // Upload Word document for module info (admin only)
-  app.post("/api/admin/objectives/:objectiveId/word-upload", isAdmin, upload.single('wordDoc'), async (req: any, res) => {
+  // Upload Word document for ALL modules (admin only)
+  app.post("/api/admin/level-subjects/:levelSubjectId/word-upload", isAdmin, upload.single('wordDoc'), async (req: any, res) => {
     try {
-      const { objectiveId } = req.params;
+      const { levelSubjectId } = req.params;
       
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      // Verify the objective exists
-      const objective = await storage.getLearningObjectiveById(objectiveId);
-      if (!objective) {
-        return res.status(404).json({ message: "Learning objective not found" });
+      // Get all learning objectives for this level-subject
+      const objectives = await storage.getLearningObjectives(levelSubjectId);
+      if (!objectives || objectives.length === 0) {
+        return res.status(404).json({ message: "No learning objectives found for this course" });
       }
 
       // Parse Word document using mammoth
       const result = await mammoth.extractRawText({ buffer: req.file.buffer });
       const text = result.value;
       
-      // Extract module info from the text
-      const moduleInfo = parseModuleInfoFromText(text);
+      // Extract info for all modules from the text
+      const parsedModules = parseAllModulesFromText(text);
       
-      // Update the learning objective with the extracted info
-      const updated = await storage.updateLearningObjectiveModuleInfo(objectiveId, {
-        moduleOAs: moduleInfo.moduleOAs || null,
-        moduleContents: moduleInfo.moduleContents || null,
-        moduleDateRange: moduleInfo.moduleDateRange || null,
-      });
+      // Update each learning objective with its corresponding module info
+      const updatedModules: any[] = [];
+      for (const parsed of parsedModules) {
+        const objective = objectives.find(o => o.weekNumber === parsed.moduleNumber);
+        if (objective) {
+          const updated = await storage.updateLearningObjectiveModuleInfo(objective.id, {
+            moduleOAs: parsed.oas || null,
+            moduleContents: parsed.contents || null,
+            moduleDateRange: parsed.dateRange || null,
+          });
+          updatedModules.push({
+            moduleNumber: parsed.moduleNumber,
+            objectiveId: objective.id,
+            updated: !!updated
+          });
+        }
+      }
 
       res.json({
         success: true,
-        objective: updated,
-        extractedInfo: moduleInfo,
-        rawText: text
+        modulesUpdated: updatedModules.length,
+        modules: updatedModules,
+        parsedModules: parsedModules.length
       });
     } catch (error) {
       console.error("Error processing Word document:", error);
