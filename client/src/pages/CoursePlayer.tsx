@@ -13,7 +13,6 @@ import {
   Presentation,
   Loader2,
   FileText,
-  Calendar,
   ClipboardCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,6 +24,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -40,12 +40,18 @@ export default function CoursePlayer() {
   const levelCode = parts[0];
   const subjectLabel = parts.slice(1).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
 
-  const [currentModule, setCurrentModule] = useState(1);
+  const [currentModule] = useState(1);
+  const [currentEvaluation, setCurrentEvaluation] = useState(0);
   const [selectedResource, setSelectedResource] = useState<null | { 
     title: string, 
     embedUrl: string, 
     embedType: "video" | "audio" | "infografia" | "presentacion",
     id: string
+  }>(null);
+  const [selectedEvaluation, setSelectedEvaluation] = useState<null | {
+    number: number;
+    title: string;
+    htmlContent: string;
   }>(null);
 
   const levels: Record<string, string> = {
@@ -118,13 +124,15 @@ export default function CoursePlayer() {
         number: week * 2 + 1,
         title: `Evaluación Formativa ${week * 2 + 1}`,
         date: wednesday,
-        dayName: "Miércoles"
+        dayName: "Miércoles",
+        htmlContent: ""
       });
       evaluations.push({
         number: week * 2 + 2,
         title: `Evaluación Formativa ${week * 2 + 2}`,
         date: friday,
-        dayName: "Viernes"
+        dayName: "Viernes",
+        htmlContent: ""
       });
     }
     
@@ -169,6 +177,14 @@ export default function CoursePlayer() {
       id: res.id
     });
   };
+
+  const handleEvaluationClick = (evaluation: typeof evaluations[0]) => {
+    setSelectedEvaluation({
+      number: evaluation.number,
+      title: evaluation.title,
+      htmlContent: evaluation.htmlContent
+    });
+  };
   
   const convertToEmbedUrl = (url: string): string => {
     if (!url) return "";
@@ -184,6 +200,14 @@ export default function CoursePlayer() {
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('es-CL', { day: 'numeric', month: 'long' });
+  };
+
+  const nextEvaluation = () => {
+    setCurrentEvaluation((prev) => (prev + 1) % evaluations.length);
+  };
+
+  const prevEvaluation = () => {
+    setCurrentEvaluation((prev) => (prev - 1 + evaluations.length) % evaluations.length);
   };
 
   return (
@@ -211,36 +235,6 @@ export default function CoursePlayer() {
             <p className="text-[#A51C30] text-xs font-bold uppercase tracking-[0.3em]">{levelName}</p>
           </div>
 
-          {/* SELECTOR DE MÓDULOS (1-15) - ARRIBA */}
-          <div className="bg-white border border-slate-200 p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-[#0A192F] flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-[#A51C30]" />
-                Seleccionar Módulo
-              </h3>
-              <Badge className="bg-[#0A192F] text-white rounded-none text-[9px]">
-                15 Módulos • 2 semanas c/u
-              </Badge>
-            </div>
-            <div className="flex flex-wrap gap-2 justify-center">
-              {Array.from({ length: 15 }, (_, i) => i + 1).map((num) => (
-                <button
-                  key={num}
-                  onClick={() => setCurrentModule(num)}
-                  className={cn(
-                    "w-10 h-10 text-sm font-bold transition-all border",
-                    currentModule === num
-                      ? "bg-[#A51C30] text-white border-[#A51C30]"
-                      : "bg-white text-slate-600 border-slate-200 hover:border-[#A51C30] hover:text-[#A51C30]"
-                  )}
-                  data-testid={`module-selector-${num}`}
-                >
-                  {num}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* CUADRO DEL MÓDULO ACTUAL */}
           <Card className="bg-white shadow-lg border-none overflow-hidden">
             <div className="h-2 bg-[#A51C30]" />
@@ -258,31 +252,6 @@ export default function CoursePlayer() {
                   {currentModuleData.startFormatted} — {currentModuleData.endFormatted}
                 </p>
               )}
-              
-              <div className="flex items-center justify-center gap-4 pt-4">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="rounded-none"
-                  onClick={() => setCurrentModule(Math.max(1, currentModule - 1))}
-                  disabled={currentModule === 1}
-                  data-testid="prev-module"
-                >
-                  <ChevronLeft className="w-4 h-4 mr-1" />
-                  Anterior
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="rounded-none"
-                  onClick={() => setCurrentModule(Math.min(15, currentModule + 1))}
-                  disabled={currentModule === 15}
-                  data-testid="next-module"
-                >
-                  Siguiente
-                  <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              </div>
             </div>
           </Card>
 
@@ -302,44 +271,6 @@ export default function CoursePlayer() {
               />
             </div>
           )}
-
-          {/* EVALUACIONES FORMATIVAS (4 por módulo) */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <ClipboardCheck className="w-5 h-5 text-[#A51C30]" />
-              <h3 className="text-lg font-bold text-[#0A192F]">Evaluaciones Formativas</h3>
-              <Badge className="bg-slate-100 text-slate-600 rounded-none text-[9px] ml-2">
-                4 evaluaciones por módulo
-              </Badge>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {evaluations.map((evaluation, index) => (
-                <Card 
-                  key={index} 
-                  className="p-4 bg-white border border-slate-200 hover:border-[#A51C30] hover:shadow-md transition-all cursor-pointer"
-                  data-testid={`evaluation-${evaluation.number}`}
-                >
-                  <div className="flex flex-col items-center text-center space-y-3">
-                    <div className="w-12 h-12 bg-[#A51C30]/10 flex items-center justify-center">
-                      <FileText className="w-6 h-6 text-[#A51C30]" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-[#0A192F]">{evaluation.title}</p>
-                      <p className="text-[10px] text-slate-500 uppercase tracking-wider mt-1">
-                        {evaluation.dayName} {formatDate(evaluation.date)}
-                      </p>
-                    </div>
-                    <Badge className="bg-amber-100 text-amber-700 rounded-none text-[8px]">
-                      Próximamente
-                    </Badge>
-                  </div>
-                </Card>
-              ))}
-            </div>
-            <p className="text-xs text-slate-400 mt-3 text-center italic">
-              Las evaluaciones serán generadas por Gemini. Podrás pegar el código HTML aquí.
-            </p>
-          </div>
 
           {/* 4 RECURSOS DIDÁCTICOS */}
           <div>
@@ -369,6 +300,80 @@ export default function CoursePlayer() {
             </div>
           </div>
 
+          {/* EVALUACIONES FORMATIVAS EN CARRUSEL */}
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <ClipboardCheck className="w-5 h-5 text-[#A51C30]" />
+              <h3 className="text-lg font-bold text-[#0A192F]">Evaluaciones Formativas</h3>
+              <Badge className="bg-slate-100 text-slate-600 rounded-none text-[9px] ml-2">
+                4 evaluaciones por módulo
+              </Badge>
+            </div>
+            
+            {/* Carrusel de evaluaciones */}
+            <div className="bg-white border border-slate-200 p-6">
+              <div className="flex items-center justify-between">
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  className="rounded-none shrink-0"
+                  onClick={prevEvaluation}
+                  data-testid="prev-evaluation"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+                
+                <div className="flex-1 mx-4">
+                  {evaluations.length > 0 && (
+                    <div 
+                      className="text-center cursor-pointer hover:bg-slate-50 p-4 transition-colors"
+                      onClick={() => handleEvaluationClick(evaluations[currentEvaluation])}
+                      data-testid={`evaluation-carousel-${evaluations[currentEvaluation]?.number}`}
+                    >
+                      <div className="w-14 h-14 bg-[#A51C30]/10 flex items-center justify-center mx-auto mb-3">
+                        <FileText className="w-7 h-7 text-[#A51C30]" />
+                      </div>
+                      <p className="text-lg font-bold text-[#0A192F]">
+                        {evaluations[currentEvaluation]?.title}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {evaluations[currentEvaluation]?.dayName} {formatDate(evaluations[currentEvaluation]?.date)}
+                      </p>
+                      <Badge className="bg-amber-100 text-amber-700 rounded-none text-[8px] mt-3">
+                        Clic para abrir
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+                
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  className="rounded-none shrink-0"
+                  onClick={nextEvaluation}
+                  data-testid="next-evaluation"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </Button>
+              </div>
+              
+              {/* Indicadores del carrusel */}
+              <div className="flex justify-center gap-2 mt-4">
+                {evaluations.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentEvaluation(idx)}
+                    className={cn(
+                      "w-2 h-2 rounded-full transition-colors",
+                      idx === currentEvaluation ? "bg-[#A51C30]" : "bg-slate-300"
+                    )}
+                    data-testid={`evaluation-dot-${idx}`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -376,12 +381,10 @@ export default function CoursePlayer() {
       <Dialog open={selectedResource !== null} onOpenChange={() => setSelectedResource(null)}>
         <DialogContent className="max-w-5xl h-[80vh] p-0 rounded-none border-none bg-white">
           <DialogHeader className="p-6 border-b border-slate-100 shrink-0 bg-[#F8F9FA]">
-            <div className="flex items-center justify-between">
-              <DialogTitle className="text-xl font-serif font-bold text-[#0A192F]">{selectedResource?.title}</DialogTitle>
-              <Badge className="bg-[#A51C30] text-white border-none rounded-none px-4 py-1.5 text-[9px] font-bold tracking-widest uppercase">
-                Módulo {currentModule}
-              </Badge>
-            </div>
+            <DialogTitle className="text-xl font-serif font-bold text-[#0A192F]">{selectedResource?.title}</DialogTitle>
+            <DialogDescription className="sr-only">
+              Recurso didáctico del módulo {currentModule}
+            </DialogDescription>
           </DialogHeader>
           <div className="flex-1 w-full h-full min-h-0 bg-slate-50 relative overflow-hidden">
             {selectedResource?.embedUrl ? (
@@ -406,6 +409,57 @@ export default function CoursePlayer() {
                   <p className="text-sm text-slate-500">
                     Este recurso aún no ha sido configurado. El administrador debe agregar el enlace correspondiente.
                   </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Evaluation Modal with HTML content */}
+      <Dialog open={selectedEvaluation !== null} onOpenChange={() => setSelectedEvaluation(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0 rounded-none border-none bg-white overflow-hidden">
+          <DialogHeader className="p-6 border-b border-slate-100 shrink-0 bg-[#F8F9FA]">
+            <DialogTitle className="text-xl font-serif font-bold text-[#0A192F]">
+              {selectedEvaluation?.title}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-slate-500">
+              Módulo {currentModule} • Evaluación formativa generada por Gemini
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto p-6">
+            {selectedEvaluation?.htmlContent ? (
+              <div 
+                className="prose max-w-none"
+                dangerouslySetInnerHTML={{ __html: selectedEvaluation.htmlContent }}
+              />
+            ) : (
+              <div className="text-center py-12 space-y-6">
+                <div className="w-20 h-20 bg-[#A51C30]/10 flex items-center justify-center mx-auto">
+                  <FileText className="w-10 h-10 text-[#A51C30]" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-bold text-[#0A192F]">Evaluación Pendiente</h3>
+                  <p className="text-sm text-slate-500 max-w-md mx-auto">
+                    Esta evaluación aún no tiene contenido. El administrador debe pegar el código HTML generado por Gemini.
+                  </p>
+                </div>
+                
+                <div className="bg-slate-50 border border-slate-200 p-6 max-w-lg mx-auto text-left">
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-2">
+                    Pegar código HTML de Gemini aquí:
+                  </label>
+                  <textarea 
+                    className="w-full h-32 border border-slate-300 p-3 text-sm font-mono resize-none focus:outline-none focus:border-[#A51C30]"
+                    placeholder="<div>...</div>"
+                    data-testid="evaluation-html-input"
+                  />
+                  <Button 
+                    className="mt-3 bg-[#A51C30] hover:bg-[#821626] text-white rounded-none text-xs"
+                    data-testid="save-evaluation-html"
+                  >
+                    Guardar Evaluación
+                  </Button>
                 </div>
               </div>
             )}
