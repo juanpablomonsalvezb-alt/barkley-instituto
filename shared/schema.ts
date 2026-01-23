@@ -56,6 +56,8 @@ export const levelSubjects = pgTable("level_subjects", {
   levelId: varchar("level_id").notNull().references(() => levels.id),
   subjectId: varchar("subject_id").notNull().references(() => subjects.id),
   totalOAs: integer("total_oas").default(0),
+  textbookPdfUrl: text("textbook_pdf_url"),
+  textbookTitle: text("textbook_title"),
 });
 
 // Learning Objectives (OAs - Objetivos de Aprendizaje) / Módulos
@@ -67,6 +69,8 @@ export const learningObjectives = pgTable("learning_objectives", {
   description: text("description"),
   weekNumber: integer("week_number").notNull(), // Actually module number (1-15)
   sortOrder: integer("sort_order").default(0).notNull(),
+  textbookStartPage: integer("textbook_start_page"),
+  textbookEndPage: integer("textbook_end_page"),
 });
 
 // Program Calendar Configuration
