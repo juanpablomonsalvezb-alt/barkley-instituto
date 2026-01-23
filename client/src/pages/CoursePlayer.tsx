@@ -424,11 +424,17 @@ export default function CoursePlayer() {
     }
   };
 
-  const convertToEmbedUrl = (url: string): string => {
+  const convertToEmbedUrl = (url: string, resourceType?: string): string => {
     if (!url) return "";
     if (url.includes("drive.google.com/file/d/")) {
       const fileId = url.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1];
-      if (fileId) return `https://drive.google.com/file/d/${fileId}/preview`;
+      if (fileId) {
+        // For images (infografia), use direct view URL instead of preview
+        if (resourceType === "infografia") {
+          return `https://drive.google.com/uc?export=view&id=${fileId}`;
+        }
+        return `https://drive.google.com/file/d/${fileId}/preview`;
+      }
     }
     if (url.includes("docs.google.com/presentation")) {
       return url.replace("/edit", "/embed").replace("/pub", "/embed");
@@ -788,17 +794,25 @@ export default function CoursePlayer() {
               Recurso didáctico del módulo {currentModule}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 w-full h-full min-h-0 bg-slate-50 relative overflow-hidden">
+          <div className="flex-1 w-full min-h-0 bg-slate-50 relative overflow-auto flex items-center justify-center">
             {selectedResource?.embedUrl ? (
-              <iframe 
-                src={convertToEmbedUrl(selectedResource.embedUrl)}
-                className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                allowFullScreen
-                title={selectedResource.title}
-              />
+              selectedResource.embedType === "infografia" ? (
+                <img 
+                  src={convertToEmbedUrl(selectedResource.embedUrl, "infografia")}
+                  alt={selectedResource.title}
+                  className="max-w-full max-h-full object-contain"
+                />
+              ) : (
+                <iframe 
+                  src={convertToEmbedUrl(selectedResource.embedUrl, selectedResource.embedType)}
+                  className="w-full h-full border-0 absolute inset-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                  allowFullScreen
+                  title={selectedResource.title}
+                />
+              )
             ) : (
-              <div className="flex flex-col items-center justify-center h-full p-12 text-center space-y-6">
+              <div className="flex flex-col items-center justify-center p-12 text-center space-y-6">
                 <div className="w-20 h-20 bg-slate-200 flex items-center justify-center">
                   {selectedResource?.embedType === "video" && <Video className="w-10 h-10 text-slate-400" />}
                   {selectedResource?.embedType === "audio" && <Headphones className="w-10 h-10 text-slate-400" />}

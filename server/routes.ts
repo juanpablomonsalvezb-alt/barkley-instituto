@@ -496,6 +496,9 @@ export async function registerRoutes(
         return res.status(400).json({ message: "folderId and learningObjectiveId are required" });
       }
 
+      // Delete existing resources for this learning objective before syncing
+      await storage.deleteResourcesByObjective(learningObjectiveId);
+
       const resources = await getModuleResources(folderId);
       const createdResources: any[] = [];
 

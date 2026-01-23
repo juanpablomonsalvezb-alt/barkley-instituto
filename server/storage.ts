@@ -41,6 +41,7 @@ export interface IStorage {
   getResourceById(id: string): Promise<WeeklyResource | undefined>;
   createResource(resource: InsertWeeklyResource): Promise<WeeklyResource>;
   updateResource(id: string, resource: Partial<InsertWeeklyResource>): Promise<WeeklyResource | undefined>;
+  deleteResourcesByObjective(learningObjectiveId: string): Promise<void>;
   
   // Enrollments
   getEnrollmentsByUser(userId: string): Promise<Enrollment[]>;
@@ -252,6 +253,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(weeklyResources.id, id))
       .returning();
     return updated;
+  }
+
+  async deleteResourcesByObjective(learningObjectiveId: string): Promise<void> {
+    await db.delete(weeklyResources).where(eq(weeklyResources.learningObjectiveId, learningObjectiveId));
   }
 
   // Enrollments
