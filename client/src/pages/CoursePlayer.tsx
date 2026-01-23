@@ -61,7 +61,35 @@ export default function CoursePlayer() {
   const subjectLabel = parts.slice(1).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
 
   const [currentWeek, setCurrentWeek] = useState(1);
-  const [selectedResource, setSelectedResource] = useState<null | { title: string, url: string }>(null);
+  const [selectedResource, setSelectedResource] = useState<null | { 
+    title: string, 
+    url: string, 
+    embedUrl: string, 
+    embedType: "youtube" | "image" | "audio" | "slides" | "interactive" | "quiz" | "text",
+    id: string,
+    help: string,
+    fundamental: string
+  }>(null);
+  const [viewedResources, setViewedResources] = useState<Set<string>>(new Set());
+  const [examCompleted, setExamCompleted] = useState(false);
+
+  const levels: Record<string, string> = {
+    "7b": "7° Básico", "8b": "8° Básico", "1m": "1° Medio", "2m": "2° Medio",
+    "3m": "3° Medio", "4m": "4° Medio", "nb1": "NB1 (1-4)", "nb2": "NB2 (5-6)",
+    "nb3": "NB3 (7-8)", "nm1": "NM1 (1-2 Media)", "nm2": "NM2 (3-4 Media)", "nm2i": "NM2 Intensivo"
+  };
+
+  const levelName = levels[levelCode] || levelCode;
+
+  const resources = [
+    { id: "video", title: "Video: Tu Impulso Inicial", icon: Video, color: "text-red-500", url: "", embedUrl: "", embedType: "youtube" as const, fundamental: "Activación Atencional (Barkley)", help: "Míralo para captar la esencia del tema sin esfuerzo.", objective: "Activación Atencional: Reducir resistencia de funciones ejecutivas." },
+    { id: "infografia", title: "La Infografía: Tu Mapa de Ruta", icon: Map, color: "text-blue-500", url: "", embedUrl: "", embedType: "image" as const, fundamental: "Andamiaje Externo (Barkley)", help: "Observa cómo se organiza todo lo que viste en el video.", objective: "Memoria de Trabajo Externa: Liberar espacio mental." },
+    { id: "audio", title: "Resumen de Audio: Repaso en Movimiento", icon: Headphones, color: "text-orange-500", url: "", embedUrl: "", embedType: "audio" as const, fundamental: "Protección Canal Atencional (Barkley)", help: "Deja que la información entre por tus oídos y descansa la vista.", objective: "Variación Sensorial: Prevenir fatiga cognitiva." },
+    { id: "presentacion", title: "La Presentación: Paso a Paso", icon: Presentation, color: "text-emerald-500", url: "", embedUrl: "", embedType: "slides" as const, fundamental: "Autocontrol y Autonomía (Barkley)", help: "Avanza a tu propio ritmo por estas láminas.", objective: "Autodirección: Ajustar flujo a velocidad de procesamiento." },
+    { id: "flashcards", title: "Tarjetas Didácticas: Desafía tu Memoria", icon: Layers, color: "text-amber-500", url: "", embedUrl: "", embedType: "interactive" as const, fundamental: "Feedback Inmediato (Barkley)", help: "Pon a prueba lo que recuerdas. El cerebro aprende del error.", objective: "Refuerzo Inmediato: Combatir miopía temporal." },
+    { id: "cuestionario", title: "El Cuestionario: Valida tu Éxito", icon: Award, color: "text-[#A51C30]", url: "", embedUrl: "", embedType: "quiz" as const, fundamental: "Sentido de Autoeficacia (Barkley)", help: "Demuéstrate cuánto has avanzado y celebra tus resultados.", objective: "Cierre de Ciclo: Validación objetiva del logro." },
+    { id: "resumen", title: "Resumen Escrito: Reflexión Final", icon: PenTool, color: "text-indigo-500", url: "", embedUrl: "", embedType: "text" as const, fundamental: "Metacognición (Harvard)", help: "¿Cómo ha cambiado tu forma de ver este tema desde el lunes?", objective: "Aprendizaje Profundo: Consolidación mediante reflexión." }
+  ];
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -91,35 +119,10 @@ export default function CoursePlayer() {
     return null;
   }
 
-  const levels: Record<string, string> = {
-    "7b": "7° Básico", "8b": "8° Básico", "1m": "1° Medio", "2m": "2° Medio",
-    "3m": "3° Medio", "4m": "4° Medio", "nb1": "NB1 (1-4)", "nb2": "NB2 (5-6)",
-    "nb3": "NB3 (7-8)", "nm1": "NM1 (1-2 Media)", "nm2": "NM2 (3-4 Media)", "nm2i": "NM2 Intensivo"
-  };
-
-  const levelName = levels[levelCode] || levelCode;
-
-  const resources = [
-    { id: "video", title: "Video: Tu Impulso Inicial", icon: Video, color: "text-red-500", url: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=2b533b66-1972-4f6c-bf79-2475461437f4", fundamental: "Activación Atencional (Barkley)", help: "Míralo para captar la esencia del tema sin esfuerzo.", objective: "Activación Atencional: Reducir resistencia de funciones ejecutivas." },
-    { id: "infografia", title: "La Infografía: Tu Mapa de Ruta", icon: Map, color: "text-blue-500", url: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=871937ff-1809-4637-a701-a5d404c47b71", fundamental: "Andamiaje Externo (Barkley)", help: "Observa cómo se organiza todo lo que viste en el video.", objective: "Memoria de Trabajo Externa: Liberar espacio mental." },
-    { id: "audio", title: "Resumen de Audio: Repaso en Movimiento", icon: Headphones, color: "text-orange-500", url: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=cff1485a-2441-49d0-aaa4-9bccd87e8429", fundamental: "Protección Canal Atencional (Barkley)", help: "Deja que la información entre por tus oídos y descansa la vista.", objective: "Variación Sensorial: Prevenir fatiga cognitiva." },
-    { id: "presentacion", title: "La Presentación: Paso a Paso", icon: Presentation, color: "text-emerald-500", url: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=7ca2abfb-f2ae-4ff3-bdf1-a502e81bfeeb", fundamental: "Autocontrol y Autonomía (Barkley)", help: "Avanza a tu propio ritmo por estas láminas.", objective: "Autodirección: Ajustar flujo a velocidad de procesamiento." },
-    { id: "flashcards", title: "Tarjetas Didácticas: Desafía tu Memoria", icon: Layers, color: "text-amber-500", url: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=5044c5b9-31af-4043-9e6a-73f8c529fe59", fundamental: "Feedback Inmediato (Barkley)", help: "Pon a prueba lo que recuerdas. El cerebro aprende del error.", objective: "Refuerzo Inmediato: Combatir miopía temporal." },
-    { id: "cuestionario", title: "El Cuestionario: Valida tu Éxito", icon: Award, color: "text-[#A51C30]", url: "https://notebooklm.google.com/notebook/362d1175-d595-406c-922e-debef3cdf103?artifactId=9ee506a5-f8c9-4b44-a33c-379056472528", fundamental: "Sentido de Autoeficacia (Barkley)", help: "Demuéstrate cuánto has avanzado y celebra tus resultados.", objective: "Cierre de Ciclo: Validación objetiva del logro." },
-    { id: "resumen", title: "Resumen Escrito: Reflexión Final", icon: PenTool, color: "text-indigo-500", url: "", fundamental: "Metacognición (Harvard)", help: "¿Cómo ha cambiado tu forma de ver este tema desde el lunes?", objective: "Aprendizaje Profundo: Consolidación mediante reflexión." }
-  ];
-
-  const [viewedResources, setViewedResources] = useState<Set<string>>(new Set());
-  const [examCompleted, setExamCompleted] = useState(false);
-
-  const handleResourceClick = (res: any) => {
+  const handleResourceClick = (res: typeof resources[0]) => {
     if (res.id !== "cuestionario" || viewedResources.size >= resources.length - 2) {
-      if (res.url) {
-        setSelectedResource({ title: res.title, url: res.url });
-        setViewedResources(prev => new Set(prev).add(res.id));
-      } else if (res.id === "resumen") {
-         setViewedResources(prev => new Set(prev).add(res.id));
-      }
+      setSelectedResource({ title: res.title, url: res.url || "", embedUrl: res.embedUrl || "", embedType: res.embedType, id: res.id, help: res.help, fundamental: res.fundamental });
+      setViewedResources(prev => new Set(prev).add(res.id));
     }
   };
 
@@ -275,54 +278,82 @@ export default function CoursePlayer() {
           <DialogHeader className="p-6 border-b border-slate-100 shrink-0 bg-[#F8F9FA]">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-xl font-serif font-bold text-[#0A192F] italic">{selectedResource?.title}</DialogTitle>
-              <Badge className="bg-[#A51C30] text-white border-none rounded-none px-4 py-1.5 text-[9px] font-bold tracking-widest uppercase">NotebookLM Integration</Badge>
+              <Badge className="bg-[#A51C30] text-white border-none rounded-none px-4 py-1.5 text-[9px] font-bold tracking-widest uppercase">
+                {selectedResource?.embedType === "youtube" ? "Video Integrado" : 
+                 selectedResource?.embedType === "audio" ? "Audio Integrado" :
+                 selectedResource?.embedType === "slides" ? "Presentación" :
+                 selectedResource?.embedType === "quiz" ? "Evaluación" : "Recurso Barkley"}
+              </Badge>
             </div>
           </DialogHeader>
           <div className="flex-1 w-full h-full min-h-0 bg-slate-50 relative overflow-hidden">
-            {selectedResource?.url ? (
+            {selectedResource?.embedUrl ? (
+              <div className="w-full h-full">
+                {selectedResource.embedType === "youtube" && (
+                  <iframe 
+                    src={selectedResource.embedUrl}
+                    className="w-full h-full border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    title={selectedResource.title}
+                  />
+                )}
+                {selectedResource.embedType === "slides" && (
+                  <iframe 
+                    src={selectedResource.embedUrl}
+                    className="w-full h-full border-0"
+                    allowFullScreen
+                    title={selectedResource.title}
+                  />
+                )}
+                {selectedResource.embedType === "image" && (
+                  <div className="w-full h-full flex items-center justify-center p-8">
+                    <img src={selectedResource.embedUrl} alt={selectedResource.title} className="max-w-full max-h-full object-contain" />
+                  </div>
+                )}
+                {selectedResource.embedType === "audio" && (
+                  <div className="w-full h-full flex flex-col items-center justify-center p-12 space-y-8">
+                    <Headphones className="w-24 h-24 text-[#A51C30]" />
+                    <audio controls className="w-full max-w-xl">
+                      <source src={selectedResource.embedUrl} type="audio/mpeg" />
+                      Tu navegador no soporta el elemento de audio.
+                    </audio>
+                    <p className="text-sm text-slate-500 italic max-w-md text-center">{selectedResource.help}</p>
+                  </div>
+                )}
+              </div>
+            ) : (
               <div className="flex flex-col items-center justify-center h-full p-12 text-center space-y-8 animate-in fade-in zoom-in duration-500">
                 <div className="w-24 h-24 bg-[#0A192F] rounded-none flex items-center justify-center shadow-2xl relative">
                   <div className="absolute inset-0 border-2 border-[#A51C30] scale-110 opacity-20 animate-pulse"></div>
-                  <Brain className="w-10 h-10 text-[#A51C30]" />
+                  {selectedResource?.embedType === "youtube" && <Video className="w-10 h-10 text-[#A51C30]" />}
+                  {selectedResource?.embedType === "audio" && <Headphones className="w-10 h-10 text-[#A51C30]" />}
+                  {selectedResource?.embedType === "slides" && <Presentation className="w-10 h-10 text-[#A51C30]" />}
+                  {selectedResource?.embedType === "image" && <Map className="w-10 h-10 text-[#A51C30]" />}
+                  {selectedResource?.embedType === "interactive" && <Layers className="w-10 h-10 text-[#A51C30]" />}
+                  {selectedResource?.embedType === "quiz" && <Award className="w-10 h-10 text-[#A51C30]" />}
+                  {selectedResource?.embedType === "text" && <PenTool className="w-10 h-10 text-[#A51C30]" />}
                 </div>
                 
-                <div className="space-y-4 max-w-md">
-                  <h3 className="text-3xl font-serif font-bold italic text-[#0A192F]">Acceso al Laboratorio</h3>
+                <div className="space-y-4 max-w-lg">
+                  <h3 className="text-3xl font-serif font-bold italic text-[#0A192F]">Recurso en Configuración</h3>
                   <p className="text-sm text-slate-500 leading-relaxed font-medium">
-                    Para garantizar la mejor experiencia y evitar restricciones de seguridad de Google, este recurso se abrirá en una ventana dedicada de alto rendimiento.
+                    {selectedResource?.help}
                   </p>
-                </div>
-
-                <div className="flex flex-col items-center gap-4">
-                  <Button 
-                    onClick={() => {
-                      if (selectedResource?.url) {
-                        window.open(selectedResource.url, "_blank", "noopener,noreferrer");
-                        setViewedResources(prev => new Set(prev).add(resources.find(r => r.title === selectedResource.title)?.id || ""));
-                      }
-                    }}
-                    className="bg-[#A51C30] hover:bg-[#821626] text-white rounded-none px-12 h-16 text-[10px] font-bold uppercase tracking-[0.4em] shadow-xl shadow-[#A51C30]/20 active:scale-95 transition-all"
-                  >
-                    Abrir NotebookLM <ExternalLink className="w-4 h-4 ml-3" />
-                  </Button>
-                  <div className="bg-blue-50 border border-blue-100 p-4 max-w-sm rounded-none">
-                    <p className="text-[10px] text-blue-800 font-medium leading-relaxed italic">
-                      "Para una experiencia integrada sin salir de la plataforma, asegúrate de estar logueado en tu cuenta institucional de Google. Esto permitirá que los recursos se sincronicen directamente con tu perfil Barkley."
+                  <div className="bg-amber-50 border border-amber-200 p-4 rounded-none mt-6">
+                    <p className="text-xs text-amber-700 font-medium">
+                      <strong>Admin:</strong> Este recurso aún no tiene contenido configurado. 
+                      Ve a la sección de configuración para agregar una URL de video de YouTube, 
+                      presentación de Google Slides, o archivo de audio.
                     </p>
                   </div>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <Lock className="w-3 h-3" /> Autenticación Google Activa
-                  </p>
                 </div>
 
-                <div className="pt-8 border-t border-slate-100 w-full max-w-sm">
-                   <p className="text-[10px] text-slate-400 italic">"Externalización cognitiva en proceso. La plataforma Barkley sigue activa para registrar tu avance."</p>
+                <div className="flex flex-col items-center gap-4 mt-4">
+                  <p className="text-[10px] text-slate-400 italic max-w-sm">
+                    Fundamento: <strong>{selectedResource?.fundamental}</strong>
+                  </p>
                 </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full space-y-4">
-                <PenTool className="w-12 h-12 text-slate-200" />
-                <p className="text-sm font-serif italic text-slate-400">Recurso de Reflexión en desarrollo...</p>
               </div>
             )}
           </div>
