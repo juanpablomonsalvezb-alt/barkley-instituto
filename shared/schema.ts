@@ -226,6 +226,56 @@ export const insertProgramCalendarSchema = createInsertSchema(programCalendar).o
 export const insertModuleEvaluationSchema = createInsertSchema(moduleEvaluations).omit({ id: true, createdAt: true });
 export const insertEvaluationProgressSchema = createInsertSchema(evaluationProgress).omit({ id: true });
 
+const baseLevelSubjectTextbookSchema = createInsertSchema(levelSubjects, {
+  textbookPdfUrl: z.preprocess(
+    (val) => (val === '' ? null : val),
+    z.string().url({ message: 'Invalid URL format' }).nullable().optional()
+  ),
+  textbookTitle: z.preprocess(
+    (val) => (val === '' ? null : val),
+    z.string().nullable().optional()
+  )
+}).pick({
+  textbookPdfUrl: true,
+  textbookTitle: true
+}).partial();
+
+export const updateLevelSubjectTextbookSchema = baseLevelSubjectTextbookSchema;
+
+const baseLearningObjectivePagesSchema = createInsertSchema(learningObjectives, {
+  textbookStartPage: z.preprocess(
+    (val) => {
+      if (val === '' || val === null) return null;
+      if (val === undefined) return undefined;
+      if (typeof val === 'string') return parseInt(val, 10);
+      return val;
+    },
+    z.number({ invalid_type_error: 'Must be a number' })
+      .int({ message: 'Must be an integer' })
+      .min(1, { message: 'Must be at least 1' })
+      .nullable()
+      .optional()
+  ),
+  textbookEndPage: z.preprocess(
+    (val) => {
+      if (val === '' || val === null) return null;
+      if (val === undefined) return undefined;
+      if (typeof val === 'string') return parseInt(val, 10);
+      return val;
+    },
+    z.number({ invalid_type_error: 'Must be a number' })
+      .int({ message: 'Must be an integer' })
+      .min(1, { message: 'Must be at least 1' })
+      .nullable()
+      .optional()
+  )
+}).pick({
+  textbookStartPage: true,
+  textbookEndPage: true
+}).partial();
+
+export const updateLearningObjectivePagesSchema = baseLearningObjectivePagesSchema;
+
 // Types
 export type Level = typeof levels.$inferSelect;
 export type InsertLevel = z.infer<typeof insertLevelSchema>;

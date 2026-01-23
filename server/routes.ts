@@ -1,11 +1,12 @@
 import type { Express, RequestHandler } from "express";
 import { createServer, type Server } from "http";
+import { z } from "zod";
 import { storage } from "./storage";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { 
   insertLevelSchema, insertSubjectSchema, insertLevelSubjectSchema,
   insertLearningObjectiveSchema, insertWeeklyResourceSchema, insertStudentProgressSchema,
-  insertEvaluationProgressSchema
+  insertEvaluationProgressSchema, updateLevelSubjectTextbookSchema, updateLearningObjectivePagesSchema
 } from "@shared/schema";
 import { listRootFolders, listModuleFolders, getModuleResources, searchFolderByName } from "./googleDrive";
 import { 
@@ -589,9 +590,15 @@ export async function registerRoutes(
   app.put("/api/admin/level-subjects/:id/textbook", isAdmin, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const { textbookPdfUrl, textbookTitle } = req.body;
+      const parsed = updateLevelSubjectTextbookSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid request body", errors: parsed.error.flatten() });
+      }
       
-      const updated = await storage.updateLevelSubjectTextbook(id, { textbookPdfUrl, textbookTitle });
+      const updated = await storage.updateLevelSubjectTextbook(id, { 
+        textbookPdfUrl: parsed.data.textbookPdfUrl ?? undefined, 
+        textbookTitle: parsed.data.textbookTitle ?? undefined 
+      });
       if (!updated) {
         return res.status(404).json({ message: "Level subject not found" });
       }
@@ -606,12 +613,22 @@ export async function registerRoutes(
   app.put("/api/admin/learning-objectives/:id/pages", isAdmin, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const { textbookStartPage, textbookEndPage } = req.body;
+      const parsed = updateLearningObjectivePagesSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid request body", errors: parsed.error.flatten() });
+      }
       
-      const updated = await storage.updateLearningObjectivePages(id, { 
-        textbookStartPage: textbookStartPage ? Number(textbookStartPage) : undefined, 
-        textbookEndPage: textbookEndPage ? Number(textbookEndPage) : undefined 
-      });
+      const updateData: { textbookStartPage?: number; textbookEndPage?: number } = {};
+      
+      if (typeof parsed.data.textbookStartPage === 'number') {
+        updateData.textbookStartPage = parsed.data.textbookStartPage;
+      }
+      
+      if (typeof parsed.data.textbookEndPage === 'number') {
+        updateData.textbookEndPage = parsed.data.textbookEndPage;
+      }
+      
+      const updated = await storage.updateLearningObjectivePages(id, updateData);
       if (!updated) {
         return res.status(404).json({ message: "Learning objective not found" });
       }

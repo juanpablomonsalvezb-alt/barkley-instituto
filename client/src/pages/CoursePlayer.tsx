@@ -306,13 +306,13 @@ export default function CoursePlayer() {
           </div>
 
           {/* Visor del Texto Escolar */}
-          {textbookData?.textbookPdfUrl && textbookData?.modulePages?.startPage && textbookData?.modulePages?.endPage && (
+          {textbookData?.textbookPdfUrl && (
             <div className="max-w-4xl mx-auto">
               <TextbookViewer
                 pdfUrl={textbookData.textbookPdfUrl}
                 title={textbookData.textbookTitle || undefined}
-                startPage={textbookData.modulePages.startPage}
-                endPage={textbookData.modulePages.endPage}
+                startPage={textbookData.modulePages?.startPage ?? 0}
+                endPage={textbookData.modulePages?.endPage ?? 0}
                 moduleNumber={currentModule}
               />
             </div>
