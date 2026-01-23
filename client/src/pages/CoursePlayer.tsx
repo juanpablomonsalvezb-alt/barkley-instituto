@@ -468,17 +468,21 @@ export default function CoursePlayer() {
                 </p>
               )}
               
-              {moduleInfo?.moduleOAs && (
-                <div className="text-left bg-slate-50 p-4 mt-4 border border-slate-200">
-                  <h4 className="text-xs font-bold text-[#A51C30] uppercase tracking-wider mb-2">Objetivos de Aprendizaje</h4>
-                  <p className="text-sm text-slate-700 whitespace-pre-line">{moduleInfo.moduleOAs}</p>
-                </div>
-              )}
-              
-              {moduleInfo?.moduleContents && (
-                <div className="text-left bg-slate-50 p-4 mt-2 border border-slate-200">
-                  <h4 className="text-xs font-bold text-[#A51C30] uppercase tracking-wider mb-2">Contenidos</h4>
-                  <p className="text-sm text-slate-700 whitespace-pre-line">{moduleInfo.moduleContents}</p>
+              {(moduleInfo?.moduleOAs || moduleInfo?.moduleContents) && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                  {moduleInfo?.moduleOAs && (
+                    <div className="text-left bg-slate-50 p-4 border border-slate-200">
+                      <h4 className="text-xs font-bold text-[#A51C30] uppercase tracking-wider mb-2">Objetivos de Aprendizaje</h4>
+                      <p className="text-sm text-slate-700 whitespace-pre-line">{moduleInfo.moduleOAs}</p>
+                    </div>
+                  )}
+                  
+                  {moduleInfo?.moduleContents && (
+                    <div className="text-left bg-slate-50 p-4 border border-slate-200">
+                      <h4 className="text-xs font-bold text-[#A51C30] uppercase tracking-wider mb-2">Contenidos</h4>
+                      <p className="text-sm text-slate-700 whitespace-pre-line">{moduleInfo.moduleContents}</p>
+                    </div>
+                  )}
                 </div>
               )}
               
