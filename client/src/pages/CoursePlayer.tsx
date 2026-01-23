@@ -13,7 +13,9 @@ import {
   Presentation,
   Loader2,
   FileText,
-  ClipboardCheck
+  ClipboardCheck,
+  Check,
+  Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -233,6 +235,45 @@ export default function CoursePlayer() {
           <div className="text-center space-y-2">
             <h1 className="text-3xl lg:text-4xl font-serif font-bold text-[#0A192F]">{subjectLabel}</h1>
             <p className="text-[#A51C30] text-xs font-bold uppercase tracking-[0.3em]">{levelName}</p>
+          </div>
+
+          {/* INDICADOR DE PROGRESO - 15 MÓDULOS */}
+          <div className="bg-white border border-slate-200 p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Progreso del Programa</span>
+              <span className="text-xs text-slate-500">
+                {calendarData?.modules?.filter(m => m.status === 'completed').length || 0} de 15 módulos completados
+              </span>
+            </div>
+            <div className="flex justify-center gap-1 sm:gap-2">
+              {Array.from({ length: 15 }, (_, i) => {
+                const moduleNum = i + 1;
+                const moduleData = calendarData?.modules?.find(m => m.moduleNumber === moduleNum);
+                const isCompleted = moduleData?.status === 'completed';
+                const isCurrent = moduleNum === currentModule;
+                const isLocked = moduleData?.status === 'locked';
+                
+                return (
+                  <div
+                    key={moduleNum}
+                    className={cn(
+                      "w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center text-[10px] sm:text-xs font-bold transition-all",
+                      isCompleted && "bg-green-500 text-white",
+                      isCurrent && !isCompleted && "bg-[#A51C30] text-white ring-2 ring-[#A51C30] ring-offset-2",
+                      !isCompleted && !isCurrent && "bg-slate-200 text-slate-400"
+                    )}
+                    title={`Módulo ${moduleNum}${isCompleted ? ' - Completado' : isCurrent ? ' - En curso' : isLocked ? ' - Bloqueado' : ''}`}
+                    data-testid={`progress-module-${moduleNum}`}
+                  >
+                    {isCompleted ? (
+                      <Check className="w-3 h-3 sm:w-4 sm:h-4" />
+                    ) : (
+                      moduleNum
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* CUADRO DEL MÓDULO ACTUAL */}
