@@ -8,6 +8,7 @@ import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
 import CoursePlayer from "@/pages/CoursePlayer";
 import DriveSync from "@/pages/DriveSync";
+import TextbookConfig from "@/pages/TextbookConfig";
 
 function Router() {
   return (
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/course/:id" component={CoursePlayer} />
       <Route path="/admin/drive-sync" component={DriveSync} />
+      <Route path="/admin/textbook-config" component={TextbookConfig} />
       <Route component={NotFound} />
     </Switch>
   );

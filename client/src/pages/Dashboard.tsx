@@ -119,6 +119,7 @@ export default function Dashboard() {
           {[
             { icon: LayoutDashboard, label: "Panel Central", active: true, href: "/dashboard" },
             { icon: CloudDownload, label: "Sincronizar Drive", active: false, href: "/admin/drive-sync" },
+            { icon: BookOpen, label: "Textos Escolares", active: false, href: "/admin/textbook-config" },
             { icon: Users, label: "Gestión Alumnos", active: false, href: "#" },
             { icon: Database, label: "Carga Masiva", active: false, href: "#" },
             { icon: Settings, label: "Configuración", active: false, href: "#" },
