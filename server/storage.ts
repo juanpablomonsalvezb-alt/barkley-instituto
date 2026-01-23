@@ -27,7 +27,7 @@ export interface IStorage {
   getLevelSubjects(levelId: string): Promise<(LevelSubject & { subject: Subject })[]>;
   getLevelSubjectById(id: string): Promise<LevelSubject | undefined>;
   createLevelSubject(ls: InsertLevelSubject): Promise<LevelSubject>;
-  updateLevelSubjectTextbook(id: string, data: { textbookPdfUrl?: string; textbookTitle?: string }): Promise<LevelSubject | undefined>;
+  updateLevelSubjectTextbook(id: string, data: { textbookPdfUrl?: string | null; textbookTitle?: string | null }): Promise<LevelSubject | undefined>;
   
   // Learning Objectives
   getLearningObjectives(levelSubjectId: string): Promise<LearningObjective[]>;
@@ -135,10 +135,21 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async updateLevelSubjectTextbook(id: string, data: { textbookPdfUrl?: string; textbookTitle?: string }): Promise<LevelSubject | undefined> {
+  async updateLevelSubjectTextbook(id: string, data: { textbookPdfUrl?: string | null; textbookTitle?: string | null }): Promise<LevelSubject | undefined> {
+    // Filter out undefined values, but keep null values to allow clearing fields
+    const updateData: Record<string, string | null> = {};
+    if (data.textbookPdfUrl !== undefined) updateData.textbookPdfUrl = data.textbookPdfUrl;
+    if (data.textbookTitle !== undefined) updateData.textbookTitle = data.textbookTitle;
+    
+    // If no values to update, just return the existing record
+    if (Object.keys(updateData).length === 0) {
+      const [existing] = await db.select().from(levelSubjects).where(eq(levelSubjects.id, id));
+      return existing;
+    }
+    
     const [updated] = await db
       .update(levelSubjects)
-      .set(data)
+      .set(updateData)
       .where(eq(levelSubjects.id, id))
       .returning();
     return updated;

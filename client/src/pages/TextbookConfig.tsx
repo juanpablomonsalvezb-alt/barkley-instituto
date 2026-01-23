@@ -41,9 +41,9 @@ interface LevelSubjectWithSubject {
 }
 
 interface LearningObjective {
-  id: number;
+  id: string;
   levelSubjectId: string;
-  moduleNumber: number;
+  weekNumber: number;
   title: string;
   textbookStartPage: number | null;
   textbookEndPage: number | null;
@@ -146,7 +146,7 @@ export default function TextbookConfig() {
     if (objectives) {
       const pages: Record<number, { startPage: string; endPage: string }> = {};
       objectives.forEach(obj => {
-        pages[obj.moduleNumber] = {
+        pages[obj.weekNumber] = {
           startPage: obj.textbookStartPage?.toString() || "",
           endPage: obj.textbookEndPage?.toString() || ""
         };
@@ -182,7 +182,7 @@ export default function TextbookConfig() {
   });
 
   const savePagesMutation = useMutation({
-    mutationFn: async ({ objectiveId, startPage, endPage }: { objectiveId: number; startPage: string; endPage: string }) => {
+    mutationFn: async ({ objectiveId, startPage, endPage }: { objectiveId: string; startPage: string; endPage: string }) => {
       const res = await fetch(`/api/admin/learning-objectives/${objectiveId}/pages`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -211,7 +211,7 @@ export default function TextbookConfig() {
     
     if (objectives) {
       for (const obj of objectives) {
-        const pages = modulePages[obj.moduleNumber];
+        const pages = modulePages[obj.weekNumber];
         if (pages) {
           await savePagesMutation.mutateAsync({
             objectiveId: obj.id,
@@ -364,10 +364,10 @@ export default function TextbookConfig() {
                   </div>
                 ) : objectives && objectives.length > 0 ? (
                   <div className="space-y-3" data-testid="modules-list">
-                    {objectives.sort((a, b) => a.moduleNumber - b.moduleNumber).map(obj => (
-                      <div key={obj.id} className="flex items-center gap-4 p-3 bg-slate-50 border border-slate-100" data-testid={`module-row-${obj.moduleNumber}`}>
-                        <Badge className="bg-[#0A192F] text-white rounded-none min-w-[80px] justify-center" data-testid={`badge-module-${obj.moduleNumber}`}>
-                          Módulo {obj.moduleNumber}
+                    {objectives.sort((a, b) => a.weekNumber - b.weekNumber).map(obj => (
+                      <div key={obj.id} className="flex items-center gap-4 p-3 bg-slate-50 border border-slate-100" data-testid={`module-row-${obj.weekNumber}`}>
+                        <Badge className="bg-[#0A192F] text-white rounded-none min-w-[80px] justify-center" data-testid={`badge-module-${obj.weekNumber}`}>
+                          Módulo {obj.weekNumber}
                         </Badge>
                         <span className="flex-1 text-sm text-slate-600 truncate">{obj.title}</span>
                         <div className="flex items-center gap-2">
@@ -377,15 +377,15 @@ export default function TextbookConfig() {
                             min="1"
                             className="w-20 h-8"
                             placeholder="1"
-                            value={modulePages[obj.moduleNumber]?.startPage || ""}
+                            value={modulePages[obj.weekNumber]?.startPage || ""}
                             onChange={(e) => setModulePages(prev => ({
                               ...prev,
-                              [obj.moduleNumber]: {
-                                ...prev[obj.moduleNumber],
+                              [obj.weekNumber]: {
+                                ...prev[obj.weekNumber],
                                 startPage: e.target.value
                               }
                             }))}
-                            data-testid={`input-start-page-${obj.moduleNumber}`}
+                            data-testid={`input-start-page-${obj.weekNumber}`}
                           />
                           <Label className="text-xs text-slate-500">Hasta:</Label>
                           <Input
@@ -393,15 +393,15 @@ export default function TextbookConfig() {
                             min="1"
                             className="w-20 h-8"
                             placeholder="25"
-                            value={modulePages[obj.moduleNumber]?.endPage || ""}
+                            value={modulePages[obj.weekNumber]?.endPage || ""}
                             onChange={(e) => setModulePages(prev => ({
                               ...prev,
-                              [obj.moduleNumber]: {
-                                ...prev[obj.moduleNumber],
+                              [obj.weekNumber]: {
+                                ...prev[obj.weekNumber],
                                 endPage: e.target.value
                               }
                             }))}
-                            data-testid={`input-end-page-${obj.moduleNumber}`}
+                            data-testid={`input-end-page-${obj.weekNumber}`}
                           />
                         </div>
                       </div>
