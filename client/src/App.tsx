@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
 import CoursePlayer from "@/pages/CoursePlayer";
+import DriveSync from "@/pages/DriveSync";
 
 function Router() {
   return (
@@ -14,6 +15,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/course/:id" component={CoursePlayer} />
+      <Route path="/admin/drive-sync" component={DriveSync} />
       <Route component={NotFound} />
     </Switch>
   );

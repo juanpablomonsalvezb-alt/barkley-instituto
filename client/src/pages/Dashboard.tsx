@@ -24,7 +24,8 @@ import {
   ChevronRight,
   LogOut,
   Loader2,
-  User
+  User,
+  CloudDownload
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -116,15 +117,18 @@ export default function Dashboard() {
         <nav className="flex-1 px-4 mt-8 space-y-1.5 overflow-y-auto custom-scrollbar">
           <p className="text-[9px] font-bold text-white/30 uppercase tracking-[0.4em] px-4 mb-4">Módulos Admin</p>
           {[
-            { icon: LayoutDashboard, label: "Panel Central", active: true },
-            { icon: Users, label: "Gestión Alumnos", active: false },
-            { icon: Database, label: "Carga Masiva", active: false },
-            { icon: Settings, label: "Configuración", active: false },
+            { icon: LayoutDashboard, label: "Panel Central", active: true, href: "/dashboard" },
+            { icon: CloudDownload, label: "Sincronizar Drive", active: false, href: "/admin/drive-sync" },
+            { icon: Users, label: "Gestión Alumnos", active: false, href: "#" },
+            { icon: Database, label: "Carga Masiva", active: false, href: "#" },
+            { icon: Settings, label: "Configuración", active: false, href: "#" },
           ].map((item) => (
-            <button key={item.label} className={cn("w-full flex items-center gap-4 p-3.5 rounded-lg transition-all", item.active ? "bg-white/5 text-white border-l-2 border-[#A51C30]" : "text-slate-400 hover:text-white hover:bg-white/5")}>
-              <item.icon className={cn("w-5 h-5 shrink-0", item.active && "text-[#A51C30]")} />
-              {!isSidebarCollapsed && <span className="text-[11px] font-bold uppercase tracking-[0.2em]">{item.label}</span>}
-            </button>
+            <Link key={item.label} href={item.href}>
+              <button className={cn("w-full flex items-center gap-4 p-3.5 rounded-lg transition-all", item.active ? "bg-white/5 text-white border-l-2 border-[#A51C30]" : "text-slate-400 hover:text-white hover:bg-white/5")}>
+                <item.icon className={cn("w-5 h-5 shrink-0", item.active && "text-[#A51C30]")} />
+                {!isSidebarCollapsed && <span className="text-[11px] font-bold uppercase tracking-[0.2em]">{item.label}</span>}
+              </button>
+            </Link>
           ))}
         </nav>
       </aside>

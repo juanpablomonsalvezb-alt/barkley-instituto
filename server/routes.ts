@@ -6,6 +6,7 @@ import {
   insertLevelSchema, insertSubjectSchema, insertLevelSubjectSchema,
   insertLearningObjectiveSchema, insertWeeklyResourceSchema, insertStudentProgressSchema
 } from "@shared/schema";
+import { listRootFolders, listModuleFolders, getModuleResources, searchFolderByName } from "./googleDrive";
 
 // Admin authorization middleware - must be used after isAuthenticated
 const isAdmin: RequestHandler = async (req: any, res, next) => {
@@ -302,6 +303,116 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error seeding data:", error);
       res.status(500).json({ message: "Failed to seed data" });
+    }
+  });
+
+  // === GOOGLE DRIVE INTEGRATION ROUTES ===
+
+  // List all folders in Google Drive (admin only)
+  app.get("/api/admin/drive/folders", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const folders = await listRootFolders();
+      res.json(folders);
+    } catch (error) {
+      console.error("Error listing Drive folders:", error);
+      res.status(500).json({ message: "Failed to list Drive folders" });
+    }
+  });
+
+  // Search folder by name (admin only)
+  app.get("/api/admin/drive/search", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const folderName = req.query.name as string;
+      if (!folderName) {
+        return res.status(400).json({ message: "Folder name is required" });
+      }
+      const folder = await searchFolderByName(folderName);
+      res.json(folder);
+    } catch (error) {
+      console.error("Error searching Drive folder:", error);
+      res.status(500).json({ message: "Failed to search folder" });
+    }
+  });
+
+  // List modules in a subject folder (admin only)
+  app.get("/api/admin/drive/folders/:folderId/modules", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const modules = await listModuleFolders(req.params.folderId);
+      res.json(modules);
+    } catch (error) {
+      console.error("Error listing modules:", error);
+      res.status(500).json({ message: "Failed to list modules" });
+    }
+  });
+
+  // Get resources from a specific folder (admin only)
+  app.get("/api/admin/drive/folders/:folderId/resources", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const resources = await getModuleResources(req.params.folderId);
+      res.json(resources);
+    } catch (error) {
+      console.error("Error getting resources:", error);
+      res.status(500).json({ message: "Failed to get resources" });
+    }
+  });
+
+  // Sync resources from Drive folder to a learning objective (admin only)
+  app.post("/api/admin/drive/sync", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { folderId, learningObjectiveId, moduleNumber } = req.body;
+      
+      if (!folderId || !learningObjectiveId) {
+        return res.status(400).json({ message: "folderId and learningObjectiveId are required" });
+      }
+
+      const resources = await getModuleResources(folderId);
+      const createdResources: any[] = [];
+
+      const resourceTypeOrder: Record<string, number> = {
+        'video': 1,
+        'image': 2,
+        'audio': 3,
+        'slides': 4,
+        'document': 5,
+        'form': 6,
+        'unknown': 7
+      };
+
+      const sortedResources = [...resources].sort((a, b) => {
+        return (resourceTypeOrder[a.type] || 99) - (resourceTypeOrder[b.type] || 99);
+      });
+
+      for (let i = 0; i < sortedResources.length; i++) {
+        const resource = sortedResources[i];
+        
+        const resourceTypeMap: Record<string, string> = {
+          'video': 'video',
+          'audio': 'audio',
+          'image': 'infografia',
+          'slides': 'presentacion',
+          'document': 'resumen',
+          'form': 'cuestionario'
+        };
+
+        const created = await storage.createResource({
+          objectiveId: learningObjectiveId,
+          type: resourceTypeMap[resource.type] || 'resumen',
+          title: resource.name,
+          embedUrl: resource.embedUrl,
+          description: `Recurso importado desde Google Drive`,
+          sortOrder: i + 1
+        });
+        createdResources.push(created);
+      }
+
+      res.json({ 
+        message: "Sync completed", 
+        resourcesCreated: createdResources.length,
+        resources: createdResources
+      });
+    } catch (error) {
+      console.error("Error syncing resources:", error);
+      res.status(500).json({ message: "Failed to sync resources" });
     }
   });
 

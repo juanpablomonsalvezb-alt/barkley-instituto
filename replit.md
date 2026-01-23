@@ -83,3 +83,30 @@ Preferred communication style: Simple, everyday language.
 - `SESSION_SECRET`: Secret for session encryption
 - `REPL_ID`: Replit environment identifier (auto-set)
 - `ISSUER_URL`: OIDC issuer URL (defaults to Replit)
+
+## Google Drive Integration
+
+### Automatic Resource Sync
+The platform integrates with Google Drive to automatically detect and import educational resources. Admins can:
+1. Connect a Google Drive folder to the platform
+2. Organize resources in Drive using the folder structure: `Instituto Barkley/[Level Subject]/Módulo 1-15/[resources]`
+3. Sync resources automatically to learning objectives
+
+### Resource Type Detection
+Files are automatically classified based on MIME type and filename:
+- **video**: Video files (.mp4, .webm, etc.)
+- **audio**: Audio files (.mp3, .wav, etc.)
+- **image/infografia**: PDF and image files
+- **slides/presentacion**: Google Slides, PowerPoint
+- **document/resumen**: Google Docs, text files
+- **form/cuestionario**: Google Forms
+
+### Admin Routes
+- `GET /api/admin/drive/folders` - List all Drive folders
+- `GET /api/admin/drive/search?name=...` - Search folders by name
+- `GET /api/admin/drive/folders/:id/modules` - List module subfolders
+- `GET /api/admin/drive/folders/:id/resources` - Get files from a folder
+- `POST /api/admin/drive/sync` - Sync resources to a learning objective
+
+### Admin UI
+- `/admin/drive-sync` - Visual interface for Drive synchronization
