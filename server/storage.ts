@@ -27,11 +27,13 @@ export interface IStorage {
   getLevelSubjects(levelId: string): Promise<(LevelSubject & { subject: Subject })[]>;
   getLevelSubjectById(id: string): Promise<LevelSubject | undefined>;
   createLevelSubject(ls: InsertLevelSubject): Promise<LevelSubject>;
+  updateLevelSubjectTextbook(id: string, data: { textbookPdfUrl?: string; textbookTitle?: string }): Promise<LevelSubject | undefined>;
   
   // Learning Objectives
   getLearningObjectives(levelSubjectId: string): Promise<LearningObjective[]>;
   getLearningObjectiveById(id: string): Promise<LearningObjective | undefined>;
   createLearningObjective(lo: InsertLearningObjective): Promise<LearningObjective>;
+  updateLearningObjectivePages(id: string, data: { textbookStartPage?: number; textbookEndPage?: number }): Promise<LearningObjective | undefined>;
   
   // Weekly Resources
   getResourcesByObjective(learningObjectiveId: string): Promise<WeeklyResource[]>;
@@ -104,6 +106,8 @@ export class DatabaseStorage implements IStorage {
         levelId: levelSubjects.levelId,
         subjectId: levelSubjects.subjectId,
         totalOAs: levelSubjects.totalOAs,
+        textbookPdfUrl: levelSubjects.textbookPdfUrl,
+        textbookTitle: levelSubjects.textbookTitle,
         subject: subjects,
       })
       .from(levelSubjects)
@@ -115,6 +119,8 @@ export class DatabaseStorage implements IStorage {
       levelId: r.levelId,
       subjectId: r.subjectId,
       totalOAs: r.totalOAs,
+      textbookPdfUrl: r.textbookPdfUrl,
+      textbookTitle: r.textbookTitle,
       subject: r.subject,
     }));
   }
@@ -127,6 +133,15 @@ export class DatabaseStorage implements IStorage {
   async createLevelSubject(ls: InsertLevelSubject): Promise<LevelSubject> {
     const [created] = await db.insert(levelSubjects).values(ls).returning();
     return created;
+  }
+
+  async updateLevelSubjectTextbook(id: string, data: { textbookPdfUrl?: string; textbookTitle?: string }): Promise<LevelSubject | undefined> {
+    const [updated] = await db
+      .update(levelSubjects)
+      .set(data)
+      .where(eq(levelSubjects.id, id))
+      .returning();
+    return updated;
   }
 
   // Learning Objectives
@@ -144,6 +159,15 @@ export class DatabaseStorage implements IStorage {
   async createLearningObjective(lo: InsertLearningObjective): Promise<LearningObjective> {
     const [created] = await db.insert(learningObjectives).values(lo).returning();
     return created;
+  }
+
+  async updateLearningObjectivePages(id: string, data: { textbookStartPage?: number; textbookEndPage?: number }): Promise<LearningObjective | undefined> {
+    const [updated] = await db
+      .update(learningObjectives)
+      .set(data)
+      .where(eq(learningObjectives.id, id))
+      .returning();
+    return updated;
   }
 
   // Weekly Resources

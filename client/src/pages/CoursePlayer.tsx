@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRoute, Link, useLocation } from "wouter";
 import { 
   ArrowLeft, 
@@ -51,6 +52,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { ModuleCalendarCompact } from "@/components/ModuleCalendar";
 import { EvaluationTracker } from "@/components/EvaluationTracker";
+import { TextbookViewer } from "@/components/TextbookViewer";
 
 export default function CoursePlayer() {
   const [, params] = useRoute("/course/:id");
@@ -81,6 +83,22 @@ export default function CoursePlayer() {
   };
 
   const levelName = levels[levelCode] || levelCode;
+
+  const { data: textbookData } = useQuery<{
+    textbookPdfUrl: string | null;
+    textbookTitle: string | null;
+    modulePages: { startPage: number | null; endPage: number | null } | null;
+  }>({
+    queryKey: ['/api/level-subjects', courseId, 'textbook', currentModule],
+    queryFn: async () => {
+      const res = await fetch(`/api/level-subjects/${courseId}/textbook?moduleNumber=${currentModule}`, {
+        credentials: 'include'
+      });
+      if (!res.ok) return { textbookPdfUrl: null, textbookTitle: null, modulePages: null };
+      return res.json();
+    },
+    enabled: !!courseId && isAuthenticated
+  });
 
   const resources = [
     { id: "video", title: "Video: Tu Impulso Inicial", icon: Video, color: "text-red-500", embedUrl: "", embedType: "drive-video" as const, fundamental: "Activación Atencional (Barkley)", help: "Míralo para captar la esencia del tema sin esfuerzo.", objective: "Activación Atencional: Reducir resistencia de funciones ejecutivas.", instructions: "Sube el video a Google Drive, compártelo como 'Cualquiera con el link', y pega la URL aquí." },
@@ -286,6 +304,19 @@ export default function CoursePlayer() {
               moduleNumber={currentModule}
             />
           </div>
+
+          {/* Visor del Texto Escolar */}
+          {textbookData?.textbookPdfUrl && textbookData?.modulePages?.startPage && textbookData?.modulePages?.endPage && (
+            <div className="max-w-4xl mx-auto">
+              <TextbookViewer
+                pdfUrl={textbookData.textbookPdfUrl}
+                title={textbookData.textbookTitle || undefined}
+                startPage={textbookData.modulePages.startPage}
+                endPage={textbookData.modulePages.endPage}
+                moduleNumber={currentModule}
+              />
+            </div>
+          )}
         </div>
       </div>
 

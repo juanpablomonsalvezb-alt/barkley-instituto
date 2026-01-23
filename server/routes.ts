@@ -585,5 +585,76 @@ export async function registerRoutes(
     }
   });
 
+  // Update textbook PDF for a level-subject
+  app.put("/api/admin/level-subjects/:id/textbook", isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { textbookPdfUrl, textbookTitle } = req.body;
+      
+      const updated = await storage.updateLevelSubjectTextbook(id, { textbookPdfUrl, textbookTitle });
+      if (!updated) {
+        return res.status(404).json({ message: "Level subject not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating textbook:", error);
+      res.status(500).json({ message: "Failed to update textbook" });
+    }
+  });
+
+  // Update page range for a learning objective (module)
+  app.put("/api/admin/learning-objectives/:id/pages", isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { textbookStartPage, textbookEndPage } = req.body;
+      
+      const updated = await storage.updateLearningObjectivePages(id, { 
+        textbookStartPage: textbookStartPage ? Number(textbookStartPage) : undefined, 
+        textbookEndPage: textbookEndPage ? Number(textbookEndPage) : undefined 
+      });
+      if (!updated) {
+        return res.status(404).json({ message: "Learning objective not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating page range:", error);
+      res.status(500).json({ message: "Failed to update page range" });
+    }
+  });
+
+  // Get textbook info for a module
+  app.get("/api/level-subjects/:id/textbook", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { moduleNumber } = req.query;
+      
+      const levelSubject = await storage.getLevelSubjectById(id);
+      if (!levelSubject) {
+        return res.status(404).json({ message: "Level subject not found" });
+      }
+      
+      let modulePages = null;
+      if (moduleNumber) {
+        const objectives = await storage.getLearningObjectives(id);
+        const objective = objectives.find(o => o.weekNumber === Number(moduleNumber));
+        if (objective) {
+          modulePages = {
+            startPage: objective.textbookStartPage,
+            endPage: objective.textbookEndPage
+          };
+        }
+      }
+      
+      res.json({
+        textbookPdfUrl: levelSubject.textbookPdfUrl,
+        textbookTitle: levelSubject.textbookTitle,
+        modulePages
+      });
+    } catch (error) {
+      console.error("Error getting textbook info:", error);
+      res.status(500).json({ message: "Failed to get textbook info" });
+    }
+  });
+
   return httpServer;
 }
