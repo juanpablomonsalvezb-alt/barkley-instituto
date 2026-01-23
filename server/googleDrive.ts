@@ -63,17 +63,20 @@ export interface ModuleContent {
 }
 
 function getResourceType(mimeType: string, name: string): ModuleResource['type'] {
+  const lowerName = name.toLowerCase();
+  const baseName = lowerName.split('.')[0];
+  
+  // Detect by exact filename prefix (audio.*, infografia.*, presentacion.*, video.*)
+  if (baseName === 'video') return 'video';
+  if (baseName === 'audio') return 'audio';
+  if (baseName === 'infografia') return 'infografia';
+  if (baseName === 'presentacion') return 'presentacion';
+  
+  // Fallback to MIME type detection
   if (mimeType.includes('video')) return 'video';
   if (mimeType.includes('audio')) return 'audio';
-  if (mimeType.includes('image') || mimeType.includes('pdf')) return 'infografia';
-  if (mimeType.includes('presentation') || mimeType.includes('slides')) return 'presentacion';
-  if (mimeType.includes('document') || mimeType.includes('text')) return 'presentacion';
-  
-  const lowerName = name.toLowerCase();
-  if (lowerName.includes('video')) return 'video';
-  if (lowerName.includes('audio') || lowerName.includes('podcast')) return 'audio';
-  if (lowerName.includes('infograf') || lowerName.includes('imagen')) return 'infografia';
-  if (lowerName.includes('presentaci') || lowerName.includes('slides')) return 'presentacion';
+  if (mimeType.includes('image')) return 'infografia';
+  if (mimeType.includes('pdf') || mimeType.includes('presentation') || mimeType.includes('slides') || mimeType.includes('document')) return 'presentacion';
   
   return 'infografia';
 }
