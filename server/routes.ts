@@ -4,9 +4,14 @@ import { storage } from "./storage";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { 
   insertLevelSchema, insertSubjectSchema, insertLevelSubjectSchema,
-  insertLearningObjectiveSchema, insertWeeklyResourceSchema, insertStudentProgressSchema
+  insertLearningObjectiveSchema, insertWeeklyResourceSchema, insertStudentProgressSchema,
+  insertEvaluationProgressSchema
 } from "@shared/schema";
 import { listRootFolders, listModuleFolders, getModuleResources, searchFolderByName } from "./googleDrive";
+import { 
+  getAllModulesSchedule, getModuleSchedule, getCalendarSummary, 
+  isModuleAvailable, isEvaluationAvailable, DEFAULT_CONFIG, formatModuleDates 
+} from "./calendarUtils";
 
 // Admin authorization middleware - must be used after isAuthenticated
 const isAdmin: RequestHandler = async (req: any, res, next) => {
@@ -395,11 +400,10 @@ export async function registerRoutes(
         };
 
         const created = await storage.createResource({
-          objectiveId: learningObjectiveId,
-          type: resourceTypeMap[resource.type] || 'resumen',
+          learningObjectiveId: learningObjectiveId,
+          resourceType: resourceTypeMap[resource.type] as any || 'resumen',
           title: resource.name,
-          embedUrl: resource.embedUrl,
-          description: `Recurso importado desde Google Drive`,
+          notebookLmUrl: resource.embedUrl,
           sortOrder: i + 1
         });
         createdResources.push(created);
@@ -413,6 +417,171 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error syncing resources:", error);
       res.status(500).json({ message: "Failed to sync resources" });
+    }
+  });
+
+  // === CALENDAR AND MODULE ACCESS ROUTES ===
+
+  // Get calendar summary
+  app.get("/api/calendar/summary", async (req, res) => {
+    try {
+      const summary = getCalendarSummary();
+      res.json(summary);
+    } catch (error) {
+      console.error("Error getting calendar summary:", error);
+      res.status(500).json({ message: "Failed to get calendar summary" });
+    }
+  });
+
+  // Get all modules schedule for a level-subject (with access control)
+  app.get("/api/level-subjects/:id/calendar", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const levelSubjectId = req.params.id;
+      const currentDate = new Date();
+
+      const completedModules = await storage.getUserCompletedModules(userId, levelSubjectId);
+      const objectives = await storage.getLearningObjectives(levelSubjectId);
+      
+      const modulesSchedule = getAllModulesSchedule(currentDate, completedModules);
+      
+      const modulesWithDetails = modulesSchedule.map(schedule => {
+        const objective = objectives.find(o => o.weekNumber === schedule.moduleNumber);
+        const dates = formatModuleDates(schedule);
+        
+        return {
+          ...schedule,
+          ...dates,
+          objective: objective ? {
+            id: objective.id,
+            code: objective.code,
+            title: objective.title,
+            description: objective.description,
+          } : null,
+        };
+      });
+
+      res.json({
+        levelSubjectId,
+        modules: modulesWithDetails,
+        summary: getCalendarSummary(),
+      });
+    } catch (error) {
+      console.error("Error getting calendar:", error);
+      res.status(500).json({ message: "Failed to get calendar" });
+    }
+  });
+
+  // Check if a specific module is accessible
+  app.get("/api/modules/:moduleNumber/access", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const moduleNumber = parseInt(req.params.moduleNumber);
+      const levelSubjectId = req.query.levelSubjectId as string;
+      
+      if (!levelSubjectId) {
+        return res.status(400).json({ message: "levelSubjectId is required" });
+      }
+
+      const currentDate = new Date();
+      const completedModules = await storage.getUserCompletedModules(userId, levelSubjectId);
+      
+      const previousCompleted = moduleNumber === 1 || completedModules.includes(moduleNumber - 1);
+      const isAvailable = isModuleAvailable(moduleNumber, currentDate, previousCompleted);
+      
+      const schedule = getModuleSchedule(moduleNumber, currentDate, previousCompleted, completedModules.includes(moduleNumber));
+      const dates = formatModuleDates(schedule);
+
+      res.json({
+        ...schedule,
+        ...dates,
+        reason: !schedule.isAvailable 
+          ? (schedule.daysUntilStart > 0 
+              ? `Disponible en ${schedule.daysUntilStart} días` 
+              : "Completa el módulo anterior primero")
+          : null,
+      });
+    } catch (error) {
+      console.error("Error checking module access:", error);
+      res.status(500).json({ message: "Failed to check module access" });
+    }
+  });
+
+  // Check evaluation availability
+  app.get("/api/modules/:moduleNumber/evaluations", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const moduleNumber = parseInt(req.params.moduleNumber);
+      const levelSubjectId = req.query.levelSubjectId as string;
+      const currentDate = new Date();
+
+      if (!levelSubjectId) {
+        return res.status(400).json({ message: "levelSubjectId is required" });
+      }
+
+      const objectives = await storage.getLearningObjectives(levelSubjectId);
+      const objective = objectives.find(o => o.weekNumber === moduleNumber);
+      
+      if (!objective) {
+        return res.status(404).json({ message: "Module not found" });
+      }
+
+      const evaluations = await storage.getModuleEvaluations(objective.id);
+      const userProgress = await storage.getEvaluationProgressByUser(userId, evaluations.map(e => e.id));
+      
+      const schedule = getModuleSchedule(moduleNumber, currentDate, true, false);
+
+      const evaluationsWithStatus = [
+        {
+          number: 1,
+          title: "Evaluación Formativa 1",
+          releaseDate: schedule.evaluation1ReleaseDate,
+          releaseDateFormatted: formatModuleDates(schedule).eval1Formatted,
+          isAvailable: isEvaluationAvailable(moduleNumber, 1, currentDate),
+          evaluation: evaluations.find(e => e.evaluationNumber === 1),
+          completed: userProgress.some(p => evaluations.find(e => e.evaluationNumber === 1 && e.id === p.evaluationId)),
+        },
+        {
+          number: 2,
+          title: "Evaluación Formativa 2",
+          releaseDate: schedule.evaluation2ReleaseDate,
+          releaseDateFormatted: formatModuleDates(schedule).eval2Formatted,
+          isAvailable: isEvaluationAvailable(moduleNumber, 2, currentDate),
+          evaluation: evaluations.find(e => e.evaluationNumber === 2),
+          completed: userProgress.some(p => evaluations.find(e => e.evaluationNumber === 2 && e.id === p.evaluationId) && p.passed),
+        },
+      ];
+
+      res.json({
+        moduleNumber,
+        objectiveId: objective.id,
+        evaluations: evaluationsWithStatus,
+      });
+    } catch (error) {
+      console.error("Error getting evaluations:", error);
+      res.status(500).json({ message: "Failed to get evaluations" });
+    }
+  });
+
+  // Mark evaluation as complete
+  app.post("/api/evaluations/:id/complete", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const evaluationId = req.params.id;
+      const { score, passed } = req.body;
+
+      const progress = await storage.markEvaluationComplete({
+        userId,
+        evaluationId,
+        completedAt: new Date(),
+        score: score || null,
+        passed: passed !== undefined ? passed : true,
+      });
+
+      res.json(progress);
+    } catch (error) {
+      console.error("Error completing evaluation:", error);
+      res.status(500).json({ message: "Failed to complete evaluation" });
     }
   });
 

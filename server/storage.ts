@@ -1,13 +1,16 @@
 import { 
   levels, subjects, levelSubjects, learningObjectives, weeklyResources,
   enrollments, studentProgress, weeklyCompletion, userProfiles,
+  programCalendar, moduleEvaluations, evaluationProgress,
   type Level, type InsertLevel, type Subject, type InsertSubject,
   type LevelSubject, type InsertLevelSubject, type LearningObjective, type InsertLearningObjective,
   type WeeklyResource, type InsertWeeklyResource, type Enrollment, type InsertEnrollment,
-  type StudentProgress, type InsertStudentProgress, type UserProfile, type InsertUserProfile
+  type StudentProgress, type InsertStudentProgress, type UserProfile, type InsertUserProfile,
+  type ProgramCalendar, type InsertProgramCalendar, type ModuleEvaluation, type InsertModuleEvaluation,
+  type EvaluationProgress, type InsertEvaluationProgress
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // Levels
@@ -47,6 +50,19 @@ export interface IStorage {
   // User Profiles
   getUserProfile(userId: string): Promise<UserProfile | undefined>;
   createOrUpdateUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
+  
+  // Program Calendar
+  getProgramCalendar(levelId: string): Promise<ProgramCalendar | undefined>;
+  createProgramCalendar(calendar: InsertProgramCalendar): Promise<ProgramCalendar>;
+  
+  // Module Evaluations
+  getModuleEvaluations(learningObjectiveId: string): Promise<ModuleEvaluation[]>;
+  createModuleEvaluation(evaluation: InsertModuleEvaluation): Promise<ModuleEvaluation>;
+  
+  // Evaluation Progress
+  getEvaluationProgressByUser(userId: string, evaluationIds?: string[]): Promise<EvaluationProgress[]>;
+  getUserCompletedModules(userId: string, levelSubjectId: string): Promise<number[]>;
+  markEvaluationComplete(progress: InsertEvaluationProgress): Promise<EvaluationProgress>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -193,6 +209,90 @@ export class DatabaseStorage implements IStorage {
       return updated;
     }
     const [created] = await db.insert(userProfiles).values(profile).returning();
+    return created;
+  }
+
+  // Program Calendar
+  async getProgramCalendar(levelId: string): Promise<ProgramCalendar | undefined> {
+    const [calendar] = await db.select().from(programCalendar).where(eq(programCalendar.levelId, levelId));
+    return calendar;
+  }
+
+  async createProgramCalendar(calendar: InsertProgramCalendar): Promise<ProgramCalendar> {
+    const [created] = await db.insert(programCalendar).values(calendar).returning();
+    return created;
+  }
+
+  // Module Evaluations
+  async getModuleEvaluations(learningObjectiveId: string): Promise<ModuleEvaluation[]> {
+    return db.select().from(moduleEvaluations)
+      .where(eq(moduleEvaluations.learningObjectiveId, learningObjectiveId))
+      .orderBy(moduleEvaluations.evaluationNumber);
+  }
+
+  async createModuleEvaluation(evaluation: InsertModuleEvaluation): Promise<ModuleEvaluation> {
+    const [created] = await db.insert(moduleEvaluations).values(evaluation).returning();
+    return created;
+  }
+
+  // Evaluation Progress
+  async getEvaluationProgressByUser(userId: string, evaluationIds?: string[]): Promise<EvaluationProgress[]> {
+    if (evaluationIds && evaluationIds.length > 0) {
+      return db.select().from(evaluationProgress)
+        .where(and(
+          eq(evaluationProgress.userId, userId),
+          inArray(evaluationProgress.evaluationId, evaluationIds)
+        ));
+    }
+    return db.select().from(evaluationProgress)
+      .where(eq(evaluationProgress.userId, userId));
+  }
+
+  async getUserCompletedModules(userId: string, levelSubjectId: string): Promise<number[]> {
+    const objectivesForSubject = await db.select({ id: learningObjectives.id, weekNumber: learningObjectives.weekNumber })
+      .from(learningObjectives)
+      .where(eq(learningObjectives.levelSubjectId, levelSubjectId));
+    
+    if (objectivesForSubject.length === 0) return [];
+    
+    const objectiveIds = objectivesForSubject.map(o => o.id);
+    
+    const eval2s = await db.select()
+      .from(moduleEvaluations)
+      .where(and(
+        inArray(moduleEvaluations.learningObjectiveId, objectiveIds),
+        eq(moduleEvaluations.evaluationNumber, 2)
+      ));
+    
+    if (eval2s.length === 0) return [];
+    
+    const eval2Ids = eval2s.map(e => e.id);
+    
+    const completedEvals = await db.select()
+      .from(evaluationProgress)
+      .where(and(
+        eq(evaluationProgress.userId, userId),
+        inArray(evaluationProgress.evaluationId, eval2Ids),
+        eq(evaluationProgress.passed, true)
+      ));
+    
+    const completedEvalIds = new Set(completedEvals.map(e => e.evaluationId));
+    
+    const completedModules: number[] = [];
+    for (const eval2 of eval2s) {
+      if (completedEvalIds.has(eval2.id)) {
+        const objective = objectivesForSubject.find(o => o.id === eval2.learningObjectiveId);
+        if (objective) {
+          completedModules.push(objective.weekNumber);
+        }
+      }
+    }
+    
+    return completedModules.sort((a, b) => a - b);
+  }
+
+  async markEvaluationComplete(progress: InsertEvaluationProgress): Promise<EvaluationProgress> {
+    const [created] = await db.insert(evaluationProgress).values(progress).returning();
     return created;
   }
 }
