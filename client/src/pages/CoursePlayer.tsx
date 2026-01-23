@@ -16,7 +16,8 @@ import {
   ClipboardCheck,
   Check,
   Lock,
-  Upload
+  Upload,
+  Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -32,6 +33,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { TextbookViewer } from "@/components/TextbookViewer";
+import { EvaluationQuiz } from "@/components/EvaluationQuiz";
 
 export default function CoursePlayer() {
   const [, params] = useRoute("/course/:id");
@@ -57,9 +59,18 @@ export default function CoursePlayer() {
     htmlContent: string;
     objectiveId: string;
   }>(null);
+  const [quizData, setQuizData] = useState<null | {
+    evaluationId: string;
+    title: string;
+    questions: { id: number; question: string; options: string[] }[];
+    passingScore: number;
+  }>(null);
   const [htmlInputValue, setHtmlInputValue] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingWord, setIsUploadingWord] = useState(false);
+  const [isGeneratingEvaluations, setIsGeneratingEvaluations] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState<{ current: number; total: number } | null>(null);
+  const [loadingQuiz, setLoadingQuiz] = useState(false);
   const queryClient = useQueryClient();
 
   const levels: Record<string, string> = {
@@ -128,6 +139,24 @@ export default function CoursePlayer() {
       if (!currentObjectiveId) return { moduleOAs: null, moduleContents: null, moduleDateRange: null };
       const res = await fetch(`/api/objectives/${currentObjectiveId}/module-info`, { credentials: 'include' });
       if (!res.ok) return { moduleOAs: null, moduleContents: null, moduleDateRange: null };
+      return res.json();
+    },
+    enabled: !!currentObjectiveId && isAuthenticated
+  });
+
+  const { data: moduleEvaluations } = useQuery<Array<{
+    id: string;
+    evaluationNumber: number;
+    title: string;
+    hasQuestions: boolean;
+    totalQuestions: number | null;
+    generatedAt: string | null;
+  }>>({
+    queryKey: ['/api/learning-objectives', currentObjectiveId, 'evaluations'],
+    queryFn: async () => {
+      if (!currentObjectiveId) return [];
+      const res = await fetch(`/api/learning-objectives/${currentObjectiveId}/evaluations`, { credentials: 'include' });
+      if (!res.ok) return [];
       return res.json();
     },
     enabled: !!currentObjectiveId && isAuthenticated
@@ -211,6 +240,13 @@ export default function CoursePlayer() {
   };
 
   const handleEvaluationClick = async (evaluation: typeof evaluations[0]) => {
+    const moduleEval = moduleEvaluations?.find(e => e.evaluationNumber === evaluation.number);
+    
+    if (moduleEval?.hasQuestions) {
+      await startEvaluationQuiz(moduleEval.id);
+      return;
+    }
+    
     let htmlContent = evaluation.htmlContent;
     
     if (currentObjectiveId) {
@@ -324,6 +360,49 @@ export default function CoursePlayer() {
     }
   };
 
+  const handleGenerateEvaluations = async () => {
+    if (!currentObjectiveId) {
+      toast({
+        title: "Error",
+        description: "No hay un módulo seleccionado",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsGeneratingEvaluations(true);
+    setGenerationProgress({ current: 0, total: 4 });
+    
+    try {
+      const res = await fetch(`/api/admin/learning-objectives/${currentObjectiveId}/generate-evaluations`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+
+      if (!res.ok) throw new Error('Failed to generate evaluations');
+
+      const data = await res.json();
+      const successCount = data.results?.filter((r: any) => r.success).length || 0;
+      
+      toast({
+        title: "Evaluaciones Generadas",
+        description: `Se generaron ${successCount} evaluaciones para el Módulo ${currentModule} con IA`
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['/api/objectives', currentObjectiveId, 'module-info'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/learning-objectives', currentObjectiveId, 'evaluations'] });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudieron generar las evaluaciones",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingEvaluations(false);
+      setGenerationProgress(null);
+    }
+  };
+
   const convertToEmbedUrl = (url: string): string => {
     if (!url) return "";
     if (url.includes("drive.google.com/file/d/")) {
@@ -346,6 +425,38 @@ export default function CoursePlayer() {
 
   const prevEvaluation = () => {
     setCurrentEvaluation((prev) => (prev - 1 + evaluations.length) % evaluations.length);
+  };
+
+  const startEvaluationQuiz = async (evaluationId: string) => {
+    setLoadingQuiz(true);
+    try {
+      const res = await fetch(`/api/evaluations/${evaluationId}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to load evaluation');
+      const data = await res.json();
+      
+      if (data.questions && data.questions.length > 0) {
+        setQuizData({
+          evaluationId: data.id,
+          title: data.title,
+          questions: data.questions,
+          passingScore: data.passingScore || 60
+        });
+      } else {
+        toast({
+          title: "Sin preguntas",
+          description: "Esta evaluación aún no tiene preguntas generadas",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo cargar la evaluación",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingQuiz(false);
+    }
   };
 
   return (
@@ -373,9 +484,9 @@ export default function CoursePlayer() {
             <p className="text-[#A51C30] text-xs font-bold uppercase tracking-[0.3em]">{levelName}</p>
           </div>
 
-          {/* Subir documento Word - Solo admin */}
+          {/* Admin Controls - Solo admin */}
           {isAdmin && (
-            <div className="bg-white border border-slate-200 p-4 shadow-sm">
+            <div className="bg-white border border-slate-200 p-4 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-bold text-[#0A192F]">Planificación del Programa</h3>
@@ -407,6 +518,35 @@ export default function CoursePlayer() {
                     data-testid="word-upload-input"
                   />
                 </label>
+              </div>
+              
+              <div className="border-t border-slate-200 pt-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-bold text-[#0A192F]">Generar Evaluaciones con IA</h3>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Genera 4 evaluaciones formativas (15-20 preguntas c/u) para el Módulo {currentModule}
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handleGenerateEvaluations}
+                    disabled={isGeneratingEvaluations || !currentObjectiveId}
+                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                    data-testid="generate-evaluations-button"
+                  >
+                    {isGeneratingEvaluations ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Generando...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        Generar con IA
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
           )}
@@ -573,9 +713,16 @@ export default function CoursePlayer() {
                       <p className="text-xs text-slate-500 mt-1">
                         {evaluations[currentEvaluation]?.dayName} {formatDate(evaluations[currentEvaluation]?.date)}
                       </p>
-                      <Badge className="bg-amber-100 text-amber-700 rounded-none text-[8px] mt-3">
-                        Clic para abrir
-                      </Badge>
+                      {moduleEvaluations?.find(e => e.evaluationNumber === evaluations[currentEvaluation]?.number)?.hasQuestions ? (
+                        <Badge className="bg-emerald-100 text-emerald-700 rounded-none text-[8px] mt-3">
+                          <Sparkles className="w-3 h-3 mr-1" />
+                          IA • {moduleEvaluations?.find(e => e.evaluationNumber === evaluations[currentEvaluation]?.number)?.totalQuestions} preguntas
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-amber-100 text-amber-700 rounded-none text-[8px] mt-3">
+                          Clic para abrir
+                        </Badge>
+                      )}
                     </div>
                   )}
                 </div>
@@ -713,6 +860,25 @@ export default function CoursePlayer() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Quiz Modal for AI-generated evaluations */}
+      {quizData && (
+        <EvaluationQuiz
+          evaluationId={quizData.evaluationId}
+          title={quizData.title}
+          questions={quizData.questions}
+          passingScore={quizData.passingScore}
+          onComplete={(result) => {
+            toast({
+              title: result.passed ? "¡Aprobado!" : "No Aprobado",
+              description: `Obtuviste ${result.score}% (${result.totalCorrect}/${result.totalQuestions} correctas)`,
+              variant: result.passed ? "default" : "destructive"
+            });
+            queryClient.invalidateQueries({ queryKey: ['/api/learning-objectives', currentObjectiveId, 'evaluations'] });
+          }}
+          onClose={() => setQuizData(null)}
+        />
+      )}
     </div>
   );
 }

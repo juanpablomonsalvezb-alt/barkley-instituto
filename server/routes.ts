@@ -15,6 +15,7 @@ import {
 } from "./calendarUtils";
 import mammoth from "mammoth";
 import multer from "multer";
+import { generateEvaluationQuestions } from "./aiEvaluationGenerator";
 
 // Multer configuration for Word document uploads
 const upload = multer({ 
@@ -893,6 +894,256 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error proxying PDF:", error);
       res.status(500).json({ message: "Failed to proxy PDF" });
+    }
+  });
+
+  // Generate AI evaluations for a single module
+  app.post("/api/admin/learning-objectives/:id/generate-evaluations", isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const objective = await storage.getLearningObjectiveById(id);
+      if (!objective) {
+        return res.status(404).json({ message: "Learning objective not found" });
+      }
+
+      const results: { evaluationNumber: number; success: boolean; questionCount?: number; error?: string }[] = [];
+      const questionCounts = [15, 18, 15, 20];
+
+      for (let evalNum = 1; evalNum <= 4; evalNum++) {
+        try {
+          const generated = await generateEvaluationQuestions(
+            objective.weekNumber,
+            evalNum,
+            objective.moduleOAs || "",
+            objective.moduleContents || "",
+            null,
+            questionCounts[evalNum - 1]
+          );
+
+          await storage.upsertEvaluationQuestions(
+            id,
+            evalNum,
+            JSON.stringify(generated.questions),
+            generated.totalQuestions
+          );
+
+          results.push({
+            evaluationNumber: evalNum,
+            success: true,
+            questionCount: generated.totalQuestions
+          });
+
+          if (evalNum < 4) {
+            await new Promise(resolve => setTimeout(resolve, 1500));
+          }
+        } catch (error: any) {
+          console.error(`Error generating evaluation ${evalNum}:`, error);
+          results.push({
+            evaluationNumber: evalNum,
+            success: false,
+            error: error.message
+          });
+        }
+      }
+
+      res.json({ 
+        message: "Evaluation generation completed",
+        moduleNumber: objective.weekNumber,
+        results 
+      });
+    } catch (error) {
+      console.error("Error generating evaluations:", error);
+      res.status(500).json({ message: "Failed to generate evaluations" });
+    }
+  });
+
+  // Generate AI evaluations for all modules in a level-subject (batch generation)
+  app.post("/api/admin/level-subjects/:id/generate-all-evaluations", isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const startModule = Math.max(1, Math.min(15, Number(req.body.startModule) || 1));
+      const endModule = Math.max(1, Math.min(15, Number(req.body.endModule) || 15));
+      
+      const objectives = await storage.getLearningObjectives(id);
+      if (objectives.length === 0) {
+        return res.status(404).json({ message: "No learning objectives found" });
+      }
+
+      const filteredObjectives = objectives.filter(
+        o => o.weekNumber >= startModule && o.weekNumber <= endModule
+      );
+
+      const allResults: { moduleNumber: number; results: any[] }[] = [];
+      const questionCounts = [15, 18, 15, 20];
+
+      for (const objective of filteredObjectives) {
+        const moduleResults: { evaluationNumber: number; success: boolean; questionCount?: number; error?: string }[] = [];
+        
+        for (let evalNum = 1; evalNum <= 4; evalNum++) {
+          try {
+            const generated = await generateEvaluationQuestions(
+              objective.weekNumber,
+              evalNum,
+              objective.moduleOAs || "",
+              objective.moduleContents || "",
+              null,
+              questionCounts[evalNum - 1]
+            );
+
+            await storage.upsertEvaluationQuestions(
+              objective.id,
+              evalNum,
+              JSON.stringify(generated.questions),
+              generated.totalQuestions
+            );
+
+            moduleResults.push({
+              evaluationNumber: evalNum,
+              success: true,
+              questionCount: generated.totalQuestions
+            });
+
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          } catch (error: any) {
+            console.error(`Error generating M${objective.weekNumber} E${evalNum}:`, error);
+            moduleResults.push({
+              evaluationNumber: evalNum,
+              success: false,
+              error: error.message
+            });
+          }
+        }
+
+        allResults.push({
+          moduleNumber: objective.weekNumber,
+          results: moduleResults
+        });
+      }
+
+      res.json({ 
+        message: "Evaluation generation completed",
+        totalModules: filteredObjectives.length,
+        results: allResults
+      });
+    } catch (error) {
+      console.error("Error generating all evaluations:", error);
+      res.status(500).json({ message: "Failed to generate evaluations" });
+    }
+  });
+
+  // Get evaluation with questions for a student
+  app.get("/api/evaluations/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const evaluation = await storage.getModuleEvaluationById(id);
+      if (!evaluation) {
+        return res.status(404).json({ message: "Evaluation not found" });
+      }
+
+      if (!evaluation.questionsJson) {
+        return res.status(404).json({ message: "No questions available for this evaluation" });
+      }
+
+      const questions = JSON.parse(evaluation.questionsJson);
+      const questionsWithoutAnswers = questions.map((q: any) => ({
+        id: q.id,
+        question: q.question,
+        options: q.options
+      }));
+
+      res.json({
+        id: evaluation.id,
+        title: evaluation.title,
+        totalQuestions: evaluation.totalQuestions,
+        passingScore: evaluation.passingScore,
+        questions: questionsWithoutAnswers
+      });
+    } catch (error) {
+      console.error("Error getting evaluation:", error);
+      res.status(500).json({ message: "Failed to get evaluation" });
+    }
+  });
+
+  // Submit evaluation answers
+  app.post("/api/evaluations/:id/submit", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.claims?.sub;
+      const { answers } = req.body;
+
+      if (!Array.isArray(answers)) {
+        return res.status(400).json({ message: "Answers must be an array" });
+      }
+
+      const evaluation = await storage.getModuleEvaluationById(id);
+      if (!evaluation || !evaluation.questionsJson) {
+        return res.status(404).json({ message: "Evaluation not found" });
+      }
+
+      const questions = JSON.parse(evaluation.questionsJson);
+      let correctCount = 0;
+      const results: { questionId: number; correct: boolean; correctAnswer: number; explanation: string }[] = [];
+
+      for (const question of questions) {
+        const userAnswer = answers.find((a: { questionId: number }) => a.questionId === question.id);
+        const isCorrect = userAnswer && userAnswer.answer === question.correctAnswer;
+        if (isCorrect) correctCount++;
+        
+        results.push({
+          questionId: question.id,
+          correct: isCorrect,
+          correctAnswer: question.correctAnswer,
+          explanation: question.explanation
+        });
+      }
+
+      const score = Math.round((correctCount / questions.length) * 100);
+      const passed = score >= (evaluation.passingScore || 60);
+
+      await storage.saveEvaluationAttempt(
+        userId,
+        id,
+        correctCount,
+        questions.length,
+        JSON.stringify(answers),
+        passed
+      );
+
+      res.json({
+        score,
+        totalCorrect: correctCount,
+        totalQuestions: questions.length,
+        passed,
+        passingScore: evaluation.passingScore || 60,
+        results
+      });
+    } catch (error) {
+      console.error("Error submitting evaluation:", error);
+      res.status(500).json({ message: "Failed to submit evaluation" });
+    }
+  });
+
+  // Get module evaluations with generation status
+  app.get("/api/learning-objectives/:id/evaluations", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const evaluations = await storage.getModuleEvaluations(id);
+      
+      const evaluationsWithStatus = evaluations.map(e => ({
+        id: e.id,
+        evaluationNumber: e.evaluationNumber,
+        title: e.title,
+        releaseDay: e.releaseDay,
+        releaseWeek: e.releaseWeek,
+        hasQuestions: !!e.questionsJson,
+        totalQuestions: e.totalQuestions,
+        generatedAt: e.generatedAt
+      }));
+
+      res.json(evaluationsWithStatus);
+    } catch (error) {
+      console.error("Error getting evaluations:", error);
+      res.status(500).json({ message: "Failed to get evaluations" });
     }
   });
 

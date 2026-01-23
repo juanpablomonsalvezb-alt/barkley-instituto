@@ -145,3 +145,49 @@ Students must meet both conditions to access a module:
 - `server/calendarUtils.ts` - Calendar calculation utilities
 - `client/src/components/ModuleCalendar.tsx` - Calendar UI component
 - `client/src/components/EvaluationTracker.tsx` - Evaluation progress tracker
+
+## AI-Generated Evaluations
+
+### Overview
+The platform uses Gemini AI (via Replit AI Integrations) to automatically generate formative evaluations for each module. Each module has 4 evaluations with 15-20 multiple-choice questions each.
+
+### Question Generation
+- **Evaluations 1 & 3**: 15 questions each
+- **Evaluations 2 & 4**: 18 and 20 questions respectively
+- **Passing Score**: 60% (configurable per evaluation)
+- Questions are generated based on:
+  - Module learning objectives (OAs)
+  - Module contents
+  - Textbook content (if available)
+
+### Schema Fields
+`moduleEvaluations` table includes:
+- `questionsJson`: JSON array of questions with id, question, options, correctAnswer, explanation
+- `totalQuestions`: Number of questions in the evaluation
+- `passingScore`: Minimum percentage to pass (default 60%)
+- `generatedAt`: Timestamp of AI generation
+
+`evaluationProgress` table includes:
+- `totalCorrect`: Number of correct answers
+- `totalQuestions`: Total questions answered
+- `answersJson`: JSON array of user's answers
+
+### API Endpoints
+- `POST /api/admin/learning-objectives/:id/generate-evaluations` - Generate 4 evaluations for a single module
+- `POST /api/admin/level-subjects/:id/generate-all-evaluations` - Batch generate for multiple modules
+- `GET /api/evaluations/:id` - Get evaluation with questions (answers hidden)
+- `POST /api/evaluations/:id/submit` - Submit answers and get results
+- `GET /api/learning-objectives/:id/evaluations` - Get evaluation status for a module
+
+### Admin UI
+- "Generar con IA" button in CoursePlayer generates evaluations for the current module
+- Green badge indicates AI-generated evaluations with question count
+
+### Student UI
+- `EvaluationQuiz` component provides a carousel-style quiz experience
+- Questions displayed one at a time with navigation
+- Results screen shows score, pass/fail status, and answer review with explanations
+
+### Key Files
+- `server/aiEvaluationGenerator.ts` - Gemini API integration for question generation
+- `client/src/components/EvaluationQuiz.tsx` - Quiz carousel component

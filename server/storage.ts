@@ -59,14 +59,29 @@ export interface IStorage {
   
   // Module Evaluations
   getModuleEvaluations(learningObjectiveId: string): Promise<ModuleEvaluation[]>;
+  getModuleEvaluationById(id: string): Promise<ModuleEvaluation | undefined>;
   createModuleEvaluation(evaluation: InsertModuleEvaluation): Promise<ModuleEvaluation>;
   upsertEvaluationHtml(objectiveId: string, evaluationNumber: number, htmlContent: string): Promise<ModuleEvaluation>;
   getEvaluationHtml(objectiveId: string, evaluationNumber: number): Promise<ModuleEvaluation | undefined>;
+  upsertEvaluationQuestions(
+    objectiveId: string, 
+    evaluationNumber: number, 
+    questionsJson: string, 
+    totalQuestions: number
+  ): Promise<ModuleEvaluation>;
   
   // Evaluation Progress
   getEvaluationProgressByUser(userId: string, evaluationIds?: string[]): Promise<EvaluationProgress[]>;
   getUserCompletedModules(userId: string, levelSubjectId: string): Promise<number[]>;
   markEvaluationComplete(progress: InsertEvaluationProgress): Promise<EvaluationProgress>;
+  saveEvaluationAttempt(
+    userId: string,
+    evaluationId: string,
+    totalCorrect: number,
+    totalQuestions: number,
+    answersJson: string,
+    passed: boolean
+  ): Promise<EvaluationProgress>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -312,6 +327,56 @@ export class DatabaseStorage implements IStorage {
     return evaluation;
   }
 
+  async getModuleEvaluationById(id: string): Promise<ModuleEvaluation | undefined> {
+    const [evaluation] = await db.select().from(moduleEvaluations)
+      .where(eq(moduleEvaluations.id, id))
+      .limit(1);
+    return evaluation;
+  }
+
+  async upsertEvaluationQuestions(
+    objectiveId: string, 
+    evaluationNumber: number, 
+    questionsJson: string, 
+    totalQuestions: number
+  ): Promise<ModuleEvaluation> {
+    const existing = await db.select().from(moduleEvaluations)
+      .where(and(
+        eq(moduleEvaluations.learningObjectiveId, objectiveId),
+        eq(moduleEvaluations.evaluationNumber, evaluationNumber)
+      ))
+      .limit(1);
+    
+    if (existing.length > 0) {
+      const [updated] = await db.update(moduleEvaluations)
+        .set({ 
+          questionsJson, 
+          totalQuestions,
+          passingScore: 60,
+          generatedAt: new Date()
+        })
+        .where(eq(moduleEvaluations.id, existing[0].id))
+        .returning();
+      return updated;
+    } else {
+      const releaseDay = evaluationNumber % 2 === 1 ? 3 : 5;
+      const releaseWeek = evaluationNumber <= 2 ? 1 : 2;
+      
+      const [created] = await db.insert(moduleEvaluations).values({
+        learningObjectiveId: objectiveId,
+        evaluationNumber,
+        title: `Evaluación Formativa ${evaluationNumber}`,
+        releaseDay,
+        releaseWeek,
+        questionsJson,
+        totalQuestions,
+        passingScore: 60,
+        generatedAt: new Date(),
+      }).returning();
+      return created;
+    }
+  }
+
   // Evaluation Progress
   async getEvaluationProgressByUser(userId: string, evaluationIds?: string[]): Promise<EvaluationProgress[]> {
     if (evaluationIds && evaluationIds.length > 0) {
@@ -370,6 +435,29 @@ export class DatabaseStorage implements IStorage {
 
   async markEvaluationComplete(progress: InsertEvaluationProgress): Promise<EvaluationProgress> {
     const [created] = await db.insert(evaluationProgress).values(progress).returning();
+    return created;
+  }
+
+  async saveEvaluationAttempt(
+    userId: string,
+    evaluationId: string,
+    totalCorrect: number,
+    totalQuestions: number,
+    answersJson: string,
+    passed: boolean
+  ): Promise<EvaluationProgress> {
+    const score = Math.round((totalCorrect / totalQuestions) * 100);
+    
+    const [created] = await db.insert(evaluationProgress).values({
+      userId,
+      evaluationId,
+      completedAt: new Date(),
+      score,
+      totalCorrect,
+      totalQuestions,
+      answersJson,
+      passed,
+    }).returning();
     return created;
   }
 
