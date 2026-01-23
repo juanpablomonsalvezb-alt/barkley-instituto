@@ -161,6 +161,17 @@ export async function registerRoutes(
     }
   });
 
+  // Get all level-subjects with level and subject info
+  app.get("/api/level-subjects", async (req, res) => {
+    try {
+      const levelSubjects = await storage.getAllLevelSubjects();
+      res.json(levelSubjects);
+    } catch (error) {
+      console.error("Error fetching level-subjects:", error);
+      res.status(500).json({ message: "Failed to fetch level-subjects" });
+    }
+  });
+
   // Get learning objectives for a level-subject combination
   app.get("/api/level-subjects/:id/objectives", async (req, res) => {
     try {

@@ -85,12 +85,8 @@ export default function DriveSync() {
     retry: 1
   });
 
-  const { data: levels } = useQuery<any[]>({
-    queryKey: ['/api/levels']
-  });
-
-  const { data: subjects } = useQuery<any[]>({
-    queryKey: ['/api/subjects']
+  const { data: levelSubjectsList } = useQuery<any[]>({
+    queryKey: ['/api/level-subjects']
   });
 
   const { data: modules, isLoading: modulesLoading, refetch: refetchModules } = useQuery<ModuleContent[]>({
@@ -286,12 +282,10 @@ export default function DriveSync() {
                   <SelectValue placeholder="Seleccionar nivel y materia..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {levels?.map((level) => (
-                    subjects?.map((subject) => (
-                      <SelectItem key={`${level.id}-${subject.id}`} value={`${level.id}-${subject.id}`}>
-                        {level.name} - {subject.name}
-                      </SelectItem>
-                    ))
+                  {levelSubjectsList?.map((ls) => (
+                    <SelectItem key={ls.id} value={ls.id}>
+                      {ls.level?.name} - {ls.subject?.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

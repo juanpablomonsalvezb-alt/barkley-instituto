@@ -24,6 +24,7 @@ export interface IStorage {
   createSubject(subject: InsertSubject): Promise<Subject>;
   
   // Level-Subjects
+  getAllLevelSubjects(): Promise<(LevelSubject & { level: Level; subject: Subject })[]>;
   getLevelSubjects(levelId: string): Promise<(LevelSubject & { subject: Subject })[]>;
   getLevelSubjectById(id: string): Promise<LevelSubject | undefined>;
   createLevelSubject(ls: InsertLevelSubject): Promise<LevelSubject>;
@@ -116,6 +117,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Level-Subjects
+  async getAllLevelSubjects(): Promise<(LevelSubject & { level: Level; subject: Subject })[]> {
+    const result = await db
+      .select({
+        id: levelSubjects.id,
+        levelId: levelSubjects.levelId,
+        subjectId: levelSubjects.subjectId,
+        totalOAs: levelSubjects.totalOAs,
+        textbookPdfUrl: levelSubjects.textbookPdfUrl,
+        textbookTitle: levelSubjects.textbookTitle,
+        level: levels,
+        subject: subjects,
+      })
+      .from(levelSubjects)
+      .innerJoin(levels, eq(levelSubjects.levelId, levels.id))
+      .innerJoin(subjects, eq(levelSubjects.subjectId, subjects.id))
+      .orderBy(levels.sortOrder, subjects.name);
+    
+    return result.map(r => ({
+      id: r.id,
+      levelId: r.levelId,
+      subjectId: r.subjectId,
+      totalOAs: r.totalOAs,
+      textbookPdfUrl: r.textbookPdfUrl,
+      textbookTitle: r.textbookTitle,
+      level: r.level,
+      subject: r.subject,
+    }));
+  }
+
   async getLevelSubjects(levelId: string): Promise<(LevelSubject & { subject: Subject })[]> {
     const result = await db
       .select({
