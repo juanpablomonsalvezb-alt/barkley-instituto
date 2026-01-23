@@ -72,6 +72,13 @@ export default function CoursePlayer() {
   }>(null);
   const [viewedResources, setViewedResources] = useState<Set<string>>(new Set());
   const [examCompleted, setExamCompleted] = useState(false);
+  const [sidePanel, setSidePanel] = useState<null | {
+    title: string,
+    help: string,
+    fundamental: string,
+    objective: string,
+    resourceId: string
+  }>(null);
 
   const levels: Record<string, string> = {
     "7b": "7° Básico", "8b": "8° Básico", "1m": "1° Medio", "2m": "2° Medio",
@@ -138,14 +145,12 @@ export default function CoursePlayer() {
     if (res.id !== "cuestionario" || viewedResources.size >= resources.length - 2) {
       if (res.embedType === "notebooklm-popup" && res.embedUrl) {
         openNotebookLMPopup(res.embedUrl, res.title);
-        setSelectedResource({ 
-          title: res.title, 
-          embedUrl: res.embedUrl, 
-          embedType: res.embedType, 
-          id: res.id, 
-          help: res.help, 
+        setSidePanel({
+          title: res.title,
+          help: res.help,
           fundamental: res.fundamental,
-          instructions: res.instructions || ""
+          objective: res.objective,
+          resourceId: res.id
         });
       } else {
         setSelectedResource({ 
@@ -322,6 +327,91 @@ export default function CoursePlayer() {
           </div>
         </div>
       </div>
+
+      {/* Side Panel for NotebookLM Resources */}
+      {sidePanel && (
+        <div className="fixed left-0 top-16 bottom-0 w-[380px] bg-white border-r border-slate-200 shadow-2xl z-40 animate-in slide-in-from-left duration-300">
+          <div className="h-full flex flex-col">
+            <div className="bg-[#0A192F] p-6 shrink-0">
+              <div className="flex items-center justify-between mb-4">
+                <Badge className="bg-[#A51C30] text-white rounded-none text-[8px] px-3 py-1 uppercase tracking-widest">
+                  NotebookLM Activo
+                </Badge>
+                <button 
+                  onClick={() => setSidePanel(null)}
+                  className="text-white/60 hover:text-white transition-colors"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+              </div>
+              <h3 className="text-white font-serif font-bold text-lg italic leading-tight">
+                {sidePanel.title}
+              </h3>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              <div className="space-y-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#A51C30]">Tu Guía</p>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  {sidePanel.help}
+                </p>
+              </div>
+              
+              <div className="h-px bg-slate-100"></div>
+              
+              <div className="space-y-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#A51C30]">Objetivo Cognitivo</p>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  {sidePanel.objective}
+                </p>
+              </div>
+              
+              <div className="h-px bg-slate-100"></div>
+              
+              <div className="space-y-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#A51C30]">Fundamento Barkley</p>
+                <div className="bg-slate-50 border-l-4 border-[#A51C30] p-4">
+                  <p className="text-sm text-slate-700 font-medium italic">
+                    {sidePanel.fundamental}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="h-px bg-slate-100"></div>
+              
+              <div className="space-y-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#A51C30]">Notas Personales</p>
+                <textarea 
+                  className="w-full h-32 border border-slate-200 rounded-none p-3 text-sm resize-none focus:outline-none focus:border-[#A51C30] focus:ring-1 focus:ring-[#A51C30]"
+                  placeholder="Escribe aquí tus reflexiones mientras estudias..."
+                />
+              </div>
+            </div>
+            
+            <div className="p-4 border-t border-slate-200 shrink-0 space-y-3">
+              <Button 
+                onClick={() => {
+                  const res = resources.find(r => r.id === sidePanel.resourceId);
+                  if (res) openNotebookLMPopup(res.embedUrl, res.title);
+                }}
+                className="w-full bg-[#A51C30] hover:bg-[#8B1728] text-white rounded-none text-[10px] font-bold uppercase tracking-widest"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" /> Reabrir NotebookLM
+              </Button>
+              <Button 
+                onClick={() => {
+                  setViewedResources(prev => new Set(prev).add(sidePanel.resourceId));
+                  setSidePanel(null);
+                }}
+                variant="outline"
+                className="w-full rounded-none text-[10px] font-bold uppercase tracking-widest border-slate-300"
+              >
+                <CheckCircle2 className="w-4 h-4 mr-2" /> Marcar como Completado
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Resource Modal */}
       <Dialog open={selectedResource !== null} onOpenChange={() => setSelectedResource(null)}>
