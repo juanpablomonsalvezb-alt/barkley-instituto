@@ -127,12 +127,10 @@ export default function CoursePlayer() {
   }
 
   const openNotebookLMPopup = (url: string, title: string) => {
-    const screenWidth = window.screen.width;
-    const screenHeight = window.screen.height;
-    const popupWidth = Math.floor(screenWidth * 0.45);
-    const popupHeight = screenHeight;
-    const left = screenWidth - popupWidth;
-    const top = 0;
+    const popupWidth = 900;
+    const popupHeight = 600;
+    const left = window.screen.width - popupWidth - 50;
+    const top = 100;
     
     window.open(
       url,
