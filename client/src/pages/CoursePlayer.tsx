@@ -15,7 +15,8 @@ import {
   FileText,
   ClipboardCheck,
   Check,
-  Lock
+  Lock,
+  Upload
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -58,6 +59,7 @@ export default function CoursePlayer() {
   }>(null);
   const [htmlInputValue, setHtmlInputValue] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingWord, setIsUploadingWord] = useState(false);
   const queryClient = useQueryClient();
 
   const levels: Record<string, string> = {
@@ -119,6 +121,17 @@ export default function CoursePlayer() {
   });
 
   const isAdmin = profileData?.role === 'admin';
+
+  const { data: moduleInfo } = useQuery<{ moduleOAs: string | null; moduleContents: string | null; moduleDateRange: string | null }>({
+    queryKey: ['/api/objectives', currentObjectiveId, 'module-info'],
+    queryFn: async () => {
+      if (!currentObjectiveId) return { moduleOAs: null, moduleContents: null, moduleDateRange: null };
+      const res = await fetch(`/api/objectives/${currentObjectiveId}/module-info`, { credentials: 'include' });
+      if (!res.ok) return { moduleOAs: null, moduleContents: null, moduleDateRange: null };
+      return res.json();
+    },
+    enabled: !!currentObjectiveId && isAuthenticated
+  });
 
   const resources = [
     { id: "video", title: "Video", icon: Video, color: "bg-red-500", embedUrl: "" },
@@ -265,6 +278,52 @@ export default function CoursePlayer() {
     }
   };
   
+  const handleWordUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !currentObjectiveId) {
+      toast({
+        title: "Error",
+        description: "Selecciona un archivo Word válido",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsUploadingWord(true);
+    try {
+      const formData = new FormData();
+      formData.append('wordDoc', file);
+
+      const res = await fetch(`/api/admin/objectives/${currentObjectiveId}/word-upload`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      });
+
+      if (!res.ok) throw new Error('Failed to upload');
+
+      const data = await res.json();
+      
+      toast({
+        title: "Documento procesado",
+        description: "La información del módulo ha sido extraída y guardada"
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['/api/objectives', currentObjectiveId, 'module-info'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/level-subjects', courseId, 'calendar'] });
+      
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo procesar el documento Word",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploadingWord(false);
+      event.target.value = '';
+    }
+  };
+
   const convertToEmbedUrl = (url: string): string => {
     if (!url) return "";
     if (url.includes("drive.google.com/file/d/")) {
@@ -367,8 +426,54 @@ export default function CoursePlayer() {
               
               {currentModuleData && (
                 <p className="text-sm text-slate-500">
-                  {currentModuleData.startFormatted} — {currentModuleData.endFormatted}
+                  {moduleInfo?.moduleDateRange || `${currentModuleData.startFormatted} — ${currentModuleData.endFormatted}`}
                 </p>
+              )}
+              
+              {moduleInfo?.moduleOAs && (
+                <div className="text-left bg-slate-50 p-4 mt-4 border border-slate-200">
+                  <h4 className="text-xs font-bold text-[#A51C30] uppercase tracking-wider mb-2">Objetivos de Aprendizaje</h4>
+                  <p className="text-sm text-slate-700 whitespace-pre-line">{moduleInfo.moduleOAs}</p>
+                </div>
+              )}
+              
+              {moduleInfo?.moduleContents && (
+                <div className="text-left bg-slate-50 p-4 mt-2 border border-slate-200">
+                  <h4 className="text-xs font-bold text-[#A51C30] uppercase tracking-wider mb-2">Contenidos</h4>
+                  <p className="text-sm text-slate-700 whitespace-pre-line">{moduleInfo.moduleContents}</p>
+                </div>
+              )}
+              
+              {isAdmin && (
+                <div className="mt-6 pt-4 border-t border-slate-200">
+                  <label 
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 cursor-pointer transition-colors text-sm"
+                    data-testid="word-upload-button"
+                  >
+                    {isUploadingWord ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Procesando...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4" />
+                        Subir documento Word
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept=".docx,.doc"
+                      onChange={handleWordUpload}
+                      disabled={isUploadingWord}
+                      className="hidden"
+                      data-testid="word-upload-input"
+                    />
+                  </label>
+                  <p className="text-xs text-slate-500 mt-2">
+                    Sube un documento Word con: número de módulo, fechas, OAs y contenidos
+                  </p>
+                </div>
               )}
             </div>
           </Card>
