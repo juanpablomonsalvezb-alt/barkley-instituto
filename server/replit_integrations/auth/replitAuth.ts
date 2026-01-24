@@ -5,8 +5,92 @@ import passport from "passport";
 import session from "express-session";
 import type { Express, RequestHandler } from "express";
 import memoize from "memoizee";
-import connectPg from "connect-pg-simple";
 import { authStorage } from "./storage";
+import Database from "better-sqlite3";
+import path from "path";
+
+// Get SQLite database instance for sessions
+const getSessionDb = () => {
+  const dbPath = process.env.DATABASE_URL || path.join(process.cwd(), "taskManagement.db");
+  const sqlite = new Database(dbPath);
+  sqlite.pragma("foreign_keys = ON");
+  
+  // Ensure sessions table exists
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS sessions (
+      sid TEXT PRIMARY KEY,
+      sess TEXT NOT NULL,
+      expire INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS IDX_session_expire ON sessions(expire);
+  `);
+  
+  return sqlite;
+};
+
+// Simple SQLite session store using better-sqlite3 directly for synchronous operations
+class SQLiteStore extends session.Store {
+  private db: Database.Database;
+
+  constructor() {
+    super();
+    this.db = getSessionDb();
+  }
+
+  get(sid: string, callback: (err?: any, session?: any) => void) {
+    try {
+      const row = this.db.prepare("SELECT sess, expire FROM sessions WHERE sid = ?").get(sid) as { sess: string; expire: number } | undefined;
+      
+      if (!row || row.expire < Date.now()) {
+        return callback();
+      }
+      
+      callback(null, JSON.parse(row.sess));
+    } catch (error) {
+      callback(error);
+    }
+  }
+
+  set(sid: string, sess: any, callback?: (err?: any) => void) {
+    try {
+      const expire = Date.now() + (sess.cookie?.maxAge || 7 * 24 * 60 * 60 * 1000);
+      this.db.prepare(
+        "INSERT INTO sessions (sid, sess, expire) VALUES (?, ?, ?) ON CONFLICT(sid) DO UPDATE SET sess = ?, expire = ?"
+      ).run(sid, JSON.stringify(sess), expire, JSON.stringify(sess), expire);
+      callback?.();
+    } catch (error) {
+      callback?.(error);
+    }
+  }
+
+  destroy(sid: string, callback?: (err?: any) => void) {
+    try {
+      this.db.prepare("DELETE FROM sessions WHERE sid = ?").run(sid);
+      callback?.();
+    } catch (error) {
+      callback?.(error);
+    }
+  }
+
+  touch(sid: string, sess: any, callback?: (err?: any) => void) {
+    try {
+      const expire = Date.now() + (sess.cookie?.maxAge || 7 * 24 * 60 * 60 * 1000);
+      this.db.prepare("UPDATE sessions SET expire = ? WHERE sid = ?").run(expire, sid);
+      callback?.();
+    } catch (error) {
+      callback?.(error);
+    }
+  }
+
+  // Clean up expired sessions
+  cleanup() {
+    try {
+      this.db.prepare("DELETE FROM sessions WHERE expire < ?").run(Date.now());
+    } catch (error) {
+      console.error("Error cleaning up sessions:", error);
+    }
+  }
+}
 
 const getOidcConfig = memoize(
   async () => {
@@ -20,21 +104,21 @@ const getOidcConfig = memoize(
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-  const pgStore = connectPg(session);
-  const sessionStore = new pgStore({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: false,
-    ttl: sessionTtl,
-    tableName: "sessions",
-  });
+  const sessionStore = new SQLiteStore();
+  
+  // Clean up expired sessions periodically
+  setInterval(() => {
+    sessionStore.cleanup();
+  }, 60 * 60 * 1000); // Every hour
+  
   return session({
-    secret: process.env.SESSION_SECRET!,
+    secret: process.env.SESSION_SECRET || "dev-secret-change-in-production",
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
       maxAge: sessionTtl,
     },
   });

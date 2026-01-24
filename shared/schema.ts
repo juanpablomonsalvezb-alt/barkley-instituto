@@ -1,68 +1,62 @@
-import { sql, relations } from "drizzle-orm";
-import { pgTable, text, varchar, integer, boolean, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { sqliteTable, text, integer, boolean } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { randomUUID } from "crypto";
 
 // Re-export auth models (users and sessions tables)
 export * from "./models/auth";
 // Re-export chat models (conversations and messages tables)
 export * from "./models/chat";
 
-// Enums
-export const programTypeEnum = pgEnum("program_type", ["menores", "adultos"]);
-export const resourceTypeEnum = pgEnum("resource_type", [
-  "video", 
-  "infografia", 
-  "audio", 
-  "presentacion"
-]);
-export const userRoleEnum = pgEnum("user_role", ["admin", "student", "tutor"]);
+// Enums - SQLite doesn't have native enums, so we use text with check constraints
+// For simplicity, we'll just use text fields and validate in the application layer
 
 // User roles - extends the auth users table
-export const userProfiles = pgTable("user_profiles", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull(),
-  role: userRoleEnum("role").default("student").notNull(),
-  levelId: varchar("level_id"),
-  createdAt: timestamp("created_at").defaultNow(),
+export const userProfiles = sqliteTable("user_profiles", {
+  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
+  userId: text("user_id").notNull(),
+  role: text("role", { enum: ["admin", "student", "tutor"] }).default("student").notNull(),
+  levelId: text("level_id"),
+  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow(),
 });
 
 // Import users from auth for foreign key references
 import { users } from "./models/auth";
 
 // Levels (7° Básico, 8° Básico, etc.)
-export const levels = pgTable("levels", {
-  id: varchar("id").primaryKey(), // e.g., "7b", "8b", "1m", etc.
+export const levels = sqliteTable("levels", {
+  id: text("id").primaryKey(), // e.g., "7b", "8b", "1m", etc.
   name: text("name").notNull(), // "7° Básico"
-  programType: programTypeEnum("program_type").notNull(),
+  programType: text("program_type", { enum: ["menores", "adultos"] }).notNull(),
   totalWeeks: integer("total_weeks").default(30).notNull(),
   cadencePerOA: text("cadence_per_oa"), // "2.18 sem/OA"
   sortOrder: integer("sort_order").default(0).notNull(),
 });
 
 // Subjects (Matemáticas, Lenguaje, etc.)
-export const subjects = pgTable("subjects", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+export const subjects = sqliteTable("subjects", {
+  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description"),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow(),
 });
 
 // Level-Subject association (which subjects are in which levels)
-export const levelSubjects = pgTable("level_subjects", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  levelId: varchar("level_id").notNull().references(() => levels.id),
-  subjectId: varchar("subject_id").notNull().references(() => subjects.id),
+export const levelSubjects = sqliteTable("level_subjects", {
+  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
+  levelId: text("level_id").notNull().references(() => levels.id),
+  subjectId: text("subject_id").notNull().references(() => subjects.id),
   totalOAs: integer("total_oas").default(0),
   textbookPdfUrl: text("textbook_pdf_url"),
   textbookTitle: text("textbook_title"),
 });
 
 // Learning Objectives (OAs - Objetivos de Aprendizaje) / Módulos
-export const learningObjectives = pgTable("learning_objectives", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  levelSubjectId: varchar("level_subject_id").notNull().references(() => levelSubjects.id),
+export const learningObjectives = sqliteTable("learning_objectives", {
+  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
+  levelSubjectId: text("level_subject_id").notNull().references(() => levelSubjects.id),
   code: text("code").notNull(), // "OA 3"
   title: text("title").notNull(),
   description: text("description"),
@@ -77,18 +71,18 @@ export const learningObjectives = pgTable("learning_objectives", {
 });
 
 // Program Calendar Configuration
-export const programCalendar = pgTable("program_calendar", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  levelId: varchar("level_id").notNull().references(() => levels.id),
-  startDate: timestamp("start_date").notNull(), // March 9, 2026
+export const programCalendar = sqliteTable("program_calendar", {
+  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
+  levelId: text("level_id").notNull().references(() => levels.id),
+  startDate: integer("start_date", { mode: "timestamp" }).notNull(), // March 9, 2026
   moduleDurationWeeks: integer("module_duration_weeks").default(2).notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow(),
 });
 
 // Module Evaluations (4 per module - Wed/Fri for 2 weeks)
-export const moduleEvaluations = pgTable("module_evaluations", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  learningObjectiveId: varchar("learning_objective_id").notNull().references(() => learningObjectives.id),
+export const moduleEvaluations = sqliteTable("module_evaluations", {
+  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
+  learningObjectiveId: text("learning_objective_id").notNull().references(() => learningObjectives.id),
   evaluationNumber: integer("evaluation_number").notNull(), // 1, 2, 3, or 4
   title: text("title").notNull(),
   description: text("description"),
@@ -99,65 +93,65 @@ export const moduleEvaluations = pgTable("module_evaluations", {
   questionsJson: text("questions_json"), // JSON array of AI-generated questions
   totalQuestions: integer("total_questions"), // Number of questions (15 or 20)
   passingScore: integer("passing_score").default(60), // Passing percentage (60%)
-  generatedAt: timestamp("generated_at"), // When questions were generated by AI
-  isRequired: boolean("is_required").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
+  generatedAt: integer("generated_at", { mode: "timestamp" }), // When questions were generated by AI
+  isRequired: integer("is_required", { mode: "boolean" }).default(true),
+  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow(),
 });
 
 // Student Evaluation Progress
-export const evaluationProgress = pgTable("evaluation_progress", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  evaluationId: varchar("evaluation_id").notNull().references(() => moduleEvaluations.id),
-  completedAt: timestamp("completed_at"),
+export const evaluationProgress = sqliteTable("evaluation_progress", {
+  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
+  userId: text("user_id").notNull().references(() => users.id),
+  evaluationId: text("evaluation_id").notNull().references(() => moduleEvaluations.id),
+  completedAt: integer("completed_at", { mode: "timestamp" }),
   score: integer("score"),
   totalCorrect: integer("total_correct"), // Number of correct answers
   totalQuestions: integer("total_questions"), // Total questions answered
   answersJson: text("answers_json"), // JSON array of user's answers
-  passed: boolean("passed").default(false),
+  passed: integer("passed", { mode: "boolean" }).default(false),
 });
 
 // Weekly Resources (7 tipos por semana)
-export const weeklyResources = pgTable("weekly_resources", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  learningObjectiveId: varchar("learning_objective_id").notNull().references(() => learningObjectives.id),
-  resourceType: resourceTypeEnum("resource_type").notNull(),
+export const weeklyResources = sqliteTable("weekly_resources", {
+  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
+  learningObjectiveId: text("learning_objective_id").notNull().references(() => learningObjectives.id),
+  resourceType: text("resource_type", { enum: ["video", "infografia", "audio", "presentacion"] }).notNull(),
   title: text("title").notNull(),
   notebookLmUrl: text("notebook_lm_url"),
   barkleyFoundation: text("barkley_foundation"), // "Activación Atencional (Barkley)"
   studentHelp: text("student_help"), // "Voz al alumno" text
   pedagogicalObjective: text("pedagogical_objective"),
   sortOrder: integer("sort_order").default(0).notNull(),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  isActive: integer("is_active", { mode: "boolean" }).default(true),
+  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).defaultNow(),
 });
 
 // Student Enrollments
-export const enrollments = pgTable("enrollments", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  levelSubjectId: varchar("level_subject_id").notNull().references(() => levelSubjects.id),
-  enrolledAt: timestamp("enrolled_at").defaultNow(),
-  isActive: boolean("is_active").default(true),
+export const enrollments = sqliteTable("enrollments", {
+  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
+  userId: text("user_id").notNull().references(() => users.id),
+  levelSubjectId: text("level_subject_id").notNull().references(() => levelSubjects.id),
+  enrolledAt: integer("enrolled_at", { mode: "timestamp" }).defaultNow(),
+  isActive: integer("is_active", { mode: "boolean" }).default(true),
 });
 
 // Student Progress (tracks which resources have been completed)
-export const studentProgress = pgTable("student_progress", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  resourceId: varchar("resource_id").notNull().references(() => weeklyResources.id),
-  completedAt: timestamp("completed_at").defaultNow(),
+export const studentProgress = sqliteTable("student_progress", {
+  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
+  userId: text("user_id").notNull().references(() => users.id),
+  resourceId: text("resource_id").notNull().references(() => weeklyResources.id),
+  completedAt: integer("completed_at", { mode: "timestamp" }).defaultNow(),
   score: integer("score"), // For cuestionario
 });
 
 // Weekly completion status
-export const weeklyCompletion = pgTable("weekly_completion", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  learningObjectiveId: varchar("learning_objective_id").notNull().references(() => learningObjectives.id),
-  isComplete: boolean("is_complete").default(false),
-  completedAt: timestamp("completed_at"),
+export const weeklyCompletion = sqliteTable("weekly_completion", {
+  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
+  userId: text("user_id").notNull().references(() => users.id),
+  learningObjectiveId: text("learning_objective_id").notNull().references(() => learningObjectives.id),
+  isComplete: integer("is_complete", { mode: "boolean" }).default(false),
+  completedAt: integer("completed_at", { mode: "timestamp" }),
   examScore: integer("exam_score"),
 });
 

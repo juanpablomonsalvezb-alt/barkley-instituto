@@ -1,0 +1,51 @@
+═══════════════════════════════════════════════════════════════════════════════
+  COMANDOS RÁPIDOS PARA GITHUB
+═══════════════════════════════════════════════════════════════════════════════
+
+OPCIÓN 1: Usar el script automático
+────────────────────────────────────────────────────────────────────────────────
+  bash setup-github.sh
+
+  Luego sigue las instrucciones que aparecen en pantalla.
+
+
+OPCIÓN 2: Comandos manuales paso a paso
+────────────────────────────────────────────────────────────────────────────────
+
+1. Inicializar Git:
+   git init
+
+2. Agregar todos los archivos:
+   git add .
+
+3. Crear el primer commit:
+   git commit -m "Initial commit: Proyecto Moodle Theme Creator"
+
+4. Crear repositorio en GitHub:
+   👉 Ve a: https://github.com/new
+   👉 Crea el repositorio (NO marques README, .gitignore, ni license)
+
+5. Conectar con GitHub (reemplaza TU-USUARIO y TU-REPOSITORIO):
+   git remote add origin https://github.com/TU-USUARIO/TU-REPOSITORIO.git
+   git branch -M main
+   git push -u origin main
+
+
+COMANDOS ÚTILES PARA EL FUTURO
+────────────────────────────────────────────────────────────────────────────────
+
+Ver estado de cambios:
+  git status
+
+Ver qué archivos cambiaron:
+  git diff
+
+Agregar cambios y subirlos:
+  git add .
+  git commit -m "Descripción de los cambios"
+  git push
+
+Ver historial de commits:
+  git log --oneline
+
+═══════════════════════════════════════════════════════════════════════════════
