@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY || "dummy_key_to_allow_startup",
   httpOptions: {
     apiVersion: "",
     baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
@@ -102,15 +102,15 @@ No incluyas ningún texto adicional, solo el JSON.`;
     jsonText = jsonText.trim();
 
     const parsed = JSON.parse(jsonText);
-    
+
     if (!parsed.questions || !Array.isArray(parsed.questions)) {
       throw new Error("Invalid response format: missing questions array");
     }
 
     for (let i = 0; i < parsed.questions.length; i++) {
       const q = parsed.questions[i];
-      if (!q.question || !q.options || q.options.length !== 4 || 
-          typeof q.correctAnswer !== 'number' || q.correctAnswer < 0 || q.correctAnswer > 3) {
+      if (!q.question || !q.options || q.options.length !== 4 ||
+        typeof q.correctAnswer !== 'number' || q.correctAnswer < 0 || q.correctAnswer > 3) {
         throw new Error(`Invalid question format at index ${i}`);
       }
       q.id = i + 1;
@@ -134,9 +134,10 @@ export async function generateAllEvaluationsForModule(
   textbookContent: string | null
 ): Promise<GeneratedEvaluation[]> {
   const evaluations: GeneratedEvaluation[] = [];
-  
-  const questionCounts = [15, 18, 15, 20];
-  
+
+  // All 4 evaluations have exactly 15 multiple choice questions
+  const questionCounts = [15, 15, 15, 15];
+
   for (let evalNum = 1; evalNum <= 4; evalNum++) {
     const evaluation = await generateEvaluationQuestions(
       moduleNumber,
@@ -147,9 +148,9 @@ export async function generateAllEvaluationsForModule(
       questionCounts[evalNum - 1]
     );
     evaluations.push(evaluation);
-    
+
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
-  
+
   return evaluations;
 }

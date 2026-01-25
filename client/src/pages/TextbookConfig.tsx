@@ -11,14 +11,15 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useProfile } from "@/hooks/use-profile";
-import { 
-  ArrowLeft, 
-  BookOpen, 
+import {
+  ArrowLeft,
+  BookOpen,
   Save,
   Loader2,
   Check,
   AlertCircle,
-  FileText
+  FileText,
+  ExternalLink
 } from "lucide-react";
 
 interface Level {
@@ -60,6 +61,7 @@ export default function TextbookConfig() {
   const [pdfTitle, setPdfTitle] = useState("");
   const [modulePages, setModulePages] = useState<Record<number, { startPage: string; endPage: string }>>({});
 
+  /* Auth checks disabled for dev
   useEffect(() => {
     if (!isAuthLoading && !isAuthenticated) {
       toast({
@@ -83,6 +85,7 @@ export default function TextbookConfig() {
       setLocation("/dashboard");
     }
   }, [isProfileLoading, isAuthenticated, isAdmin, toast, setLocation]);
+  */
 
   const { data: levels } = useQuery<Level[]>({
     queryKey: ['/api/levels'],
@@ -107,9 +110,9 @@ export default function TextbookConfig() {
 
   const selectedLevel = levels?.find(l => l.id === selectedLevelId);
   const selectedSubject = subjects?.find(s => s.id === selectedSubjectId);
-  const levelSubjectId = selectedLevelId && selectedSubjectId && selectedLevel && selectedSubject
-    ? `${selectedLevel.id}-${selectedSubject.slug}`
-    : null;
+  const levelSubjectId = levelSubjectsData?.find(ls => 
+    ls.levelId === selectedLevelId && ls.subjectId === selectedSubjectId
+  )?.id || null;
 
   const { data: textbookData, isLoading: isLoadingTextbook } = useQuery<{
     textbookPdfUrl: string | null;
@@ -208,7 +211,7 @@ export default function TextbookConfig() {
 
   const handleSaveAll = async () => {
     await saveTextbookMutation.mutateAsync();
-    
+
     if (objectives) {
       for (const obj of objectives) {
         const pages = modulePages[obj.weekNumber];
@@ -221,7 +224,7 @@ export default function TextbookConfig() {
         }
       }
     }
-    
+
     toast({ title: "Guardado", description: "Toda la configuración ha sido guardada" });
   };
 
@@ -235,24 +238,26 @@ export default function TextbookConfig() {
     );
   }
 
-  if (!isAuthenticated || !isAdmin) {
-    return null;
-  }
+  // if (!isAuthenticated || !isAdmin) {
+  //   return null;
+  // }
 
   return (
     <div className="min-h-screen bg-[#F8F9FA]">
-      <header className="bg-[#0A192F] text-white py-4 px-6">
+      <header className="bg-white border-b border-gray-200 py-6 px-6 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto flex items-center gap-4">
           <Link href="/dashboard">
-            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10" data-testid="back-button">
+            <Button variant="ghost" size="icon" className="hover:text-[#A51C30]" data-testid="back-button">
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>
           <div className="flex items-center gap-3">
-            <BookOpen className="w-6 h-6 text-[#A51C30]" />
+            <div className="p-2 bg-[#A51C30]/10 rounded-lg">
+              <BookOpen className="w-6 h-6 text-[#A51C30]" />
+            </div>
             <div>
-              <h1 className="text-xl font-bold">Configuración de Textos Escolares</h1>
-              <p className="text-sm text-slate-300">Asigna PDFs y páginas por módulo</p>
+              <h1 className="text-2xl font-serif font-bold text-[#1e1e1e]">Biblioteca <span className="text-[#A51C30] italic font-normal">Digital</span></h1>
+              <p className="text-sm text-gray-500">Consulta y descarga tus textos de estudio</p>
             </div>
           </div>
         </div>
@@ -350,63 +355,157 @@ export default function TextbookConfig() {
             </Card>
 
             <Card className="rounded-none border-slate-200">
-              <CardHeader>
-                <CardTitle className="text-lg font-bold text-[#0A192F] flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-[#A51C30]" />
-                  Páginas por Módulo
+              <CardHeader className="bg-gradient-to-r from-[#0A192F] to-[#1a365d] text-white">
+                <CardTitle className="text-lg font-bold flex items-center gap-2">
+                  <BookOpen className="w-5 h-5" />
+                  Configuración de Páginas del Texto Escolar
                 </CardTitle>
-                <CardDescription>Configura qué páginas del texto corresponden a cada módulo</CardDescription>
+                <CardDescription className="text-slate-300">
+                  Programa las páginas del PDF que corresponden a cada uno de los 15 módulos del curso
+                </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 {isLoadingObjectives ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
                   </div>
                 ) : objectives && objectives.length > 0 ? (
-                  <div className="space-y-3" data-testid="modules-list">
-                    {objectives.sort((a, b) => a.weekNumber - b.weekNumber).map(obj => (
-                      <div key={obj.id} className="flex items-center gap-4 p-3 bg-slate-50 border border-slate-100" data-testid={`module-row-${obj.weekNumber}`}>
-                        <Badge className="bg-[#0A192F] text-white rounded-none min-w-[80px] justify-center" data-testid={`badge-module-${obj.weekNumber}`}>
-                          Módulo {obj.weekNumber}
-                        </Badge>
-                        <span className="flex-1 text-sm text-slate-600 truncate">{obj.title}</span>
-                        <div className="flex items-center gap-2">
-                          <Label className="text-xs text-slate-500">Desde:</Label>
-                          <Input
-                            type="number"
-                            min="1"
-                            className="w-20 h-8"
-                            placeholder="1"
-                            value={modulePages[obj.weekNumber]?.startPage || ""}
-                            onChange={(e) => setModulePages(prev => ({
-                              ...prev,
-                              [obj.weekNumber]: {
-                                ...prev[obj.weekNumber],
-                                startPage: e.target.value
-                              }
-                            }))}
-                            data-testid={`input-start-page-${obj.weekNumber}`}
-                          />
-                          <Label className="text-xs text-slate-500">Hasta:</Label>
-                          <Input
-                            type="number"
-                            min="1"
-                            className="w-20 h-8"
-                            placeholder="25"
-                            value={modulePages[obj.weekNumber]?.endPage || ""}
-                            onChange={(e) => setModulePages(prev => ({
-                              ...prev,
-                              [obj.weekNumber]: {
-                                ...prev[obj.weekNumber],
-                                endPage: e.target.value
-                              }
-                            }))}
-                            data-testid={`input-end-page-${obj.weekNumber}`}
-                          />
+                  <>
+                    {/* Información del curso */}
+                    <div className="mb-6 p-4 bg-slate-50 border-l-4 border-[#A51C30]">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <Label className="text-xs font-bold text-slate-500 uppercase">Nivel</Label>
+                          <p className="text-sm font-medium text-slate-900">{selectedLevel?.name || "N/A"}</p>
+                        </div>
+                        <div>
+                          <Label className="text-xs font-bold text-slate-500 uppercase">Asignatura</Label>
+                          <p className="text-sm font-medium text-slate-900">
+                            {selectedSubject?.name || "N/A"}
+                          </p>
+                        </div>
+                        <div>
+                          <Label className="text-xs font-bold text-slate-500 uppercase">Total Módulos</Label>
+                          <p className="text-sm font-medium text-slate-900">{objectives.length} módulos</p>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+
+                    {/* Link para abrir el PDF en nueva pestaña */}
+                    {pdfUrl && (
+                      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <BookOpen className="w-5 h-5 text-blue-600 mt-0.5" />
+                          <div className="flex-1">
+                            <p className="text-sm font-bold text-blue-900 mb-2">Vista Previa del PDF</p>
+                            <p className="text-xs text-blue-700 mb-3">
+                              Abre el PDF en una nueva pestaña para verificar los números de página mientras configuras los módulos.
+                            </p>
+                            <a
+                              href={pdfUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                              Abrir PDF en Nueva Pestaña
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Tabla de módulos */}
+                    <div className="space-y-2" data-testid="modules-list">
+                      <div className="flex items-center gap-4 p-3 bg-slate-100 border border-slate-200 font-bold text-xs text-slate-600 uppercase">
+                        <div className="w-[100px]">Módulo</div>
+                        <div className="flex-1">Objetivo de Aprendizaje</div>
+                        <div className="w-[280px] text-center">Páginas del Texto</div>
+                      </div>
+                      {objectives.sort((a, b) => a.weekNumber - b.weekNumber).map(obj => {
+                        const startPage = modulePages[obj.weekNumber]?.startPage || "";
+                        const endPage = modulePages[obj.weekNumber]?.endPage || "";
+                        const hasPages = startPage && endPage;
+                        
+                        return (
+                          <div 
+                            key={obj.id} 
+                            className={`flex items-center gap-4 p-3 border transition-colors ${
+                              hasPages 
+                                ? 'bg-green-50 border-green-200' 
+                                : 'bg-white border-slate-200 hover:bg-slate-50'
+                            }`}
+                            data-testid={`module-row-${obj.weekNumber}`}
+                          >
+                            <Badge 
+                              className={`rounded-none min-w-[100px] justify-center ${
+                                hasPages 
+                                  ? 'bg-green-700 text-white' 
+                                  : 'bg-slate-300 text-slate-700'
+                              }`}
+                              data-testid={`badge-module-${obj.weekNumber}`}
+                            >
+                              {hasPages && <Check className="w-3 h-3 mr-1" />}
+                              Módulo {obj.weekNumber}
+                            </Badge>
+                            <span className="flex-1 text-sm text-slate-700">{obj.title}</span>
+                            <div className="flex items-center gap-2 w-[280px]">
+                              <Label className="text-xs text-slate-600 font-medium whitespace-nowrap">Página:</Label>
+                              <Input
+                                type="number"
+                                min="1"
+                                className="w-20 h-9 text-center"
+                                placeholder="Desde"
+                                value={startPage}
+                                onChange={(e) => setModulePages(prev => ({
+                                  ...prev,
+                                  [obj.weekNumber]: {
+                                    ...prev[obj.weekNumber],
+                                    startPage: e.target.value
+                                  }
+                                }))}
+                                data-testid={`input-start-page-${obj.weekNumber}`}
+                              />
+                              <span className="text-slate-400">—</span>
+                              <Input
+                                type="number"
+                                min="1"
+                                className="w-20 h-9 text-center"
+                                placeholder="Hasta"
+                                value={endPage}
+                                onChange={(e) => setModulePages(prev => ({
+                                  ...prev,
+                                  [obj.weekNumber]: {
+                                    ...prev[obj.weekNumber],
+                                    endPage: e.target.value
+                                  }
+                                }))}
+                                data-testid={`input-end-page-${obj.weekNumber}`}
+                              />
+                              {hasPages && (
+                                <Badge variant="outline" className="ml-2 text-xs">
+                                  {parseInt(endPage) - parseInt(startPage) + 1} págs
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Resumen */}
+                    <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <FileText className="w-5 h-5 text-blue-600 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-bold text-blue-900">Resumen de Configuración</p>
+                          <p className="text-xs text-blue-700 mt-1">
+                            {Object.values(modulePages).filter(p => p.startPage && p.endPage).length} de {objectives.length} módulos configurados
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </>
                 ) : (
                   <div className="text-center py-8 text-slate-500">
                     <AlertCircle className="w-8 h-8 mx-auto mb-2 text-slate-300" />

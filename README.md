@@ -8,7 +8,7 @@ Plataforma educativa para gestión de cursos, módulos y evaluaciones.
 - Módulos de aprendizaje con recursos multimedia
 - Sistema de evaluaciones con generación de preguntas por IA
 - Integración con Google Drive para sincronización de recursos
-- Autenticación con Replit Auth
+- Autenticación con Google OAuth (Gmail)
 - Base de datos SQLite local (sin necesidad de provisionar base de datos externa)
 
 ## 📋 Requisitos Previos
@@ -37,7 +37,9 @@ Plataforma educativa para gestión de cursos, módulos y evaluaciones.
    Edita el archivo `.env` y configura:
    - `SESSION_SECRET`: Genera uno con `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
    - `DATABASE_URL`: (Opcional) Ruta al archivo SQLite, por defecto `./taskManagement.db`
-   - `REPL_ID` y `ISSUER_URL`: Solo si usas Replit Auth
+   - `GOOGLE_CLIENT_ID`: Tu Client ID de Google OAuth (ver `GOOGLE_AUTH_SETUP.md`)
+   - `GOOGLE_CLIENT_SECRET`: Tu Client Secret de Google OAuth
+   - `BASE_URL`: URL base de tu aplicación (opcional, se auto-detecta en Vercel)
 
 4. **Inicializar la base de datos**
    ```bash
@@ -99,7 +101,9 @@ Plataforma educativa para gestión de cursos, módulos y evaluaciones.
      - `SESSION_SECRET`: Genera uno con `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
      - `NODE_ENV`: `production`
      - `DATABASE_URL`: Para Vercel, usa una base de datos en la nube (ver nota abajo)
-     - `REPL_ID` y `ISSUER_URL`: Solo si usas Replit Auth
+     - `GOOGLE_CLIENT_ID`: Tu Client ID de Google OAuth
+     - `GOOGLE_CLIENT_SECRET`: Tu Client Secret de Google OAuth
+     - `BASE_URL`: URL de tu aplicación en Vercel (opcional, se auto-detecta)
 
 5. **Desplegar**
    - Haz clic en "Deploy"

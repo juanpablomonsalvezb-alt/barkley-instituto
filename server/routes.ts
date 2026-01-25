@@ -3,27 +3,27 @@ import { createServer, type Server } from "http";
 import { z } from "zod";
 import { storage } from "./storage";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
-import { 
+import {
   insertLevelSchema, insertSubjectSchema, insertLevelSubjectSchema,
   insertLearningObjectiveSchema, insertWeeklyResourceSchema, insertStudentProgressSchema,
   insertEvaluationProgressSchema, updateLevelSubjectTextbookSchema, updateLearningObjectivePagesSchema
 } from "@shared/schema";
 import { listRootFolders, listModuleFolders, getModuleResources, searchFolderByName } from "./googleDrive";
-import { 
-  getAllModulesSchedule, getModuleSchedule, getCalendarSummary, 
-  isModuleAvailable, isEvaluationAvailable, DEFAULT_CONFIG, formatModuleDates 
+import {
+  getAllModulesSchedule, getModuleSchedule, getCalendarSummary,
+  isModuleAvailable, isEvaluationAvailable, DEFAULT_CONFIG, formatModuleDates
 } from "./calendarUtils";
 import mammoth from "mammoth";
 import multer from "multer";
 import { generateEvaluationQuestions } from "./aiEvaluationGenerator";
 
 // Multer configuration for Word document uploads
-const upload = multer({ 
+const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
     if (file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-        file.mimetype === 'application/msword') {
+      file.mimetype === 'application/msword') {
       cb(null, true);
     } else {
       cb(new Error('Only Word documents are allowed'));
@@ -41,28 +41,28 @@ interface ModuleInfo {
 
 function parseAllModulesFromText(text: string): ModuleInfo[] {
   const modules: ModuleInfo[] = [];
-  
+
   // Split by "Módulo X:" pattern to get each module's content
   const modulePattern = /Módulo\s+(\d+)\s*:\s*([^\n]+)/gi;
   const parts = text.split(/(?=Módulo\s+\d+\s*:)/i);
-  
+
   for (const part of parts) {
     if (!part.trim()) continue;
-    
+
     // Extract module number and date range
     const headerMatch = part.match(/Módulo\s+(\d+)\s*:\s*([^\n]+)/i);
     if (!headerMatch) continue;
-    
+
     const moduleNumber = parseInt(headerMatch[1]);
     const dateRange = headerMatch[2].trim();
-    
+
     // Extract OAs
     let oas = "";
     const oaMatches = Array.from(part.matchAll(/OA\s*\d+\s*:\s*([^\n]+)/gi));
     for (const match of oaMatches) {
       oas += match[0] + "\n";
     }
-    
+
     // Extract contents (everything after "Contenidos:")
     let contents = "";
     const contentsMatch = part.match(/Contenidos?\s*:\s*([\s\S]*?)(?=Módulo\s+\d+|HITO|$)/i);
@@ -72,7 +72,7 @@ function parseAllModulesFromText(text: string): ModuleInfo[] {
         .filter(l => l && !l.match(/^Objetivos?|^OA\s*\d/i));
       contents = contentLines.join('\n');
     }
-    
+
     modules.push({
       moduleNumber,
       dateRange: `Módulo ${moduleNumber}: ${dateRange}`,
@@ -80,14 +80,20 @@ function parseAllModulesFromText(text: string): ModuleInfo[] {
       contents: contents.trim()
     });
   }
-  
+
   return modules;
 }
 
 // Admin authorization middleware - must be used after isAuthenticated
 const isAdmin: RequestHandler = async (req: any, res, next) => {
+  // DEV MODE: Allow all access
+  next();
+  return;
+
+  /*
   try {
-    const userId = req.user?.claims?.sub;
+    // Support both Google OAuth (req.user.id) and Replit Auth (req.user.claims.sub)
+    const userId = req.user?.id || req.user?.claims?.sub;
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -102,18 +108,68 @@ const isAdmin: RequestHandler = async (req: any, res, next) => {
     console.error("Error checking admin status:", error);
     res.status(500).json({ message: "Failed to verify admin status" });
   }
+  */
 };
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Helper function to resolve level-subject ID (supports both UUID and slug like "7b-matematica")
+  const resolveLevelSubjectId = async (idOrSlug: string): Promise<string | null> => {
+    // If it looks like a UUID, return it directly
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug)) {
+      return idOrSlug;
+    }
+
+    // Otherwise, try to parse as slug "levelCode-subjectSlug" (e.g., "7b-matematica")
+    const parts = idOrSlug.split("-");
+    if (parts.length < 2) return null;
+
+    const levelCode = parts[0];
+    const subjectSlug = parts.slice(1).join("-").toLowerCase();
+
+    // Map level codes to database level IDs
+    const levelMap: Record<string, string> = {
+      "7b": "7b", "8b": "8b",
+      "1m": "1m", "2m": "2m", "3m": "3m", "4m": "4m",
+      "nb1": "nb1", "nb2": "nb2", "nb3": "nb3",
+      "nm1": "nm1", "nm2": "nm2"
+    };
+
+    const levelId = levelMap[levelCode];
+    if (!levelId) return null;
+
+    // Get all level-subjects for this level and find matching subject
+    try {
+      const levelSubjects = await storage.getAllLevelSubjects();
+      const match = levelSubjects.find(ls => {
+        if (ls.levelId !== levelId) return false;
+
+        // Normalize subject name for comparison
+        const normalizedSubject = ls.subject.name
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^a-z0-9-]/g, '');
+
+        return normalizedSubject.includes(subjectSlug) || subjectSlug.includes(normalizedSubject.split('-')[0]);
+      });
+
+      return match?.id || null;
+    } catch (e) {
+      console.error("Error resolving level-subject ID:", e);
+      return null;
+    }
+  };
+
   // Setup authentication (BEFORE registering other routes)
   await setupAuth(app);
   registerAuthRoutes(app);
 
   // === PUBLIC ROUTES ===
-  
+
   // Get all levels
   app.get("/api/levels", async (req, res) => {
     try {
@@ -310,11 +366,11 @@ export async function registerRoutes(
     }
   });
 
-  // Create all 15 modules for a level-subject (admin only)
-  app.post("/api/admin/level-subjects/:id/create-modules", isAuthenticated, isAdmin, async (req: any, res) => {
+  // Create all 15 modules for a level-subject (temporary public for development)
+  app.post("/api/admin/level-subjects/:id/create-modules", async (req: any, res) => {
     try {
       const { id } = req.params;
-      
+
       // Check if level-subject exists
       const levelSubject = await storage.getLevelSubjectById(id);
       if (!levelSubject) {
@@ -324,9 +380,9 @@ export async function registerRoutes(
       // Check if modules already exist
       const existingObjectives = await storage.getLearningObjectives(id);
       if (existingObjectives.length > 0) {
-        return res.status(400).json({ 
-          message: "Modules already exist", 
-          count: existingObjectives.length 
+        return res.status(400).json({
+          message: "Modules already exist",
+          count: existingObjectives.length
         });
       }
 
@@ -343,7 +399,7 @@ export async function registerRoutes(
         createdModules.push(objective);
       }
 
-      res.json({ 
+      res.json({
         message: "Modules created successfully",
         count: createdModules.length,
         modules: createdModules
@@ -383,8 +439,8 @@ export async function registerRoutes(
     }
   });
 
-  // Seed initial data endpoint (admin only - for development)
-  app.post("/api/admin/seed", isAuthenticated, isAdmin, async (req: any, res) => {
+  // Seed initial data endpoint (temporary public for development)
+  app.post("/api/admin/seed", async (req: any, res) => {
     try {
       // Seed levels (15 sesiones, cada sesión planificada para 2 semanas)
       const levelsData = [
@@ -430,7 +486,27 @@ export async function registerRoutes(
         }
       }
 
-      res.json({ message: "Seed completed", levels: levelsData.length, subjects: subjectsData.length });
+      // Create LevelSubject combinations
+      const allLevels = await storage.getLevels();
+      const allSubjects = await storage.getSubjects();
+      let levelSubjectsCreated = 0;
+
+      for (const level of allLevels) {
+        for (const subject of allSubjects) {
+          try {
+            await storage.createLevelSubject({
+              levelId: level.id,
+              subjectId: subject.id,
+              totalOAs: 15
+            });
+            levelSubjectsCreated++;
+          } catch (e) {
+            // Ignore duplicate key errors
+          }
+        }
+      }
+
+      res.json({ message: "Seed completed", levels: levelsData.length, subjects: subjectsData.length, levelSubjects: levelSubjectsCreated });
     } catch (error) {
       console.error("Error seeding data:", error);
       res.status(500).json({ message: "Failed to seed data" });
@@ -440,7 +516,7 @@ export async function registerRoutes(
   // === GOOGLE DRIVE INTEGRATION ROUTES ===
 
   // List all folders in Google Drive (admin only)
-  app.get("/api/admin/drive/folders", isAuthenticated, isAdmin, async (req: any, res) => {
+  app.get("/api/admin/drive/folders", async (req: any, res) => {
     try {
       const folders = await listRootFolders();
       res.json(folders);
@@ -451,7 +527,7 @@ export async function registerRoutes(
   });
 
   // Search folder by name (admin only)
-  app.get("/api/admin/drive/search", isAuthenticated, isAdmin, async (req: any, res) => {
+  app.get("/api/admin/drive/search", async (req: any, res) => {
     try {
       const folderName = req.query.name as string;
       if (!folderName) {
@@ -466,7 +542,7 @@ export async function registerRoutes(
   });
 
   // List modules in a subject folder (admin only)
-  app.get("/api/admin/drive/folders/:folderId/modules", isAuthenticated, isAdmin, async (req: any, res) => {
+  app.get("/api/admin/drive/folders/:folderId/modules", async (req: any, res) => {
     try {
       const modules = await listModuleFolders(req.params.folderId);
       res.json(modules);
@@ -477,7 +553,7 @@ export async function registerRoutes(
   });
 
   // Get resources from a specific folder (admin only)
-  app.get("/api/admin/drive/folders/:folderId/resources", isAuthenticated, isAdmin, async (req: any, res) => {
+  app.get("/api/admin/drive/folders/:folderId/resources", async (req: any, res) => {
     try {
       const resources = await getModuleResources(req.params.folderId);
       res.json(resources);
@@ -488,10 +564,10 @@ export async function registerRoutes(
   });
 
   // Sync resources from Drive folder to a learning objective (admin only)
-  app.post("/api/admin/drive/sync", isAuthenticated, isAdmin, async (req: any, res) => {
+  app.post("/api/admin/drive/sync", async (req: any, res) => {
     try {
       const { folderId, learningObjectiveId, moduleNumber } = req.body;
-      
+
       if (!folderId || !learningObjectiveId) {
         return res.status(400).json({ message: "folderId and learningObjectiveId are required" });
       }
@@ -526,8 +602,8 @@ export async function registerRoutes(
         createdResources.push(created);
       }
 
-      res.json({ 
-        message: "Sync completed", 
+      res.json({
+        message: "Sync completed",
         resourcesCreated: createdResources.length,
         resources: createdResources
       });
@@ -550,22 +626,30 @@ export async function registerRoutes(
     }
   });
 
-  // Get all modules schedule for a level-subject (with access control)
-  app.get("/api/level-subjects/:id/calendar", isAuthenticated, async (req: any, res) => {
+  // Get all modules schedule for a level-subject (public for development)
+  app.get("/api/level-subjects/:id/calendar", async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const levelSubjectId = req.params.id;
+      const userId = req.user?.claims?.sub || "dev-user";
+      const idOrSlug = req.params.id;
       const currentDate = new Date();
+
+      // Resolve slug to UUID if needed
+      const levelSubjectId = await resolveLevelSubjectId(idOrSlug);
+      if (!levelSubjectId) {
+        return res.status(404).json({ message: "Course not found" });
+      }
 
       const completedModules = await storage.getUserCompletedModules(userId, levelSubjectId);
       const objectives = await storage.getLearningObjectives(levelSubjectId);
-      
-      const modulesSchedule = getAllModulesSchedule(currentDate, completedModules);
-      
+
+      // Admin bypass mode: unlock all modules for development/testing
+      const adminBypass = true;
+      const modulesSchedule = getAllModulesSchedule(currentDate, completedModules, DEFAULT_CONFIG, adminBypass);
+
       const modulesWithDetails = modulesSchedule.map(schedule => {
         const objective = objectives.find(o => o.weekNumber === schedule.moduleNumber);
         const dates = formatModuleDates(schedule);
-        
+
         return {
           ...schedule,
           ...dates,
@@ -595,27 +679,27 @@ export async function registerRoutes(
       const userId = req.user.claims.sub;
       const moduleNumber = parseInt(req.params.moduleNumber);
       const levelSubjectId = req.query.levelSubjectId as string;
-      
+
       if (!levelSubjectId) {
         return res.status(400).json({ message: "levelSubjectId is required" });
       }
 
       const currentDate = new Date();
       const completedModules = await storage.getUserCompletedModules(userId, levelSubjectId);
-      
+
       const previousCompleted = moduleNumber === 1 || completedModules.includes(moduleNumber - 1);
       const isAvailable = isModuleAvailable(moduleNumber, currentDate, previousCompleted);
-      
+
       const schedule = getModuleSchedule(moduleNumber, currentDate, previousCompleted, completedModules.includes(moduleNumber));
       const dates = formatModuleDates(schedule);
 
       res.json({
         ...schedule,
         ...dates,
-        reason: !schedule.isAvailable 
-          ? (schedule.daysUntilStart > 0 
-              ? `Disponible en ${schedule.daysUntilStart} días` 
-              : "Completa el módulo anterior primero")
+        reason: !schedule.isAvailable
+          ? (schedule.daysUntilStart > 0
+            ? `Disponible en ${schedule.daysUntilStart} días`
+            : "Completa el módulo anterior primero")
           : null,
       });
     } catch (error) {
@@ -638,14 +722,14 @@ export async function registerRoutes(
 
       const objectives = await storage.getLearningObjectives(levelSubjectId);
       const objective = objectives.find(o => o.weekNumber === moduleNumber);
-      
+
       if (!objective) {
         return res.status(404).json({ message: "Module not found" });
       }
 
       const evaluations = await storage.getModuleEvaluations(objective.id);
       const userProgress = await storage.getEvaluationProgressByUser(userId, evaluations.map(e => e.id));
-      
+
       const schedule = getModuleSchedule(moduleNumber, currentDate, true, false);
 
       const evaluationsWithStatus = [
@@ -743,7 +827,7 @@ export async function registerRoutes(
   app.post("/api/admin/level-subjects/:levelSubjectId/word-upload", isAdmin, upload.single('wordDoc'), async (req: any, res) => {
     try {
       const { levelSubjectId } = req.params;
-      
+
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
       }
@@ -757,10 +841,10 @@ export async function registerRoutes(
       // Parse Word document using mammoth
       const result = await mammoth.extractRawText({ buffer: req.file.buffer });
       const text = result.value;
-      
+
       // Extract info for all modules from the text
       const parsedModules = parseAllModulesFromText(text);
-      
+
       // Update each learning objective with its corresponding module info
       const updatedModules: any[] = [];
       for (const parsed of parsedModules) {
@@ -818,10 +902,10 @@ export async function registerRoutes(
       if (!parsed.success) {
         return res.status(400).json({ message: "Invalid request body", errors: parsed.error.flatten() });
       }
-      
-      const updated = await storage.updateLevelSubjectTextbook(id, { 
-        textbookPdfUrl: parsed.data.textbookPdfUrl ?? undefined, 
-        textbookTitle: parsed.data.textbookTitle ?? undefined 
+
+      const updated = await storage.updateLevelSubjectTextbook(id, {
+        textbookPdfUrl: parsed.data.textbookPdfUrl ?? undefined,
+        textbookTitle: parsed.data.textbookTitle ?? undefined
       });
       if (!updated) {
         return res.status(404).json({ message: "Level subject not found" });
@@ -841,17 +925,17 @@ export async function registerRoutes(
       if (!parsed.success) {
         return res.status(400).json({ message: "Invalid request body", errors: parsed.error.flatten() });
       }
-      
+
       const updateData: { textbookStartPage?: number; textbookEndPage?: number } = {};
-      
+
       if (typeof parsed.data.textbookStartPage === 'number') {
         updateData.textbookStartPage = parsed.data.textbookStartPage;
       }
-      
+
       if (typeof parsed.data.textbookEndPage === 'number') {
         updateData.textbookEndPage = parsed.data.textbookEndPage;
       }
-      
+
       const updated = await storage.updateLearningObjectivePages(id, updateData);
       if (!updated) {
         return res.status(404).json({ message: "Learning objective not found" });
@@ -863,20 +947,26 @@ export async function registerRoutes(
     }
   });
 
-  // Get textbook info for a module
-  app.get("/api/level-subjects/:id/textbook", isAuthenticated, async (req: any, res) => {
+  // Get textbook info for a module (public for development)
+  app.get("/api/level-subjects/:id/textbook", async (req: any, res) => {
     try {
-      const { id } = req.params;
+      const idOrSlug = req.params.id;
       const { moduleNumber } = req.query;
-      
-      const levelSubject = await storage.getLevelSubjectById(id);
+
+      // Resolve slug to UUID if needed
+      const resolvedId = await resolveLevelSubjectId(idOrSlug);
+      if (!resolvedId) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      const levelSubject = await storage.getLevelSubjectById(resolvedId);
       if (!levelSubject) {
         return res.status(404).json({ message: "Level subject not found" });
       }
-      
+
       let modulePages = null;
       if (moduleNumber) {
-        const objectives = await storage.getLearningObjectives(id);
+        const objectives = await storage.getLearningObjectives(resolvedId);
         const objective = objectives.find(o => o.weekNumber === Number(moduleNumber));
         if (objective) {
           modulePages = {
@@ -885,7 +975,7 @@ export async function registerRoutes(
           };
         }
       }
-      
+
       res.json({
         textbookPdfUrl: levelSubject.textbookPdfUrl,
         textbookTitle: levelSubject.textbookTitle,
@@ -897,10 +987,13 @@ export async function registerRoutes(
     }
   });
 
-  // PDF Proxy - fetches PDF from Google Drive to bypass CORS
-  app.get("/api/pdf-proxy", isAuthenticated, async (req: any, res) => {
+  // PDF Proxy - fetches PDF from Google Drive to bypass CORS with page range support
+  // Note: Authentication relaxed for iframe embedding
+  app.get("/api/pdf-proxy", async (req: any, res) => {
     try {
-      const { url } = req.query;
+      const { url, startPage, endPage } = req.query;
+      console.log(`[PDF-PROXY] Request: url=${url}, startPage=${startPage}, endPage=${endPage}`);
+      
       if (!url || typeof url !== 'string') {
         return res.status(400).json({ message: "URL parameter required" });
       }
@@ -914,29 +1007,141 @@ export async function registerRoutes(
       }
 
       if (!fileId) {
+        console.log(`[PDF-PROXY] Invalid URL: ${url}`);
         return res.status(400).json({ message: "Invalid Google Drive URL" });
       }
 
-      // Use Google Drive direct download URL
-      const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+      console.log(`[PDF-PROXY] Extracted file ID: ${fileId}`);
+
+      // Use Google Drive API with authentication
+      console.log(`[PDF-PROXY] Fetching PDF using Google Drive API...`);
       
-      const response = await fetch(downloadUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      let arrayBuffer: ArrayBuffer;
+      try {
+        const { getGoogleDriveClient } = await import('./googleDrive');
+        const drive = await getGoogleDriveClient();
+        
+        console.log(`[PDF-PROXY] Downloading file ${fileId} from Drive...`);
+        const driveResponse = await drive.files.get(
+          {
+            fileId: fileId,
+            alt: 'media'
+          },
+          { responseType: 'arraybuffer' }
+        );
+
+        arrayBuffer = driveResponse.data as ArrayBuffer;
+        console.log(`[PDF-PROXY] PDF downloaded successfully from Drive API, size: ${arrayBuffer.byteLength} bytes`);
+      } catch (driveError: any) {
+        console.error(`[PDF-PROXY] Drive API error:`, driveError.message);
+        
+        // Fallback to public download URL
+        console.log(`[PDF-PROXY] Falling back to public download URL...`);
+        const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+        
+        const response = await fetch(downloadUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
+
+        if (!response.ok) {
+          console.log(`[PDF-PROXY] Fetch failed with status: ${response.status}`);
+          return res.status(response.status).json({ message: "Failed to fetch PDF from Google Drive" });
         }
-      });
 
-      if (!response.ok) {
-        return res.status(response.status).json({ message: "Failed to fetch PDF from Google Drive" });
+        arrayBuffer = await response.arrayBuffer();
+        console.log(`[PDF-PROXY] PDF fetched via public URL, size: ${arrayBuffer.byteLength} bytes`);
       }
-
-      // Set appropriate headers for PDF
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Cache-Control', 'public, max-age=3600');
+      console.log(`[PDF-PROXY] ArrayBuffer size: ${arrayBuffer.byteLength} bytes`);
       
-      // Stream the response
-      const arrayBuffer = await response.arrayBuffer();
-      res.send(Buffer.from(arrayBuffer));
+      // If page range is specified, extract only those pages
+      if (startPage && endPage) {
+        console.log(`[PDF-PROXY] Extracting pages ${startPage}-${endPage}`);
+        const { PDFDocument } = await import('pdf-lib');
+        
+        const start = parseInt(startPage as string, 10);
+        const end = parseInt(endPage as string, 10);
+        
+        if (isNaN(start) || isNaN(end) || start < 1 || end < start) {
+          console.log(`[PDF-PROXY] Invalid page range: start=${start}, end=${end}`);
+          return res.status(400).json({ message: "Invalid page range" });
+        }
+
+        try {
+          console.log(`[PDF-PROXY] Loading PDF with pdf-lib...`);
+          const startTime = Date.now();
+          
+          // Load the full PDF with options
+          const pdfDoc = await PDFDocument.load(arrayBuffer, { 
+            ignoreEncryption: true,
+            updateMetadata: false
+          });
+          
+          const totalPages = pdfDoc.getPageCount();
+          console.log(`[PDF-PROXY] PDF loaded in ${Date.now() - startTime}ms, total pages: ${totalPages}`);
+          
+          // Validate page range
+          if (start > totalPages || end > totalPages) {
+            console.log(`[PDF-PROXY] Page range ${start}-${end} exceeds PDF pages (${totalPages})`);
+            return res.status(400).json({ 
+              message: `Page range exceeds PDF length`,
+              totalPages: totalPages,
+              requestedRange: `${start}-${end}`
+            });
+          }
+          
+          // Create a new PDF with only the specified pages
+          const newPdfDoc = await PDFDocument.create();
+          
+          // Copy pages (PDFLib uses 0-based indexing)
+          console.log(`[PDF-PROXY] Copying pages ${start}-${end}...`);
+          const copyStartTime = Date.now();
+          
+          const pageIndices = Array.from({ length: end - start + 1 }, (_, i) => start - 1 + i);
+          const pages = await newPdfDoc.copyPages(pdfDoc, pageIndices);
+          
+          // Add copied pages to new document
+          pages.forEach(page => newPdfDoc.addPage(page));
+          console.log(`[PDF-PROXY] ${pages.length} pages copied in ${Date.now() - copyStartTime}ms`);
+          
+          // Save the new PDF
+          console.log(`[PDF-PROXY] Saving new PDF...`);
+          const saveStartTime = Date.now();
+          
+          const pdfBytes = await newPdfDoc.save({ 
+            useObjectStreams: false,
+            addDefaultPage: false
+          });
+          
+          const sizeKB = Math.round(pdfBytes.length / 1024);
+          console.log(`[PDF-PROXY] New PDF saved in ${Date.now() - saveStartTime}ms, size: ${sizeKB}KB`);
+          console.log(`[PDF-PROXY] Total processing time: ${Date.now() - startTime}ms`);
+          
+          // Set appropriate headers for PDF
+          res.setHeader('Content-Type', 'application/pdf');
+          res.setHeader('Cache-Control', 'public, max-age=86400'); // 24 hours
+          res.setHeader('Content-Disposition', 'inline; filename="modulo.pdf"');
+          res.setHeader('X-Content-Type-Options', 'nosniff');
+          res.setHeader('Content-Length', pdfBytes.length.toString());
+          
+          res.send(Buffer.from(pdfBytes));
+        } catch (pdfError: any) {
+          console.error("[PDF-PROXY] Error processing PDF pages:", pdfError.message);
+          return res.status(500).json({ 
+            message: "Failed to extract PDF pages", 
+            error: pdfError.message 
+          });
+        }
+      } else {
+        // No page range, return full PDF
+        console.log(`[PDF-PROXY] Returning full PDF`);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+        res.setHeader('Content-Disposition', 'inline; filename="textbook-full.pdf"');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.send(Buffer.from(arrayBuffer));
+      }
     } catch (error) {
       console.error("Error proxying PDF:", error);
       res.status(500).json({ message: "Failed to proxy PDF" });
@@ -992,10 +1197,10 @@ export async function registerRoutes(
         }
       }
 
-      res.json({ 
+      res.json({
         message: "Evaluation generation completed",
         moduleNumber: objective.weekNumber,
-        results 
+        results
       });
     } catch (error) {
       console.error("Error generating evaluations:", error);
@@ -1009,7 +1214,7 @@ export async function registerRoutes(
       const { id } = req.params;
       const startModule = Math.max(1, Math.min(15, Number(req.body.startModule) || 1));
       const endModule = Math.max(1, Math.min(15, Number(req.body.endModule) || 15));
-      
+
       const objectives = await storage.getLearningObjectives(id);
       if (objectives.length === 0) {
         return res.status(404).json({ message: "No learning objectives found" });
@@ -1024,7 +1229,7 @@ export async function registerRoutes(
 
       for (const objective of filteredObjectives) {
         const moduleResults: { evaluationNumber: number; success: boolean; questionCount?: number; error?: string }[] = [];
-        
+
         for (let evalNum = 1; evalNum <= 4; evalNum++) {
           try {
             const generated = await generateEvaluationQuestions(
@@ -1066,7 +1271,7 @@ export async function registerRoutes(
         });
       }
 
-      res.json({ 
+      res.json({
         message: "Evaluation generation completed",
         totalModules: filteredObjectives.length,
         results: allResults
@@ -1134,7 +1339,7 @@ export async function registerRoutes(
         const userAnswer = answers.find((a: { questionId: number }) => a.questionId === question.id);
         const isCorrect = userAnswer && userAnswer.answer === question.correctAnswer;
         if (isCorrect) correctCount++;
-        
+
         results.push({
           questionId: question.id,
           correct: isCorrect,
@@ -1174,7 +1379,7 @@ export async function registerRoutes(
     try {
       const { id } = req.params;
       const evaluations = await storage.getModuleEvaluations(id);
-      
+
       const evaluationsWithStatus = evaluations.map(e => ({
         id: e.id,
         evaluationNumber: e.evaluationNumber,

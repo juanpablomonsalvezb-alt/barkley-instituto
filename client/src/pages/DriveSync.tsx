@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -7,13 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
-import { 
-  ArrowLeft, 
-  FolderOpen, 
-  FileVideo, 
-  FileAudio, 
-  FileImage, 
-  Presentation, 
+import {
+  ArrowLeft,
+  FolderOpen,
+  FileVideo,
+  FileAudio,
+  FileImage,
+  Presentation,
   FileText,
   RefreshCw,
   CloudDownload,
@@ -25,9 +25,20 @@ import {
 interface DriveFolder {
   id: string;
   name: string;
+  programType?: string;
 }
 
-interface DriveResource {
+interface Subject {
+  id: string;
+  name: string;
+}
+
+interface LevelSubject {
+  id: string;
+  levelId: string;
+  subjectId: string;
+  level: { id: string, name: string };
+  subject: { id: string, name: string };
   id: string;
   name: string;
   type: string;
@@ -42,11 +53,19 @@ interface ModuleContent {
   resources: DriveResource[];
 }
 
-interface LevelSubject {
+interface ResourceType {
   id: string;
-  levelId: string;
-  subjectId: string;
-  driveFolderId?: string;
+  type: 'video' | 'audio' | 'infografia' | 'presentacion' | 'documento';
+  name: string;
+}
+
+// Fix DriveResource interface based on usage
+interface DriveResource {
+  id: string;
+  name: string;
+  type: string;
+  mimeType: string;
+  webViewLink: string;
 }
 
 interface LearningObjective {
@@ -79,16 +98,95 @@ function getResourceTypeName(type: string) {
 export default function DriveSync() {
   const { toast } = useToast();
   const [selectedFolderId, setSelectedFolderId] = useState<string>("");
-  const [selectedLevelSubjectId, setSelectedLevelSubjectId] = useState<string>("");
+  const [selectedLevelId, setSelectedLevelId] = useState<string>("");
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
+  const [isSyncingAll, setIsSyncingAll] = useState(false);
 
   const { data: folders, isLoading: foldersLoading, error: foldersError } = useQuery<DriveFolder[]>({
     queryKey: ['/api/admin/drive/folders'],
+    queryFn: async () => {
+      const res = await fetch('/api/admin/drive/folders');
+      if (!res.ok) throw new Error('Failed to fetch folders');
+      return res.json();
+    },
     retry: 1
   });
 
-  const { data: levelSubjectsList } = useQuery<any[]>({
-    queryKey: ['/api/level-subjects']
+  const { data: levelSubjectsList } = useQuery<LevelSubject[]>({
+    queryKey: ['/api/level-subjects'],
+    queryFn: async () => {
+      const res = await fetch('/api/level-subjects', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch level subjects');
+      return res.json();
+    }
   });
+
+  // Extract unique levels and subjects for the dropdowns
+  const uniqueLevels = useMemo(() => {
+    return Array.from(new Set(levelSubjectsList?.map(ls => JSON.stringify(ls.level))))
+      .map(s => JSON.parse(s) as { id: string, name: string });
+  }, [levelSubjectsList]);
+
+  const uniqueSubjects = useMemo(() => {
+    return selectedLevelId
+      ? levelSubjectsList?.filter(ls => ls.levelId === selectedLevelId).map(ls => ls.subject)
+      : [];
+  }, [selectedLevelId, levelSubjectsList]);
+
+  // Auto-select Level and Subject based on Folder Name
+  useEffect(() => {
+    if (!selectedFolderId || !folders || !uniqueLevels) return;
+
+    const folder = folders.find(f => f.id === selectedFolderId);
+    if (!folder) return;
+
+    // Normalize text for comparison (handle º vs °, accents, etc.)
+    const normalizeText = (text: string) => {
+      return text
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove accents
+        .replace(/[º°]/g, '') // Remove degree symbols
+        .toLowerCase()
+        .trim();
+    };
+
+    const folderNormalized = normalizeText(folder.name);
+
+    // Try to match level (e.g., "7 basico" from "7º Básico - Matematica")
+    const matchedLevel = uniqueLevels.find(l => {
+      const levelNormalized = normalizeText(l.name);
+      // Extract just the number and type (e.g., "7 basico", "1 medio")
+      const levelPattern = levelNormalized.replace(/\s+/g, '');
+      const folderPattern = folderNormalized.replace(/\s+/g, '');
+      return folderPattern.includes(levelPattern);
+    });
+
+    if (matchedLevel) {
+      setSelectedLevelId(curr => (curr !== matchedLevel.id ? matchedLevel.id : curr));
+
+      // If level matched, try to match subject
+      const relevantSubjects = levelSubjectsList
+        ?.filter(ls => ls.levelId === matchedLevel.id)
+        .map(ls => ls.subject);
+
+      if (relevantSubjects) {
+        const matchedSubject = relevantSubjects.find(s => {
+          const subjectNormalized = normalizeText(s.name);
+          // Handle partial matches: "Matematica" matches "Matemática", "Lenguaje" matches "Lengua y Literatura"
+          const subjectWords = subjectNormalized.split(/\s+/);
+          return subjectWords.some(word => word.length > 4 && folderNormalized.includes(word));
+        });
+        if (matchedSubject) {
+          setSelectedSubjectId(curr => (curr !== matchedSubject.id ? matchedSubject.id : curr));
+        }
+      }
+    }
+  }, [selectedFolderId, folders, uniqueLevels, levelSubjectsList]);
+
+  // Derived state for levelSubjectId
+  const selectedLevelSubjectId = selectedLevelId && selectedSubjectId
+    ? levelSubjectsList?.find(ls => ls.levelId === selectedLevelId && ls.subjectId === selectedSubjectId)?.id
+    : "";
 
   const { data: modules, isLoading: modulesLoading, refetch: refetchModules } = useQuery<ModuleContent[]>({
     queryKey: ['/api/admin/drive/folders', selectedFolderId, 'modules'],
@@ -186,7 +284,7 @@ export default function DriveSync() {
       });
       return;
     }
-    
+
     syncMutation.mutate({
       folderId: moduleContent.folderId,
       learningObjectiveId: objective.id,
@@ -194,44 +292,84 @@ export default function DriveSync() {
     });
   };
 
-  if (foldersError) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center gap-4 mb-6">
-            <Link href="/dashboard">
-              <Button variant="ghost" size="sm" data-testid="link-back">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Volver
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold">Sincronizar desde Google Drive</h1>
-          </div>
-          <Card>
-            <CardContent className="py-12 text-center">
-              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Error de conexión</h3>
-              <p className="text-gray-500">
-                No se pudo conectar a Google Drive. Verifica que la integración esté configurada correctamente.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
+  const handleSyncAll = async () => {
+    if (!modules || !selectedLevelSubjectId) return;
+    setIsSyncingAll(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    try {
+      let currentObjectives = objectives || [];
+
+      // 1. Auto-create skeleton if missing (Magic Fix)
+      if (currentObjectives.length === 0) {
+        toast({
+          title: "Preparando estructura del curso...",
+          description: "Generando los 15 módulos base en la base de datos."
+        });
+
+        try {
+          await createModulesMutation.mutateAsync(selectedLevelSubjectId);
+          // Fetch the newly created objectives manually
+          const res = await fetch(`/api/level-subjects/${selectedLevelSubjectId}/objectives`);
+          if (res.ok) {
+            currentObjectives = await res.json();
+          } else {
+            throw new Error("No se pudieron cargar los módulos creados");
+          }
+        } catch (e) {
+          toast({ title: "Error preparando el curso", description: String(e), variant: "destructive" });
+          setIsSyncingAll(false);
+          return;
+        }
+      }
+
+      // 2. Proceed with Sync
+      const promises = modules.map(async (moduleContent) => {
+        const objective = currentObjectives.find(o => o.weekNumber === moduleContent.moduleNumber);
+        if (objective) {
+          try {
+            await syncMutation.mutateAsync({
+              folderId: moduleContent.folderId,
+              learningObjectiveId: objective.id,
+              moduleNumber: moduleContent.moduleNumber
+            });
+            successCount++;
+          } catch (e) {
+            failCount++;
+          }
+        }
+      });
+
+      await Promise.all(promises);
+
+      toast({
+        title: "Sincronización Total Completada",
+        description: `Se procesaron ${successCount} módulos exitosamente. ${failCount > 0 ? `${failCount} errores.` : ''}`,
+        variant: successCount > 0 ? "default" : "destructive"
+      });
+
+      // Refetch to update UI
+      queryClient.invalidateQueries({ queryKey: ['/api/objectives'] });
+
+    } catch (error) {
+      toast({ title: "Error en el proceso", variant: "destructive" });
+    } finally {
+      setIsSyncingAll(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-4 mb-6">
           <Link href="/dashboard">
-            <Button variant="ghost" size="sm" data-testid="link-back">
+            <Button variant="ghost" size="sm" data-testid="link-back" className="hover:text-[#A51C30]">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver
+              Volver al Aula
             </Button>
           </Link>
-          <h1 className="text-2xl font-bold">Sincronizar desde Google Drive</h1>
+          <h1 className="text-3xl font-serif font-bold text-[#1e1e1e]">Recursos de Apoyo <span className="text-[#A51C30] italic font-normal">Drive</span></h1>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 mb-6">
@@ -276,25 +414,46 @@ export default function DriveSync() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Select value={selectedLevelSubjectId} onValueChange={setSelectedLevelSubjectId}>
-                <SelectTrigger data-testid="select-level-subject">
-                  <SelectValue placeholder="Seleccionar nivel y materia..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {levelSubjectsList?.map((ls) => (
-                    <SelectItem key={ls.id} value={ls.id}>
-                      {ls.level?.name} - {ls.subject?.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">1. Selecciona Nivel</label>
+                  <Select value={selectedLevelId} onValueChange={(val) => { setSelectedLevelId(val); setSelectedSubjectId(""); }}>
+                    <SelectTrigger data-testid="select-level">
+                      <SelectValue placeholder="Ej: 7° Básico" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {uniqueLevels?.map((level) => (
+                        <SelectItem key={level.id} value={level.id}>
+                          {level.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">2. Selecciona Asignatura</label>
+                  <Select value={selectedSubjectId} onValueChange={setSelectedSubjectId} disabled={!selectedLevelId}>
+                    <SelectTrigger data-testid="select-subject">
+                      <SelectValue placeholder="Ej: Matemática" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {uniqueSubjects?.map((subject) => (
+                        <SelectItem key={subject?.id} value={subject?.id}>
+                          {subject?.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               {selectedLevelSubjectId && objectives?.length === 0 && (
                 <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <p className="text-sm text-yellow-800 mb-3">
                     No hay módulos creados para esta materia. Debes crearlos antes de sincronizar recursos.
                   </p>
-                  <Button 
+                  <Button
                     onClick={handleCreateModules}
                     disabled={createModulesMutation.isPending}
                     data-testid="button-create-modules"
@@ -326,9 +485,9 @@ export default function DriveSync() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Módulos Detectados</span>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => refetchModules()}
                   data-testid="button-refresh"
                 >
@@ -336,8 +495,23 @@ export default function DriveSync() {
                   Actualizar
                 </Button>
               </CardTitle>
-              <CardDescription>
-                Carpetas de módulos encontradas en la carpeta seleccionada
+              <CardDescription className="flex items-center justify-between">
+                <span>Carpetas de módulos encontradas en la carpeta seleccionada</span>
+                {modules && modules.length > 0 && selectedLevelSubjectId && (
+                  <Button
+                    size="sm"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    onClick={handleSyncAll}
+                    disabled={isSyncingAll || syncMutation.isPending}
+                  >
+                    {isSyncingAll ? (
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <CloudDownload className="h-4 w-4 mr-2" />
+                    )}
+                    Sincronizar Curso Completo
+                  </Button>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -355,8 +529,8 @@ export default function DriveSync() {
               ) : (
                 <div className="space-y-4">
                   {modules?.map((module) => (
-                    <div 
-                      key={module.moduleNumber} 
+                    <div
+                      key={module.moduleNumber}
                       className="border rounded-lg p-4"
                       data-testid={`module-card-${module.moduleNumber}`}
                     >
@@ -381,12 +555,12 @@ export default function DriveSync() {
                           Sincronizar
                         </Button>
                       </div>
-                      
+
                       {module.resources.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                           {module.resources.map((resource) => (
-                            <Badge 
-                              key={resource.id} 
+                            <Badge
+                              key={resource.id}
                               variant="secondary"
                               className="flex items-center gap-1"
                             >
@@ -419,12 +593,10 @@ export default function DriveSync() {
                 <p>📁 Instituto Barkley/</p>
                 <p className="pl-4">📁 7° Básico - Matemática/</p>
                 <p className="pl-8">📁 Módulo 1/</p>
-                <p className="pl-12">📹 Video explicativo.mp4</p>
-                <p className="pl-12">🖼️ Infografía.pdf</p>
-                <p className="pl-12">🎧 Audio resumen.mp3</p>
-                <p className="pl-12">📊 Presentación.pptx</p>
-                <p className="pl-12">📝 Flashcards.pdf</p>
-                <p className="pl-12">📋 Cuestionario (Google Forms link)</p>
+                <p className="pl-12">📹 video.mp4</p>
+                <p className="pl-12">🖼️ infografia.png</p>
+                <p className="pl-12">🎧 audio.m4a</p>
+                <p className="pl-12">📊 presentacion.pdf</p>
                 <p className="pl-8">📁 Módulo 2/</p>
                 <p className="pl-12">...</p>
               </div>

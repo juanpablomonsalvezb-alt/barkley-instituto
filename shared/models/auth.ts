@@ -19,9 +19,11 @@ export const sessions = sqliteTable(
 export const users = sqliteTable("users", {
   id: text("id").primaryKey().$defaultFn(() => randomUUID()),
   email: text("email").unique(),
-  firstName: text("first_name"),
-  lastName: text("last_name"),
+  name: text("name"), // Full name for Google OAuth compatibility
+  firstName: text("first_name"), // For backward compatibility
+  lastName: text("last_name"), // For backward compatibility
   profileImageUrl: text("profile_image_url"),
+  provider: text("provider"), // 'google' or 'replit'
   createdAt: integer("created_at", { mode: "timestamp" }).defaultNow(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).defaultNow(),
 });

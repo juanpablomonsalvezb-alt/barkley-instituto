@@ -7,13 +7,13 @@ async function getAccessToken() {
   if (connectionSettings && connectionSettings.settings.expires_at && new Date(connectionSettings.settings.expires_at).getTime() > Date.now()) {
     return connectionSettings.settings.access_token;
   }
-  
+
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
-  const xReplitToken = process.env.REPL_IDENTITY 
-    ? 'repl ' + process.env.REPL_IDENTITY 
-    : process.env.WEB_REPL_RENEWAL 
-    ? 'depl ' + process.env.WEB_REPL_RENEWAL 
-    : null;
+  const xReplitToken = process.env.REPL_IDENTITY
+    ? 'repl ' + process.env.REPL_IDENTITY
+    : process.env.WEB_REPL_RENEWAL
+      ? 'depl ' + process.env.WEB_REPL_RENEWAL
+      : null;
 
   if (!xReplitToken) {
     throw new Error('X_REPLIT_TOKEN not found for repl/depl');
@@ -37,15 +37,49 @@ async function getAccessToken() {
   return accessToken;
 }
 
-async function getUncachableGoogleDriveClient() {
-  const accessToken = await getAccessToken();
+export async function getGoogleDriveClient() {
+  // 1. Try Local Service Account (Env Vars)
+  if (process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
+    try {
+      console.log('Initializing Google Drive with Service Account (Env Vars)...');
+      const auth = new google.auth.JWT(
+        process.env.GOOGLE_CLIENT_EMAIL,
+        undefined,
+        process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        ['https://www.googleapis.com/auth/drive']
+      );
+      return google.drive({ version: 'v3', auth });
+    } catch (error) {
+      console.warn('Failed to initialize local Service Account:', error);
+    }
+  }
 
-  const oauth2Client = new google.auth.OAuth2();
-  oauth2Client.setCredentials({
-    access_token: accessToken
-  });
+  // 2. Try Application Default Credentials (ADC)
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    try {
+      console.log('Initializing Google Drive with ADC...');
+      const auth = new google.auth.GoogleAuth({
+        scopes: ['https://www.googleapis.com/auth/drive']
+      });
+      const client = await auth.getClient();
+      return google.drive({ version: 'v3', auth: client });
+    } catch (error) {
+      console.warn('Failed to initialize ADC:', error);
+    }
+  }
 
-  return google.drive({ version: 'v3', auth: oauth2Client });
+  // 3. Fallback to Replit Auth (Original Logic)
+  try {
+    const accessToken = await getAccessToken();
+    const oauth2Client = new google.auth.OAuth2();
+    oauth2Client.setCredentials({
+      access_token: accessToken
+    });
+    return google.drive({ version: 'v3', auth: oauth2Client });
+  } catch (error) {
+    console.error('All Google Drive authentication methods failed.');
+    throw new Error('Google Drive authentication failed. Please configure GOOGLE_CLIENT_EMAIL and GOOGLE_PRIVATE_KEY in .env');
+  }
 }
 
 export interface ModuleResource {
@@ -66,19 +100,19 @@ export interface ModuleContent {
 function getResourceType(mimeType: string, name: string): ModuleResource['type'] {
   const lowerName = name.toLowerCase();
   const baseName = lowerName.split('.')[0];
-  
+
   // Detect by exact filename prefix (audio.*, infografia.*, presentacion.*, video.*)
   if (baseName === 'video') return 'video';
   if (baseName === 'audio') return 'audio';
   if (baseName === 'infografia') return 'infografia';
   if (baseName === 'presentacion') return 'presentacion';
-  
+
   // Fallback to MIME type detection
   if (mimeType.includes('video')) return 'video';
   if (mimeType.includes('audio')) return 'audio';
   if (mimeType.includes('image')) return 'infografia';
   if (mimeType.includes('pdf') || mimeType.includes('presentation') || mimeType.includes('slides') || mimeType.includes('document')) return 'presentacion';
-  
+
   return 'infografia';
 }
 
@@ -99,8 +133,8 @@ function getEmbedUrl(fileId: string, mimeType: string): string {
 }
 
 export async function listModuleFolders(parentFolderId: string): Promise<ModuleContent[]> {
-  const drive = await getUncachableGoogleDriveClient();
-  
+  const drive = await getGoogleDriveClient();
+
   const foldersResponse = await drive.files.list({
     q: `'${parentFolderId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
     fields: 'files(id, name)',
@@ -141,8 +175,8 @@ export async function listModuleFolders(parentFolderId: string): Promise<ModuleC
 }
 
 export async function getModuleResources(folderId: string): Promise<ModuleResource[]> {
-  const drive = await getUncachableGoogleDriveClient();
-  
+  const drive = await getGoogleDriveClient();
+
   const filesResponse = await drive.files.list({
     q: `'${folderId}' in parents and trashed = false`,
     fields: 'files(id, name, mimeType, webViewLink)',
@@ -160,8 +194,8 @@ export async function getModuleResources(folderId: string): Promise<ModuleResour
 }
 
 export async function searchFolderByName(folderName: string): Promise<{ id: string; name: string } | null> {
-  const drive = await getUncachableGoogleDriveClient();
-  
+  const drive = await getGoogleDriveClient();
+
   const response = await drive.files.list({
     q: `name contains '${folderName}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
     fields: 'files(id, name)',
@@ -176,8 +210,8 @@ export async function searchFolderByName(folderName: string): Promise<{ id: stri
 }
 
 export async function listRootFolders(): Promise<Array<{ id: string; name: string }>> {
-  const drive = await getUncachableGoogleDriveClient();
-  
+  const drive = await getGoogleDriveClient();
+
   const response = await drive.files.list({
     q: `mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
     fields: 'files(id, name)',
