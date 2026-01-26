@@ -23,10 +23,20 @@ import {
   Eye
 } from "lucide-react";
 
-interface Subject {
+interface Level {
   id: string;
   name: string;
-  slug: string;
+}
+
+interface LevelSubject {
+  id: string;
+  levelId: string;
+  subjectId: string;
+  subject: {
+    id: string;
+    name: string;
+    slug: string;
+  };
 }
 
 interface TextbookConfig {
@@ -45,37 +55,50 @@ interface ModulePageRange {
 
 export default function TextbookConfigNew() {
   const { toast } = useToast();
-  const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
+  const [selectedLevelId, setSelectedLevelId] = useState<string>("");
+  const [selectedLevelSubjectId, setSelectedLevelSubjectId] = useState<string>("");
   const [pdfUrl, setPdfUrl] = useState("");
   const [pdfName, setPdfName] = useState("");
   const [totalPages, setTotalPages] = useState<number>(0);
   const [moduleRanges, setModuleRanges] = useState<Record<number, ModulePageRange>>({});
   const [editingModule, setEditingModule] = useState<number | null>(null);
 
-  // Fetch all subjects
-  const { data: subjects = [], isLoading: isLoadingSubjects } = useQuery<Subject[]>({
-    queryKey: ['/api/subjects'],
+  // Fetch all levels
+  const { data: levels = [], isLoading: isLoadingLevels } = useQuery<Level[]>({
+    queryKey: ['/api/levels'],
     queryFn: async () => {
-      const res = await fetch('/api/subjects', { credentials: 'include' });
+      const res = await fetch('/api/levels', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch levels');
+      return res.json();
+    }
+  });
+
+  // Fetch subjects for selected level
+  const { data: levelSubjects = [], isLoading: isLoadingSubjects } = useQuery<LevelSubject[]>({
+    queryKey: ['/api/levels', selectedLevelId, 'subjects'],
+    queryFn: async () => {
+      if (!selectedLevelId) return [];
+      const res = await fetch(`/api/levels/${selectedLevelId}/subjects`, { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch subjects');
       const data = await res.json();
-      console.log('Subjects loaded:', data);
+      console.log('Level subjects loaded:', data);
       return data;
-    }
+    },
+    enabled: !!selectedLevelId
   });
 
   // Fetch textbook config for selected subject
   const { data: existingConfig, isLoading: isLoadingConfig } = useQuery<TextbookConfig>({
-    queryKey: ['/api/textbooks/subject', selectedSubjectId],
+    queryKey: ['/api/textbooks/subject', selectedLevelSubjectId],
     queryFn: async () => {
-      const res = await fetch(`/api/textbooks/subject/${selectedSubjectId}`, { 
+      const res = await fetch(`/api/textbooks/subject/${selectedLevelSubjectId}`, { 
         credentials: 'include' 
       });
       if (res.status === 404) return null;
       if (!res.ok) throw new Error('Failed to fetch config');
       return res.json();
     },
-    enabled: !!selectedSubjectId,
+    enabled: !!selectedLevelSubjectId,
   });
 
   // Load existing config when subject changes
@@ -113,7 +136,7 @@ export default function TextbookConfigNew() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          subjectId: selectedSubjectId,
+          subjectId: selectedLevelSubjectId,
           pdfUrl,
           pdfName,
           totalPages: totalPages || null,
@@ -196,7 +219,7 @@ export default function TextbookConfigNew() {
     });
   };
 
-  const canSave = selectedSubjectId && pdfUrl && pdfName && Object.keys(moduleRanges).length > 0;
+  const canSave = selectedLevelSubjectId && pdfUrl && pdfName && Object.keys(moduleRanges).length > 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -240,7 +263,7 @@ export default function TextbookConfigNew() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Configuration */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Subject Selection */}
+            {/* Level and Subject Selection */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -250,38 +273,72 @@ export default function TextbookConfigNew() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <BookOpen className="w-5 h-5 text-[#A51C30]" />
-                    Seleccionar Asignatura
+                    Seleccionar Curso y Asignatura
                   </CardTitle>
                   <CardDescription>
-                    Elige la asignatura para configurar su libro de texto
+                    Primero elige el nivel, luego la asignatura
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  {isLoadingSubjects ? (
-                    <div className="flex items-center gap-2 p-4">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span className="text-sm text-gray-600">Cargando asignaturas...</span>
+                <CardContent className="space-y-4">
+                  {/* Level Selector */}
+                  <div>
+                    <Label htmlFor="level">Nivel</Label>
+                    {isLoadingLevels ? (
+                      <div className="flex items-center gap-2 p-4">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-sm text-gray-600">Cargando niveles...</span>
+                      </div>
+                    ) : (
+                      <Select value={selectedLevelId} onValueChange={(value) => {
+                        setSelectedLevelId(value);
+                        setSelectedLevelSubjectId(""); // Reset subject when level changes
+                      }}>
+                        <SelectTrigger className="w-full mt-1">
+                          <SelectValue placeholder="Selecciona un nivel" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {levels.map((level) => (
+                            <SelectItem key={level.id} value={level.id}>
+                              {level.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+
+                  {/* Subject Selector */}
+                  {selectedLevelId && (
+                    <div>
+                      <Label htmlFor="subject">Asignatura</Label>
+                      {isLoadingSubjects ? (
+                        <div className="flex items-center gap-2 p-4">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span className="text-sm text-gray-600">Cargando asignaturas...</span>
+                        </div>
+                      ) : levelSubjects.length === 0 ? (
+                        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg mt-1">
+                          <p className="text-sm text-yellow-800">No hay asignaturas para este nivel</p>
+                        </div>
+                      ) : (
+                        <Select value={selectedLevelSubjectId} onValueChange={setSelectedLevelSubjectId}>
+                          <SelectTrigger className="w-full mt-1">
+                            <SelectValue placeholder="Selecciona una asignatura" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {levelSubjects.map((ls) => (
+                              <SelectItem key={ls.id} value={ls.id}>
+                                {ls.subject.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </div>
-                  ) : subjects.length === 0 ? (
-                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-sm text-yellow-800">No se encontraron asignaturas</p>
-                    </div>
-                  ) : (
-                    <Select value={selectedSubjectId} onValueChange={setSelectedSubjectId}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Selecciona una asignatura" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {subjects.map((subject) => (
-                          <SelectItem key={subject.id} value={subject.id}>
-                            {subject.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                   )}
-                  {isLoadingConfig && selectedSubjectId && (
-                    <p className="text-sm text-gray-500 mt-2 flex items-center gap-2">
+
+                  {isLoadingConfig && selectedLevelSubjectId && (
+                    <p className="text-sm text-gray-500 flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
                       Cargando configuración existente...
                     </p>
@@ -291,7 +348,7 @@ export default function TextbookConfigNew() {
             </motion.div>
 
             {/* PDF Configuration */}
-            {selectedSubjectId && (
+            {selectedLevelSubjectId && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -473,9 +530,15 @@ export default function TextbookConfigNew() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
+                  <p className="text-sm text-gray-500">Nivel</p>
+                  <p className="font-semibold">
+                    {levels.find(l => l.id === selectedLevelId)?.name || '-'}
+                  </p>
+                </div>
+                <div>
                   <p className="text-sm text-gray-500">Asignatura</p>
                   <p className="font-semibold">
-                    {subjects.find(s => s.id === selectedSubjectId)?.name || '-'}
+                    {levelSubjects.find(ls => ls.id === selectedLevelSubjectId)?.subject.name || '-'}
                   </p>
                 </div>
                 <div>
