@@ -5,8 +5,13 @@ import { isAuthenticated } from "./replitAuth";
 // Register auth-specific routes
 export function registerAuthRoutes(app: Express): void {
   // Get current authenticated user
-  app.get("/api/auth/user", isAuthenticated, async (req: any, res) => {
+  app.get("/api/auth/user", async (req: any, res) => {
     try {
+      // Check if authentication is available
+      if (!req.isAuthenticated || !req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
       const userId = req.user.id || req.user.claims?.sub;
       if (!userId) {
         return res.status(401).json({ message: "User ID not found" });

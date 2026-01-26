@@ -285,7 +285,7 @@ export async function registerRoutes(
   });
 
   // Get user's enrollments
-  app.get("/api/enrollments", async (req: any, res) => {
+  app.get("/api/enrollments", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const userEnrollments = await storage.getEnrollmentsByUser(userId);
@@ -297,7 +297,7 @@ export async function registerRoutes(
   });
 
   // Get user's progress
-  app.get("/api/progress", async (req: any, res) => {
+  app.get("/api/progress", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const progress = await storage.getProgressByUser(userId);
@@ -309,7 +309,7 @@ export async function registerRoutes(
   });
 
   // Mark resource as complete
-  app.post("/api/progress", async (req: any, res) => {
+  app.post("/api/progress", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const parsed = insertStudentProgressSchema.safeParse({ ...req.body, userId });
@@ -327,7 +327,7 @@ export async function registerRoutes(
   // === ADMIN ROUTES (require admin role) ===
 
   // Create level (admin only)
-  app.post("/api/admin/levels", isAdmin, async (req: any, res) => {
+  app.post("/api/admin/levels", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const parsed = insertLevelSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -342,7 +342,7 @@ export async function registerRoutes(
   });
 
   // Create subject (admin only)
-  app.post("/api/admin/subjects", isAdmin, async (req: any, res) => {
+  app.post("/api/admin/subjects", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const parsed = insertSubjectSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -357,7 +357,7 @@ export async function registerRoutes(
   });
 
   // Create level-subject association (admin only)
-  app.post("/api/admin/level-subjects", isAdmin, async (req: any, res) => {
+  app.post("/api/admin/level-subjects", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const parsed = insertLevelSubjectSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -372,7 +372,7 @@ export async function registerRoutes(
   });
 
   // Create learning objective (admin only)
-  app.post("/api/admin/objectives", isAdmin, async (req: any, res) => {
+  app.post("/api/admin/objectives", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const parsed = insertLearningObjectiveSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -431,7 +431,7 @@ export async function registerRoutes(
   });
 
   // Create resource (admin only)
-  app.post("/api/admin/resources", isAdmin, async (req: any, res) => {
+  app.post("/api/admin/resources", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const parsed = insertWeeklyResourceSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -446,7 +446,7 @@ export async function registerRoutes(
   });
 
   // Update resource (admin only)
-  app.patch("/api/admin/resources/:id", isAdmin, async (req: any, res) => {
+  app.patch("/api/admin/resources/:id", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const resource = await storage.updateResource(req.params.id, req.body);
       if (!resource) {
@@ -694,7 +694,7 @@ export async function registerRoutes(
   });
 
   // Check if a specific module is accessible
-  app.get("/api/modules/:moduleNumber/access", async (req: any, res) => {
+  app.get("/api/modules/:moduleNumber/access", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const moduleNumber = parseInt(req.params.moduleNumber);
@@ -729,7 +729,7 @@ export async function registerRoutes(
   });
 
   // Check evaluation availability
-  app.get("/api/modules/:moduleNumber/evaluations", async (req: any, res) => {
+  app.get("/api/modules/:moduleNumber/evaluations", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const moduleNumber = parseInt(req.params.moduleNumber);
@@ -785,7 +785,7 @@ export async function registerRoutes(
   });
 
   // Mark evaluation as complete
-  app.post("/api/evaluations/:id/complete", async (req: any, res) => {
+  app.post("/api/evaluations/:id/complete", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const evaluationId = req.params.id;
@@ -830,7 +830,7 @@ export async function registerRoutes(
   });
 
   // Get evaluation HTML content
-  app.get("/api/evaluations/:objectiveId/:evaluationNumber/html", async (req: any, res) => {
+  app.get("/api/evaluations/:objectiveId/:evaluationNumber/html", isAuthenticated, async (req: any, res) => {
     try {
       const { objectiveId, evaluationNumber } = req.params;
       const evalNum = parseInt(evaluationNumber);
@@ -896,7 +896,7 @@ export async function registerRoutes(
   });
 
   // Get module info for a learning objective
-  app.get("/api/objectives/:objectiveId/module-info", async (req: any, res) => {
+  app.get("/api/objectives/:objectiveId/module-info", isAuthenticated, async (req: any, res) => {
     try {
       const { objectiveId } = req.params;
       const objective = await storage.getLearningObjectiveById(objectiveId);
@@ -1303,7 +1303,7 @@ export async function registerRoutes(
   });
 
   // Get evaluation with questions for a student
-  app.get("/api/evaluations/:id", async (req: any, res) => {
+  app.get("/api/evaluations/:id", isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
       const evaluation = await storage.getModuleEvaluationById(id);
@@ -1336,7 +1336,7 @@ export async function registerRoutes(
   });
 
   // Submit evaluation answers
-  app.post("/api/evaluations/:id/submit", async (req: any, res) => {
+  app.post("/api/evaluations/:id/submit", isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
       const userId = req.user?.claims?.sub;
@@ -1395,7 +1395,7 @@ export async function registerRoutes(
   });
 
   // Get module evaluations with generation status
-  app.get("/api/learning-objectives/:id/evaluations", async (req: any, res) => {
+  app.get("/api/learning-objectives/:id/evaluations", isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
       const evaluations = await storage.getModuleEvaluations(id);
