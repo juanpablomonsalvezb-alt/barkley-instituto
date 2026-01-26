@@ -1,4 +1,12 @@
-import { BookOpen, ExternalLink, Download } from "lucide-react";
+import { useState } from "react";
+import { Document, Page, pdfjs } from 'react-pdf';
+import { BookOpen, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+import 'react-pdf/dist/esm/Page/TextLayer.css';
+
+// Configure PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 interface TextbookViewerProps {
   pdfUrl: string;
@@ -9,63 +17,146 @@ interface TextbookViewerProps {
 }
 
 export function TextbookViewer({ pdfUrl, title, startPage, endPage, moduleNumber }: TextbookViewerProps) {
-  const proxyUrl = `/api/pdf-proxy?url=${encodeURIComponent(pdfUrl)}&startPage=${startPage}&endPage=${endPage}`;
-  const totalPages = endPage - startPage + 1;
+  const [currentPage, setCurrentPage] = useState(startPage);
+  const [numPages, setNumPages] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  const totalAllowedPages = endPage - startPage + 1;
+  const relativePageNum = currentPage - startPage + 1;
+
+  // Convert Google Drive link to direct PDF link
+  const getDirectPdfUrl = (url: string) => {
+    if (url.includes('drive.google.com')) {
+      const fileIdMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if (fileIdMatch) {
+        return `https://drive.google.com/uc?export=download&id=${fileIdMatch[1]}`;
+      }
+    }
+    return url;
+  };
+
+  const directPdfUrl = getDirectPdfUrl(pdfUrl);
+
+  function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
+    setNumPages(numPages);
+    setLoading(false);
+  }
+
+  const goToPrevPage = () => {
+    if (currentPage > startPage) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < endPage) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-12">
-      <div className="max-w-xl w-full space-y-8 text-center">
-        <div className="w-24 h-24 bg-blue-600 rounded-3xl mx-auto flex items-center justify-center shadow-2xl">
-          <BookOpen className="w-12 h-12 text-white" />
+    <div className="w-full flex flex-col bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-[#A51C30] to-[#821626] text-white p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+              <BookOpen className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-bold text-lg">{title || "Texto Escolar"}</h3>
+              <p className="text-sm text-white/80">
+                Módulo {moduleNumber} • Páginas {startPage}-{endPage}
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-black">{relativePageNum}/{totalAllowedPages}</div>
+            <div className="text-xs text-white/80">Página del módulo</div>
+          </div>
         </div>
+      </div>
+
+      {/* PDF Viewer */}
+      <div className="flex-1 flex items-center justify-center p-4 bg-gray-100 min-h-[600px] relative">
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+            <div className="text-center">
+              <Loader2 className="w-8 h-8 animate-spin text-[#A51C30] mx-auto mb-2" />
+              <p className="text-gray-600">Cargando PDF...</p>
+            </div>
+          </div>
+        )}
         
-        <div className="space-y-3">
-          <h3 className="text-3xl font-bold text-white">{title || "Texto Escolar"}</h3>
-          <div className="flex items-center justify-center gap-4">
-            <span className="px-4 py-2 bg-blue-600/20 text-blue-300 rounded-lg text-sm font-medium">
-              Módulo {moduleNumber}
+        <Document
+          file={directPdfUrl}
+          onLoadSuccess={onDocumentLoadSuccess}
+          loading={<div />}
+          error={
+            <div className="text-center p-8">
+              <div className="w-16 h-16 bg-red-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <BookOpen className="w-8 h-8 text-red-600" />
+              </div>
+              <p className="text-red-600 font-semibold mb-2">Error al cargar el PDF</p>
+              <p className="text-sm text-gray-600">
+                Verifica que el link de Google Drive sea público
+              </p>
+            </div>
+          }
+        >
+          <Page
+            pageNumber={currentPage}
+            renderTextLayer={true}
+            renderAnnotationLayer={true}
+            className="shadow-2xl"
+            width={Math.min(window.innerWidth - 100, 800)}
+          />
+        </Document>
+      </div>
+
+      {/* Navigation Controls */}
+      <div className="bg-white border-t border-gray-200 p-4">
+        <div className="flex items-center justify-between max-w-4xl mx-auto">
+          <Button
+            onClick={goToPrevPage}
+            disabled={currentPage <= startPage}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Anterior
+          </Button>
+
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-600">
+              Página real del PDF: <span className="font-semibold">{currentPage}</span>
             </span>
-            <span className="px-4 py-2 bg-emerald-600/20 text-emerald-300 rounded-lg text-sm font-medium">
-              {totalPages} páginas
+            <span className="text-xs text-gray-400">
+              (Solo puedes ver páginas {startPage}-{endPage})
             </span>
           </div>
-          <p className="text-slate-300 text-lg">
-            Páginas {startPage} - {endPage}
-          </p>
-        </div>
 
-        <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 space-y-4">
-          <p className="text-slate-400 text-sm">
-            ✓ Solo las páginas de este módulo<br/>
-            ✓ PDF optimizado y listo para estudiar<br/>
-            ✓ Extraído del texto completo
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <a
-            href={proxyUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-lg shadow-xl hover:shadow-2xl transition-all hover:scale-105"
+          <Button
+            onClick={goToNextPage}
+            disabled={currentPage >= endPage}
+            variant="outline"
+            className="flex items-center gap-2"
           >
-            <ExternalLink className="w-5 h-5" />
-            Abrir PDF del Módulo
-          </a>
-          
-          <a
-            href={proxyUrl}
-            download={`Modulo_${moduleNumber}_Paginas_${startPage}-${endPage}.pdf`}
-            className="flex items-center justify-center gap-3 px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow-xl hover:shadow-2xl transition-all hover:scale-105"
-          >
-            <Download className="w-5 h-5" />
-            Descargar PDF ({totalPages} páginas)
-          </a>
+            Siguiente
+            <ChevronRight className="w-4 h-4" />
+          </Button>
         </div>
+      </div>
 
-        <p className="text-xs text-slate-500">
-          Instituto Barkley • {title || "Texto Escolar"}
-        </p>
+      {/* Info Footer */}
+      <div className="bg-blue-50 border-t border-blue-200 px-4 py-3">
+        <div className="flex items-center justify-center gap-2 text-sm text-blue-800">
+          <BookOpen className="w-4 h-4" />
+          <span>
+            Este módulo incluye {totalAllowedPages} página{totalAllowedPages !== 1 ? 's' : ''} 
+            {' '}del libro "{title || 'Texto Escolar'}"
+          </span>
+        </div>
       </div>
     </div>
   );
