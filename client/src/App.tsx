@@ -10,6 +10,7 @@ import Dashboard from "@/pages/Dashboard";
 import CoursePlayer from "@/pages/CoursePlayer";
 import DriveSync from "@/pages/DriveSync";
 import TextbookConfig from "@/pages/TextbookConfig";
+import TextbookConfigNew from "@/pages/TextbookConfigNew";
 
 import Lenis from 'lenis';
 import { useEffect } from "react";
@@ -47,6 +48,7 @@ function Router() {
       <Route path="/course/:id" component={CoursePlayer} />
       <Route path="/drive-sync" component={DriveSync} />
       <Route path="/textbook-config" component={TextbookConfig} />
+      <Route path="/textbook-config-new" component={TextbookConfigNew} />
       <Route component={NotFound} />
     </Switch>
   );
