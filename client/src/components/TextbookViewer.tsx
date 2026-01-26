@@ -33,7 +33,8 @@ export function TextbookViewer({ pdfUrl, title, startPage, endPage, moduleNumber
     if (url.includes('drive.google.com')) {
       const fileIdMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
       if (fileIdMatch) {
-        return `https://drive.google.com/uc?export=download&id=${fileIdMatch[1]}`;
+        // Use the viewer endpoint which works better for PDFs
+        return `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
       }
     }
     return url;
