@@ -1420,6 +1420,48 @@ export async function registerRoutes(
 
   // ===== TEXTBOOK CONFIGURATION ENDPOINTS =====
   
+  // List PDF files from a Google Drive folder
+  app.get("/api/drive/folder/:folderId/pdfs", async (req, res) => {
+    try {
+      const { folderId } = req.params;
+      const { listPDFsFromFolder, extractPageRangeFromFilename } = await import("./googleDrive");
+      
+      const pdfs = await listPDFsFromFolder(folderId);
+      
+      // Add extracted page ranges to each PDF
+      const pdfsWithRanges = pdfs.map(pdf => ({
+        ...pdf,
+        pageRange: extractPageRangeFromFilename(pdf.name)
+      }));
+      
+      res.json(pdfsWithRanges);
+    } catch (error) {
+      console.error("Error listing PDFs from Drive folder:", error);
+      res.status(500).json({ message: "Failed to list PDFs from folder" });
+    }
+  });
+
+  // Auto-match PDFs from folder to modules
+  app.post("/api/textbooks/auto-match", async (req, res) => {
+    try {
+      const { folderId, modulePagesConfig } = req.body;
+      
+      if (!folderId || !modulePagesConfig) {
+        return res.status(400).json({ message: "Missing folderId or modulePagesConfig" });
+      }
+
+      const { listPDFsFromFolder, matchPDFsToModules } = await import("./googleDrive");
+      
+      const pdfs = await listPDFsFromFolder(folderId);
+      const matches = matchPDFsToModules(pdfs, modulePagesConfig);
+      
+      res.json({ matches, totalPDFs: pdfs.length, matchedModules: Object.keys(matches).length });
+    } catch (error) {
+      console.error("Error auto-matching PDFs:", error);
+      res.status(500).json({ message: "Failed to auto-match PDFs" });
+    }
+  });
+  
   // Get all textbook configs
   app.get("/api/textbooks", async (req, res) => {
     try {

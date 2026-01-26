@@ -221,3 +221,67 @@ export async function listRootFolders(): Promise<Array<{ id: string; name: strin
 
   return (response.data.files || []).map(f => ({ id: f.id!, name: f.name! }));
 }
+
+// List PDF files from a folder with their download links
+export async function listPDFsFromFolder(folderId: string): Promise<Array<{ 
+  id: string; 
+  name: string; 
+  webViewLink: string;
+  downloadUrl: string;
+}>> {
+  const drive = await getGoogleDriveClient();
+  
+  const response = await drive.files.list({
+    q: `'${folderId}' in parents and mimeType='application/pdf' and trashed=false`,
+    fields: 'files(id, name, webViewLink)',
+    orderBy: 'name'
+  });
+
+  const files = response.data.files || [];
+  
+  return files.map(file => ({
+    id: file.id!,
+    name: file.name!,
+    webViewLink: file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`,
+    downloadUrl: `https://drive.google.com/uc?export=download&id=${file.id}`
+  }));
+}
+
+// Extract page range from filename (e.g., "MATSM25E7B-8-17" => {start: 8, end: 17})
+export function extractPageRangeFromFilename(filename: string): { start: number; end: number } | null {
+  // Match patterns like: 8-17, 18-26, etc.
+  const match = filename.match(/(\d+)-(\d+)/);
+  if (match) {
+    return {
+      start: parseInt(match[1]),
+      end: parseInt(match[2])
+    };
+  }
+  return null;
+}
+
+// Match PDFs to modules based on page ranges
+export function matchPDFsToModules(
+  pdfs: Array<{ name: string; webViewLink: string }>,
+  modulePagesConfig: Record<string, { start: number; end: number }>
+): Record<string, { pdfUrl: string; fileName: string }> {
+  const result: Record<string, { pdfUrl: string; fileName: string }> = {};
+  
+  for (const pdf of pdfs) {
+    const pdfRange = extractPageRangeFromFilename(pdf.name);
+    if (!pdfRange) continue;
+    
+    // Find which module matches this page range
+    for (const [moduleKey, moduleRange] of Object.entries(modulePagesConfig)) {
+      if (pdfRange.start === moduleRange.start && pdfRange.end === moduleRange.end) {
+        result[moduleKey] = {
+          pdfUrl: pdf.webViewLink,
+          fileName: pdf.name
+        };
+        break;
+      }
+    }
+  }
+  
+  return result;
+}
