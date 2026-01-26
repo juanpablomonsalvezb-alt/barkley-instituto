@@ -304,3 +304,32 @@ export type ModuleEvaluation = typeof moduleEvaluations.$inferSelect;
 export type InsertModuleEvaluation = z.infer<typeof insertModuleEvaluationSchema>;
 export type EvaluationProgress = typeof evaluationProgress.$inferSelect;
 export type InsertEvaluationProgress = z.infer<typeof insertEvaluationProgressSchema>;
+
+// Textbook configurations - PDF page mappings per module
+export const textbookConfigs = sqliteTable("textbook_configs", {
+  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
+  subjectId: text("subject_id").notNull().references(() => subjects.id),
+  pdfUrl: text("pdf_url").notNull(), // Google Drive link or local path
+  pdfName: text("pdf_name").notNull(),
+  totalPages: integer("total_pages"),
+  // JSON object: { "module_1": { "start": 1, "end": 15 }, "module_2": { "start": 16, "end": 30 } }
+  modulePagesConfig: text("module_pages_config").notNull().default("{}"),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+
+export const textbookConfigsRelations = relations(textbookConfigs, ({ one }) => ({
+  subject: one(subjects, {
+    fields: [textbookConfigs.subjectId],
+    references: [subjects.id],
+  }),
+}));
+
+export const insertTextbookConfigSchema = createInsertSchema(textbookConfigs, {
+  pdfUrl: z.string().url().or(z.string().startsWith("/")),
+  pdfName: z.string().min(1),
+  modulePagesConfig: z.string().default("{}"),
+});
+
+export type TextbookConfig = typeof textbookConfigs.$inferSelect;
+export type InsertTextbookConfig = z.infer<typeof insertTextbookConfigSchema>;

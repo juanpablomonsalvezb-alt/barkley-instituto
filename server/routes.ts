@@ -1418,5 +1418,147 @@ export async function registerRoutes(
     }
   });
 
+  // ===== TEXTBOOK CONFIGURATION ENDPOINTS =====
+  
+  // Get all textbook configs
+  app.get("/api/textbooks", async (req, res) => {
+    try {
+      const textbooks = await storage.getAllTextbookConfigs();
+      res.json(textbooks);
+    } catch (error) {
+      console.error("Error fetching textbook configs:", error);
+      res.status(500).json({ message: "Failed to fetch textbook configs" });
+    }
+  });
+
+  // Get textbook config for a specific subject
+  app.get("/api/textbooks/subject/:subjectId", async (req, res) => {
+    try {
+      const textbook = await storage.getTextbookConfigBySubject(req.params.subjectId);
+      if (!textbook) {
+        return res.status(404).json({ message: "Textbook config not found" });
+      }
+      res.json(textbook);
+    } catch (error) {
+      console.error("Error fetching textbook config:", error);
+      res.status(500).json({ message: "Failed to fetch textbook config" });
+    }
+  });
+
+  // Get pages for a specific module
+  app.get("/api/textbooks/module/:levelSubjectId/:moduleNumber", async (req, res) => {
+    try {
+      const { levelSubjectId, moduleNumber } = req.params;
+      
+      // Get the level-subject to find the subject
+      const levelSubject = await storage.getLevelSubjectById(levelSubjectId);
+      if (!levelSubject) {
+        return res.status(404).json({ message: "Level-subject not found" });
+      }
+
+      const textbook = await storage.getTextbookConfigBySubject(levelSubject.subjectId);
+      if (!textbook) {
+        return res.status(404).json({ message: "No textbook configured for this subject" });
+      }
+
+      // Parse the module pages config
+      const modulePagesConfig = JSON.parse(textbook.modulePagesConfig);
+      const moduleKey = `module_${moduleNumber}`;
+      const pages = modulePagesConfig[moduleKey];
+
+      if (!pages) {
+        return res.status(404).json({ message: "No pages configured for this module" });
+      }
+
+      res.json({
+        pdfUrl: textbook.pdfUrl,
+        pdfName: textbook.pdfName,
+        startPage: pages.start,
+        endPage: pages.end,
+        totalPages: textbook.totalPages
+      });
+    } catch (error) {
+      console.error("Error fetching module pages:", error);
+      res.status(500).json({ message: "Failed to fetch module pages" });
+    }
+  });
+
+  // Create or update textbook config (Admin only)
+  app.post("/api/textbooks", isAdmin, async (req, res) => {
+    try {
+      const { subjectId, pdfUrl, pdfName, totalPages, modulePagesConfig } = req.body;
+
+      // Validate required fields
+      if (!subjectId || !pdfUrl || !pdfName) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // Check if config already exists for this subject
+      const existing = await storage.getTextbookConfigBySubject(subjectId);
+
+      if (existing) {
+        // Update existing
+        const updated = await storage.updateTextbookConfig(existing.id, {
+          pdfUrl,
+          pdfName,
+          totalPages,
+          modulePagesConfig: typeof modulePagesConfig === 'string' 
+            ? modulePagesConfig 
+            : JSON.stringify(modulePagesConfig)
+        });
+        res.json(updated);
+      } else {
+        // Create new
+        const created = await storage.createTextbookConfig({
+          subjectId,
+          pdfUrl,
+          pdfName,
+          totalPages,
+          modulePagesConfig: typeof modulePagesConfig === 'string' 
+            ? modulePagesConfig 
+            : JSON.stringify(modulePagesConfig)
+        });
+        res.json(created);
+      }
+    } catch (error) {
+      console.error("Error saving textbook config:", error);
+      res.status(500).json({ message: "Failed to save textbook config" });
+    }
+  });
+
+  // Update module pages config (Admin only)
+  app.patch("/api/textbooks/:id/modules", isAdmin, async (req, res) => {
+    try {
+      const { modulePagesConfig } = req.body;
+
+      if (!modulePagesConfig) {
+        return res.status(400).json({ message: "Missing modulePagesConfig" });
+      }
+
+      const updated = await storage.updateTextbookConfig(req.params.id, {
+        modulePagesConfig: typeof modulePagesConfig === 'string' 
+          ? modulePagesConfig 
+          : JSON.stringify(modulePagesConfig),
+        updatedAt: new Date()
+      });
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating module pages:", error);
+      res.status(500).json({ message: "Failed to update module pages" });
+    }
+  });
+
+  // Delete textbook config (Admin only)
+  app.delete("/api/textbooks/:id", isAdmin, async (req, res) => {
+    try {
+      await storage.deleteTextbookConfig(req.params.id);
+      res.json({ message: "Textbook config deleted" });
+    } catch (error) {
+      console.error("Error deleting textbook config:", error);
+      res.status(500).json({ message: "Failed to delete textbook config" });
+    }
+  });
+
   return httpServer;
 }

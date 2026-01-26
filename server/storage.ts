@@ -1,13 +1,13 @@
 import { 
   levels, subjects, levelSubjects, learningObjectives, weeklyResources,
   enrollments, studentProgress, weeklyCompletion, userProfiles,
-  programCalendar, moduleEvaluations, evaluationProgress,
+  programCalendar, moduleEvaluations, evaluationProgress, textbookConfigs,
   type Level, type InsertLevel, type Subject, type InsertSubject,
   type LevelSubject, type InsertLevelSubject, type LearningObjective, type InsertLearningObjective,
   type WeeklyResource, type InsertWeeklyResource, type Enrollment, type InsertEnrollment,
   type StudentProgress, type InsertStudentProgress, type UserProfile, type InsertUserProfile,
   type ProgramCalendar, type InsertProgramCalendar, type ModuleEvaluation, type InsertModuleEvaluation,
-  type EvaluationProgress, type InsertEvaluationProgress
+  type EvaluationProgress, type InsertEvaluationProgress, type TextbookConfig, type InsertTextbookConfig
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, inArray } from "drizzle-orm";
@@ -506,6 +506,44 @@ export class DatabaseStorage implements IStorage {
       .where(eq(learningObjectives.id, id))
       .returning();
     return updated;
+  }
+
+  // ===== TEXTBOOK CONFIGURATION METHODS =====
+  
+  async getAllTextbookConfigs(): Promise<TextbookConfig[]> {
+    return db.select().from(textbookConfigs);
+  }
+
+  async getTextbookConfigBySubject(subjectId: string): Promise<TextbookConfig | undefined> {
+    const results = await db.select().from(textbookConfigs)
+      .where(eq(textbookConfigs.subjectId, subjectId))
+      .limit(1);
+    return results[0];
+  }
+
+  async createTextbookConfig(data: InsertTextbookConfig): Promise<TextbookConfig> {
+    const result = await db.insert(textbookConfigs).values(data).returning();
+    return result[0];
+  }
+
+  async updateTextbookConfig(id: string, data: Partial<InsertTextbookConfig>): Promise<TextbookConfig> {
+    const result = await db.update(textbookConfigs)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(textbookConfigs.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteTextbookConfig(id: string): Promise<void> {
+    await db.delete(textbookConfigs).where(eq(textbookConfigs.id, id));
+  }
+
+  async getLevelSubjectById(id: string): Promise<any> {
+    const results = await db.select()
+      .from(levelSubjects)
+      .where(eq(levelSubjects.id, id))
+      .limit(1);
+    return results[0];
   }
 }
 
