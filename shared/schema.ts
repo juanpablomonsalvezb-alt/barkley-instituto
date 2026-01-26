@@ -309,11 +309,14 @@ export type InsertEvaluationProgress = z.infer<typeof insertEvaluationProgressSc
 export const textbookConfigs = sqliteTable("textbook_configs", {
   id: text("id").primaryKey().$defaultFn(() => randomUUID()),
   subjectId: text("subject_id").notNull().references(() => subjects.id),
-  pdfUrl: text("pdf_url").notNull(), // Google Drive link or local path
+  driveFolderId: text("drive_folder_id"), // Google Drive folder ID containing PDFs
+  pdfUrl: text("pdf_url"), // Legacy: Single PDF URL (optional)
   pdfName: text("pdf_name").notNull(),
   totalPages: integer("total_pages"),
-  // JSON object: { "module_1": { "start": 1, "end": 15 }, "module_2": { "start": 16, "end": 30 } }
+  // JSON object: { "module_1": { "start": 1, "end": 15, "pdfUrl": "..." }, "module_2": { "start": 16, "end": 30, "pdfUrl": "..." } }
   modulePagesConfig: text("module_pages_config").notNull().default("{}"),
+  // JSON object: Stores the auto-matched PDFs { "module_1": { "pdfUrl": "...", "fileName": "..." } }
+  modulePDFsMap: text("module_pdfs_map").default("{}"),
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
   updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });
@@ -326,9 +329,11 @@ export const textbookConfigsRelations = relations(textbookConfigs, ({ one }) => 
 }));
 
 export const insertTextbookConfigSchema = createInsertSchema(textbookConfigs, {
-  pdfUrl: z.string().url().or(z.string().startsWith("/")),
+  driveFolderId: z.string().optional(),
+  pdfUrl: z.string().optional(),
   pdfName: z.string().min(1),
   modulePagesConfig: z.string().default("{}"),
+  modulePDFsMap: z.string().default("{}"),
 });
 
 export type TextbookConfig = typeof textbookConfigs.$inferSelect;
