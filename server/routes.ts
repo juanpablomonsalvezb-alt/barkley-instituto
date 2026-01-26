@@ -985,6 +985,8 @@ export async function registerRoutes(
       }
 
       let modulePages = null;
+      let specificModulePdfUrl = levelSubject.textbookPdfUrl;
+      
       if (moduleNumber) {
         const objectives = await storage.getLearningObjectives(resolvedId);
         const objective = objectives.find(o => o.weekNumber === Number(moduleNumber));
@@ -996,8 +998,40 @@ export async function registerRoutes(
         }
       }
 
+      // Check if textbookPdfUrl is actually a Drive folder URL
+      const isFolderUrl = levelSubject.textbookPdfUrl?.includes('/folders/');
+      
+      if (isFolderUrl && moduleNumber && modulePages) {
+        try {
+          // Extract folder ID
+          const folderIdMatch = levelSubject.textbookPdfUrl.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+          if (folderIdMatch) {
+            const folderId = folderIdMatch[1];
+            
+            // List PDFs from folder and find matching one
+            const { listPDFsFromFolder, extractPageRangeFromFilename } = await import("./googleDrive");
+            const pdfs = await listPDFsFromFolder(folderId);
+            
+            // Find PDF that matches this module's page range
+            for (const pdf of pdfs) {
+              const pdfRange = extractPageRangeFromFilename(pdf.name);
+              if (pdfRange && 
+                  pdfRange.start === modulePages.startPage && 
+                  pdfRange.end === modulePages.endPage) {
+                specificModulePdfUrl = pdf.webViewLink;
+                console.log(`✅ Found PDF for Module ${moduleNumber}: ${pdf.name}`);
+                break;
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error finding specific module PDF:", error);
+          // Fall back to folder URL if matching fails
+        }
+      }
+
       res.json({
-        textbookPdfUrl: levelSubject.textbookPdfUrl,
+        textbookPdfUrl: specificModulePdfUrl,
         textbookTitle: levelSubject.textbookTitle,
         modulePages
       });
