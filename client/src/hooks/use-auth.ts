@@ -2,19 +2,25 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { User } from "@shared/models/auth";
 
 async function fetchUser(): Promise<User | null> {
-  const response = await fetch("/api/auth/user", {
-    credentials: "include",
-  });
+  try {
+    const response = await fetch("/api/auth/user", {
+      credentials: "include",
+    });
 
-  if (response.status === 401) {
+    if (response.status === 401) {
+      return null;
+    }
+
+    if (!response.ok) {
+      console.warn(`Auth check failed: ${response.status}`);
+      return null;
+    }
+
+    return response.json();
+  } catch (error) {
+    console.warn("Auth check error:", error);
     return null;
   }
-
-  if (!response.ok) {
-    throw new Error(`${response.status}: ${response.statusText}`);
-  }
-
-  return response.json();
 }
 
 async function logout(): Promise<void> {
