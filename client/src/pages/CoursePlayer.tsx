@@ -205,6 +205,25 @@ export default function CoursePlayer() {
     { id: "audio", title: "Audio", icon: Headphones, color: "bg-orange-500", embedUrl: getResourceUrl("audio") },
   ];
 
+  // Fetch textbook pages for this module
+  const { data: textbookData } = useQuery({
+    queryKey: ['/api/textbooks/module', courseId, currentObjective?.weekNumber],
+    queryFn: async () => {
+      if (!courseId || !currentObjective?.weekNumber) return null;
+      
+      const res = await fetch(
+        `/api/textbooks/module/${courseId}/${currentObjective.weekNumber}`,
+        { credentials: 'include' }
+      );
+      
+      if (res.status === 404) return null;
+      if (!res.ok) return null;
+      
+      return res.json();
+    },
+    enabled: !!courseId && !!currentObjective?.weekNumber,
+  });
+
   const getEvaluationDates = (moduleStartDate: string) => {
     const start = new Date(moduleStartDate);
     const evaluations = [];
@@ -793,8 +812,30 @@ export default function CoursePlayer() {
                   </div>
                 </div>
 
+                {/* LIBRO DE TEXTO DEL MÓDULO */}
+                {textbookData && (
+                  <div className="mt-8">
+                    <div className="flex items-center gap-2 mb-6">
+                      <div className="p-2 bg-[#A51C30]/10 rounded-lg">
+                        <BookOpen className="w-5 h-5 text-[#A51C30]" />
+                      </div>
+                      <h3 className="text-lg font-bold text-[#0A192F]">Libro de Texto del Módulo</h3>
+                      <Badge className="bg-blue-100 text-blue-700 rounded-full text-[10px] ml-2 px-3">
+                        Páginas {textbookData.startPage}-{textbookData.endPage}
+                      </Badge>
+                    </div>
+                    <TextbookViewer
+                      pdfUrl={textbookData.pdfUrl}
+                      title={textbookData.pdfName}
+                      startPage={textbookData.startPage}
+                      endPage={textbookData.endPage}
+                      moduleNumber={currentObjective?.weekNumber || 1}
+                    />
+                  </div>
+                )}
+
                 {/* EVALUACIONES FORMATIVAS EN CARRUSEL */}
-                <div>
+                <div className="mt-8">
                   <div className="flex items-center gap-2 mb-6">
                     <div className="p-2 bg-accent/10 rounded-lg">
                       <ClipboardCheck className="w-5 h-5 text-accent" />
