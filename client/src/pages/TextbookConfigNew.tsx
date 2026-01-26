@@ -53,12 +53,14 @@ export default function TextbookConfigNew() {
   const [editingModule, setEditingModule] = useState<number | null>(null);
 
   // Fetch all subjects
-  const { data: subjects = [] } = useQuery<Subject[]>({
+  const { data: subjects = [], isLoading: isLoadingSubjects } = useQuery<Subject[]>({
     queryKey: ['/api/subjects'],
     queryFn: async () => {
       const res = await fetch('/api/subjects', { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch subjects');
-      return res.json();
+      const data = await res.json();
+      console.log('Subjects loaded:', data);
+      return data;
     }
   });
 
@@ -255,18 +257,29 @@ export default function TextbookConfigNew() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Select value={selectedSubjectId} onValueChange={setSelectedSubjectId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona una asignatura" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {subjects.map((subject) => (
-                        <SelectItem key={subject.id} value={subject.id}>
-                          {subject.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {isLoadingSubjects ? (
+                    <div className="flex items-center gap-2 p-4">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span className="text-sm text-gray-600">Cargando asignaturas...</span>
+                    </div>
+                  ) : subjects.length === 0 ? (
+                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-sm text-yellow-800">No se encontraron asignaturas</p>
+                    </div>
+                  ) : (
+                    <Select value={selectedSubjectId} onValueChange={setSelectedSubjectId}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecciona una asignatura" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subjects.map((subject) => (
+                          <SelectItem key={subject.id} value={subject.id}>
+                            {subject.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                   {isLoadingConfig && selectedSubjectId && (
                     <p className="text-sm text-gray-500 mt-2 flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
