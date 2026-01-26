@@ -125,10 +125,14 @@ export function TextbookViewer({ pdfUrl, title, startPage, endPage, moduleNumber
       {/* PDF Viewer */}
       <div className="flex-1 flex items-center justify-center p-4 bg-gray-100 min-h-[600px] relative">
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
             <div className="text-center">
-              <Loader2 className="w-8 h-8 animate-spin text-[#A51C30] mx-auto mb-2" />
-              <p className="text-gray-600">Cargando PDF...</p>
+              <Loader2 className="w-12 h-12 animate-spin text-[#A51C30] mx-auto mb-4" />
+              <p className="text-gray-600 font-semibold text-lg">Cargando PDF...</p>
+              <p className="text-sm text-gray-500 mt-2">Esto puede tomar unos segundos</p>
+              <p className="text-xs text-gray-400 mt-4 max-w-md">
+                URL: {directPdfUrl.substring(0, 50)}...
+              </p>
             </div>
           </div>
         )}
@@ -136,6 +140,15 @@ export function TextbookViewer({ pdfUrl, title, startPage, endPage, moduleNumber
         <Document
           file={directPdfUrl}
           onLoadSuccess={onDocumentLoadSuccess}
+          onLoadError={(error) => {
+            console.error('PDF Load Error:', error);
+            setLoading(false);
+            toast({
+              title: "Error al cargar PDF",
+              description: "No se pudo cargar el archivo. Verifica que el link sea válido.",
+              variant: "destructive",
+            });
+          }}
           loading={<div />}
           error={
             <div className="text-center p-8">
@@ -143,9 +156,25 @@ export function TextbookViewer({ pdfUrl, title, startPage, endPage, moduleNumber
                 <BookOpen className="w-8 h-8 text-red-600" />
               </div>
               <p className="text-red-600 font-semibold mb-2">Error al cargar el PDF</p>
-              <p className="text-sm text-gray-600">
-                Verifica que el link de Google Drive sea público
+              <p className="text-sm text-gray-600 mb-4">
+                No se pudo cargar el archivo PDF
               </p>
+              <details className="text-left max-w-md mx-auto">
+                <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700">
+                  Ver detalles técnicos
+                </summary>
+                <div className="mt-2 p-3 bg-gray-50 rounded text-xs font-mono">
+                  <p className="break-all">URL: {pdfUrl}</p>
+                  <p className="mt-2 break-all">Direct URL: {directPdfUrl}</p>
+                </div>
+              </details>
+              <Button
+                onClick={() => window.open(pdfUrl, '_blank')}
+                variant="outline"
+                className="mt-4"
+              >
+                Abrir link original
+              </Button>
             </div>
           }
         >
