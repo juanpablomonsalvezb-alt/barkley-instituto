@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { BookOpen, ChevronLeft, ChevronRight, Loader2, ZoomIn, ZoomOut, Download, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import toast from "react-hot-toast";
+import { useToast } from "@/hooks/use-toast";
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 
@@ -20,6 +20,7 @@ interface TextbookViewerProps {
 }
 
 export function TextbookViewer({ pdfUrl, title, startPage, endPage, moduleNumber }: TextbookViewerProps) {
+  const { toast } = useToast();
   const [currentPage, setCurrentPage] = useState(startPage);
   const [numPages, setNumPages] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,25 +63,33 @@ export function TextbookViewer({ pdfUrl, title, startPage, endPage, moduleNumber
   const handleZoomIn = () => {
     if (scale < 2.0) {
       setScale(scale + 0.2);
-      toast.success(`Zoom: ${Math.round((scale + 0.2) * 100)}%`);
+      toast({
+        description: `Zoom: ${Math.round((scale + 0.2) * 100)}%`,
+      });
     }
   };
 
   const handleZoomOut = () => {
     if (scale > 0.6) {
       setScale(scale - 0.2);
-      toast.success(`Zoom: ${Math.round((scale - 0.2) * 100)}%`);
+      toast({
+        description: `Zoom: ${Math.round((scale - 0.2) * 100)}%`,
+      });
     }
   };
 
   const handleDownload = () => {
     window.open(directPdfUrl, '_blank');
-    toast.success('Abriendo PDF en nueva pestaña');
+    toast({
+      description: 'Abriendo PDF en nueva pestaña',
+    });
   };
 
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen);
-    toast.success(isFullscreen ? 'Modo normal' : 'Modo pantalla completa');
+    toast({
+      description: isFullscreen ? 'Modo normal' : 'Modo pantalla completa',
+    });
   };
 
   return (

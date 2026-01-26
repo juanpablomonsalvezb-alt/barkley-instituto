@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
-import toast from "react-hot-toast";
 import {
   ArrowLeft,
   BookOpen,
@@ -45,6 +44,7 @@ interface ModulePageRange {
 }
 
 export default function TextbookConfigNew() {
+  const { toast } = useToast();
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
   const [pdfUrl, setPdfUrl] = useState("");
   const [pdfName, setPdfName] = useState("");
@@ -127,11 +127,18 @@ export default function TextbookConfigNew() {
       return res.json();
     },
     onSuccess: () => {
-      toast.success('¡Configuración guardada exitosamente!');
+      toast({
+        title: "¡Éxito!",
+        description: "Configuración guardada exitosamente",
+      });
       queryClient.invalidateQueries({ queryKey: ['/api/textbooks'] });
     },
     onError: (error: Error) => {
-      toast.error(`Error: ${error.message}`);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   });
 
@@ -162,7 +169,11 @@ export default function TextbookConfigNew() {
 
   const handleQuickSetup = () => {
     if (!totalPages || totalPages <= 0) {
-      toast.error('Por favor ingresa el total de páginas del PDF');
+      toast({
+        title: "Error",
+        description: "Por favor ingresa el total de páginas del PDF",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -177,7 +188,10 @@ export default function TextbookConfigNew() {
     }
 
     setModuleRanges(newRanges);
-    toast.success('Distribución automática creada para 15 módulos');
+    toast({
+      title: "¡Listo!",
+      description: "Distribución automática creada para 15 módulos",
+    });
   };
 
   const canSave = selectedSubjectId && pdfUrl && pdfName && Object.keys(moduleRanges).length > 0;
