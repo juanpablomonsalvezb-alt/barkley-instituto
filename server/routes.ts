@@ -165,7 +165,16 @@ export async function registerRoutes(
   };
 
   // Setup authentication (BEFORE registering other routes)
-  await setupAuth(app);
+  // Only enable auth if OAuth credentials are configured
+  if (process.env.REPLIT_DEPLOYMENT || (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)) {
+    try {
+      await setupAuth(app);
+    } catch (error) {
+      console.warn("Authentication setup failed, continuing without auth:", error);
+    }
+  } else {
+    console.log("⚠️  Running in development mode without authentication");
+  }
   registerAuthRoutes(app);
 
   // === PUBLIC ROUTES ===
