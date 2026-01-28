@@ -466,22 +466,10 @@ export default function LevelPlanSettings() {
                 </CardHeader>
                 <CardContent className="pt-6">
                   {editingPlan?.id === plan.id ? (
-                    // EDITING MODE - Solo Full y Estándar para Adultos
+                    // EDITING MODE - Solo Estándar para Adultos
                     <div className="space-y-6">
-                      {/* Precios - Solo 2 planes para adultos */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label className="flex items-center gap-2">
-                            <Crown className="w-4 h-4 text-[#D4AF37]" />
-                            Plan Full (mensual)
-                          </Label>
-                          <Input
-                            type="number"
-                            value={editingPlan.monthlyPriceFull}
-                            onChange={(e) => setEditingPlan({ ...editingPlan, monthlyPriceFull: parseInt(e.target.value) || 0 })}
-                          />
-                        </div>
-
+                      {/* Precio - Solo plan Estándar para adultos */}
+                      <div className="max-w-md">
                         <div className="space-y-2">
                           <Label className="flex items-center gap-2">
                             <BookOpen className="w-4 h-4 text-[#002147]" />
@@ -492,6 +480,9 @@ export default function LevelPlanSettings() {
                             value={editingPlan.monthlyPriceStandard}
                             onChange={(e) => setEditingPlan({ ...editingPlan, monthlyPriceStandard: parseInt(e.target.value) || 0 })}
                           />
+                          <p className="text-xs text-[#002147]/60">
+                            Acceso completo a la plataforma educativa
+                          </p>
                         </div>
                       </div>
 
@@ -584,28 +575,22 @@ export default function LevelPlanSettings() {
                       </div>
                     </div>
                   ) : (
-                    // VIEWING MODE - Solo Full y Estándar para Adultos
+                    // VIEWING MODE - Solo Estándar para Adultos
                     <div className="space-y-6">
-                      {/* Precios - Solo 2 planes */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-4 bg-gradient-to-br from-[#D4AF37]/10 to-transparent rounded-lg border border-[#D4AF37]/20">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Crown className="w-5 h-5 text-[#D4AF37]" />
-                            <h4 className="font-semibold text-[#002147]">Plan Full</h4>
+                      {/* Precio - Solo plan Estándar */}
+                      <div className="max-w-md">
+                        <div className="p-6 bg-gradient-to-br from-[#002147]/5 to-transparent rounded-xl border-2 border-[#002147]/20">
+                          <div className="flex items-center gap-3 mb-3">
+                            <BookOpen className="w-6 h-6 text-[#002147]" />
+                            <h4 className="text-xl font-bold text-[#002147]">Plan Estándar</h4>
                           </div>
-                          <p className="text-2xl font-bold text-[#002147]">{formatPrice(plan.monthlyPriceFull)}</p>
-                          <p className="text-sm text-[#002147]/60">mensual</p>
-                          <p className="text-xs text-[#D4AF37] mt-2">Con tutorías personalizadas</p>
-                        </div>
-
-                        <div className="p-4 bg-gradient-to-br from-[#002147]/5 to-transparent rounded-lg border border-[#002147]/20">
-                          <div className="flex items-center gap-2 mb-2">
-                            <BookOpen className="w-5 h-5 text-[#002147]" />
-                            <h4 className="font-semibold text-[#002147]">Plan Estándar</h4>
+                          <p className="text-3xl font-bold text-[#002147] mb-2">{formatPrice(plan.monthlyPriceStandard)}</p>
+                          <p className="text-sm text-[#002147]/60 mb-3">mensual</p>
+                          <div className="pt-3 border-t border-[#002147]/10">
+                            <p className="text-sm text-[#002147]/70">✓ Acceso completo a plataforma</p>
+                            <p className="text-sm text-[#002147]/70">✓ Todos los contenidos digitales</p>
+                            <p className="text-sm text-[#002147]/70">✓ Evaluaciones y seguimiento</p>
                           </div>
-                          <p className="text-2xl font-bold text-[#002147]">{formatPrice(plan.monthlyPriceStandard)}</p>
-                          <p className="text-sm text-[#002147]/60">mensual</p>
-                          <p className="text-xs text-[#002147]/60 mt-2">Solo acceso a plataforma</p>
                         </div>
                       </div>
 
