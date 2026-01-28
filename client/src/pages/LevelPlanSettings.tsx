@@ -437,13 +437,235 @@ export default function LevelPlanSettings() {
         </TabsContent>
 
         {/* Adultos (EPJA) */}
-        <TabsContent value="adultos">
-          <Card>
-            <CardContent className="py-12 text-center text-[#002147]/70">
-              <p>Los planes para adultos (EPJA) se configuran en el Panel Barkley Admin.</p>
-              <p className="text-sm mt-2">Esta sección está reservada para planes de menores de edad.</p>
-            </CardContent>
-          </Card>
+        <TabsContent value="adultos" className="space-y-6">
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-[#002147]" />
+            </div>
+          ) : adultosPlan.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center text-[#002147]/70">
+                No hay planes configurados para adultos (EPJA)
+              </CardContent>
+            </Card>
+          ) : (
+            adultosPlan.map((plan) => (
+              <Card key={plan.id} className="border-[#D4AF37]/30">
+                <CardHeader className="bg-gradient-to-r from-[#D4AF37]/10 to-transparent">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-2xl text-[#002147]">{plan.levelGroupName}</CardTitle>
+                      <CardDescription className="text-sm mt-1">
+                        Niveles: {parseLevels(plan.levelsIncluded).join(", ")} • Educación de Adultos
+                      </CardDescription>
+                    </div>
+                    <Badge variant={plan.isActive ? "default" : "secondary"} className="bg-[#D4AF37] text-white">
+                      {plan.isActive ? "Activo" : "Inactivo"}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  {editingPlan?.id === plan.id ? (
+                    // EDITING MODE - Solo Full y Estándar para Adultos
+                    <div className="space-y-6">
+                      {/* Precios - Solo 2 planes para adultos */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2">
+                            <Crown className="w-4 h-4 text-[#D4AF37]" />
+                            Plan Full (mensual)
+                          </Label>
+                          <Input
+                            type="number"
+                            value={editingPlan.monthlyPriceFull}
+                            onChange={(e) => setEditingPlan({ ...editingPlan, monthlyPriceFull: parseInt(e.target.value) || 0 })}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2">
+                            <BookOpen className="w-4 h-4 text-[#002147]" />
+                            Plan Estándar (mensual)
+                          </Label>
+                          <Input
+                            type="number"
+                            value={editingPlan.monthlyPriceStandard}
+                            onChange={(e) => setEditingPlan({ ...editingPlan, monthlyPriceStandard: parseInt(e.target.value) || 0 })}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Matrícula */}
+                      <div className="space-y-2">
+                        <Label>Precio de Matrícula (común para todos)</Label>
+                        <Input
+                          type="number"
+                          value={editingPlan.enrollmentPrice}
+                          onChange={(e) => setEditingPlan({ ...editingPlan, enrollmentPrice: parseInt(e.target.value) || 0 })}
+                        />
+                      </div>
+
+                      {/* Detalles Académicos */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="space-y-2">
+                          <Label>Módulos</Label>
+                          <Input
+                            type="number"
+                            value={editingPlan.modules}
+                            onChange={(e) => setEditingPlan({ ...editingPlan, modules: parseInt(e.target.value) || 0 })}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Eval. por Módulo</Label>
+                          <Input
+                            type="number"
+                            value={editingPlan.evaluationsPerModule}
+                            onChange={(e) => setEditingPlan({ ...editingPlan, evaluationsPerModule: parseInt(e.target.value) || 0 })}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Total Evaluaciones</Label>
+                          <Input
+                            type="number"
+                            value={editingPlan.totalEvaluations}
+                            onChange={(e) => setEditingPlan({ ...editingPlan, totalEvaluations: parseInt(e.target.value) || 0 })}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Ensayos Mineduc</Label>
+                          <Input
+                            type="number"
+                            value={editingPlan.essays}
+                            onChange={(e) => setEditingPlan({ ...editingPlan, essays: parseInt(e.target.value) || 0 })}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Asignaturas */}
+                      <div className="space-y-2">
+                        <Label>Asignaturas (separadas por comas)</Label>
+                        <Textarea
+                          value={subjectsInput}
+                          onChange={(e) => setSubjectsInput(e.target.value)}
+                          placeholder="Lengua Castellana, Matemática, Ciencias Naturales, Estudios Sociales"
+                          rows={3}
+                        />
+                        <p className="text-xs text-[#002147]/60">
+                          Específicas para adultos (EPJA)
+                        </p>
+                      </div>
+
+                      {/* Botones */}
+                      <div className="flex gap-3 pt-4">
+                        <Button
+                          onClick={handleSave}
+                          disabled={updateMutation.isPending}
+                          className="bg-[#002147] hover:bg-[#003366]"
+                        >
+                          {updateMutation.isPending ? (
+                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          ) : (
+                            <Save className="w-4 h-4 mr-2" />
+                          )}
+                          Guardar Cambios
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setEditingPlan(null);
+                            setSubjectsInput("");
+                          }}
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    // VIEWING MODE - Solo Full y Estándar para Adultos
+                    <div className="space-y-6">
+                      {/* Precios - Solo 2 planes */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 bg-gradient-to-br from-[#D4AF37]/10 to-transparent rounded-lg border border-[#D4AF37]/20">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Crown className="w-5 h-5 text-[#D4AF37]" />
+                            <h4 className="font-semibold text-[#002147]">Plan Full</h4>
+                          </div>
+                          <p className="text-2xl font-bold text-[#002147]">{formatPrice(plan.monthlyPriceFull)}</p>
+                          <p className="text-sm text-[#002147]/60">mensual</p>
+                          <p className="text-xs text-[#D4AF37] mt-2">Con tutorías personalizadas</p>
+                        </div>
+
+                        <div className="p-4 bg-gradient-to-br from-[#002147]/5 to-transparent rounded-lg border border-[#002147]/20">
+                          <div className="flex items-center gap-2 mb-2">
+                            <BookOpen className="w-5 h-5 text-[#002147]" />
+                            <h4 className="font-semibold text-[#002147]">Plan Estándar</h4>
+                          </div>
+                          <p className="text-2xl font-bold text-[#002147]">{formatPrice(plan.monthlyPriceStandard)}</p>
+                          <p className="text-sm text-[#002147]/60">mensual</p>
+                          <p className="text-xs text-[#002147]/60 mt-2">Solo acceso a plataforma</p>
+                        </div>
+                      </div>
+
+                      {/* Matrícula */}
+                      <div className="flex items-center gap-3 p-4 bg-[#D4AF37]/5 rounded-lg border border-[#D4AF37]/20">
+                        <DollarSign className="w-6 h-6 text-[#D4AF37]" />
+                        <div>
+                          <p className="text-sm font-semibold text-[#002147]">Matrícula</p>
+                          <p className="text-xl font-bold text-[#002147]">{formatPrice(plan.enrollmentPrice)}</p>
+                        </div>
+                      </div>
+
+                      {/* Carga Académica */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="text-center p-3 bg-[#002147]/5 rounded-lg">
+                          <p className="text-2xl font-bold text-[#002147]">{plan.modules}</p>
+                          <p className="text-xs text-[#002147]/60">Módulos</p>
+                        </div>
+                        <div className="text-center p-3 bg-[#002147]/5 rounded-lg">
+                          <p className="text-2xl font-bold text-[#002147]">{plan.evaluationsPerModule}</p>
+                          <p className="text-xs text-[#002147]/60">Eval. por Módulo</p>
+                        </div>
+                        <div className="text-center p-3 bg-[#002147]/5 rounded-lg">
+                          <p className="text-2xl font-bold text-[#002147]">{plan.totalEvaluations}</p>
+                          <p className="text-xs text-[#002147]/60">Total Evaluaciones</p>
+                        </div>
+                        <div className="text-center p-3 bg-[#002147]/5 rounded-lg">
+                          <p className="text-2xl font-bold text-[#002147]">{plan.essays}</p>
+                          <p className="text-xs text-[#002147]/60">Ensayos Mineduc</p>
+                        </div>
+                      </div>
+
+                      {/* Asignaturas */}
+                      <div>
+                        <p className="text-sm font-semibold text-[#002147] mb-3">Asignaturas:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {parseSubjects(plan.subjects).map((subject, idx) => (
+                            <Badge key={idx} variant="outline" className="border-[#D4AF37] text-[#002147]">
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              {subject}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Botón Editar */}
+                      <div className="pt-4 border-t">
+                        <Button
+                          onClick={() => handleEdit(plan)}
+                          className="bg-[#002147] hover:bg-[#003366]"
+                        >
+                          Editar Configuración
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          )}
         </TabsContent>
       </Tabs>
     </div>
