@@ -79,10 +79,10 @@ export function TextbookViewer({ pdfUrl, title, startPage, endPage, moduleNumber
       </div>
 
       {/* PDF Viewer - Using Google Drive Embed */}
-      <div className="flex-1 bg-gray-100 min-h-[600px] relative">
+      <div className="flex-1 bg-gray-100 min-h-[580px] relative">
         <iframe
           src={embedUrl}
-          className="w-full h-[600px] border-0"
+          className="w-full h-[580px] border-0"
           title={`${title} - Módulo ${moduleNumber}`}
           allow="autoplay"
         />
@@ -135,16 +135,6 @@ export function TextbookViewer({ pdfUrl, title, startPage, endPage, moduleNumber
         </div>
       </div>
 
-      {/* Info Footer */}
-      <div className="bg-blue-50 border-t border-blue-200 px-4 py-3">
-        <div className="flex items-center justify-center gap-2 text-sm text-blue-800">
-          <BookOpen className="w-4 h-4" />
-          <span>
-            Este módulo incluye {totalAllowedPages} página{totalAllowedPages !== 1 ? 's' : ''} 
-            {' '}del libro "{title || 'Texto Escolar'}"
-          </span>
-        </div>
-      </div>
     </div>
   );
 }

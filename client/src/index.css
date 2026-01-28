@@ -1,6 +1,39 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* National 2 Font - Official Harvard Font */
+@font-face {
+  font-family: 'National 2';
+  src: url('/fonts/TestNational2-Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'National 2';
+  src: url('/fonts/TestNational2-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'National 2';
+  src: url('/fonts/TestNational2-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'National 2';
+  src: url('/fonts/TestNational2-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -46,7 +79,7 @@
   --color-sidebar-border: hsl(var(--sidebar-border));
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 
-  --font-sans: 'Roboto', system-ui, sans-serif;
+  --font-sans: 'National 2', system-ui, -apple-system, sans-serif;
   --font-display: 'Merriweather', serif;
   --font-serif: 'Merriweather', serif;
 }
@@ -124,7 +157,7 @@
   }
 
   .font-sans-safe {
-    font-family: 'Roboto', system-ui, sans-serif;
+    font-family: 'National 2', system-ui, sans-serif;
   }
 }
 

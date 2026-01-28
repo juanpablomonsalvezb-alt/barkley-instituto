@@ -34,6 +34,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { TextbookViewer } from "@/components/TextbookViewer";
 import { EvaluationQuiz } from "@/components/EvaluationQuiz";
+import { GeminiCopilotButton } from "@/components/GeminiCopilotButton";
 import {
   AreaChart, Area,
   PieChart, Pie, Cell,
@@ -1158,6 +1159,9 @@ export default function CoursePlayer() {
           />
         )
       }
+
+      {/* Floating Gemini Copilot Button */}
+      <GeminiCopilotButton levelId={levelCode} variant="floating" />
     </>
   );
 }

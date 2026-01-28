@@ -6,7 +6,8 @@ import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integra
 import {
   insertLevelSchema, insertSubjectSchema, insertLevelSubjectSchema,
   insertLearningObjectiveSchema, insertWeeklyResourceSchema, insertStudentProgressSchema,
-  insertEvaluationProgressSchema, updateLevelSubjectTextbookSchema, updateLearningObjectivePagesSchema
+  insertEvaluationProgressSchema, updateLevelSubjectTextbookSchema, updateLearningObjectivePagesSchema,
+  insertReservationSchema
 } from "@shared/schema";
 import { listRootFolders, listModuleFolders, getModuleResources, searchFolderByName } from "./googleDrive";
 import {
@@ -1633,6 +1634,463 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting textbook config:", error);
       res.status(500).json({ message: "Failed to delete textbook config" });
+    }
+  });
+
+  // ========== RESERVATIONS API ==========
+  
+  // Create a new reservation (Public endpoint - no auth required)
+  app.post("/api/reservations", async (req, res) => {
+    try {
+      // Validate request body
+      const result = insertReservationSchema.safeParse(req.body);
+      
+      if (!result.success) {
+        return res.status(400).json({ 
+          message: "Datos de reserva inválidos", 
+          errors: result.error.errors.map(e => ({ 
+            field: e.path.join('.'), 
+            message: e.message 
+          }))
+        });
+      }
+      
+      const reservation = await storage.createReservation(result.data);
+      res.status(201).json(reservation);
+    } catch (error) {
+      console.error("Error creating reservation:", error);
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create reservation" });
+    }
+  });
+
+  // Get all reservations (Admin only)
+  app.get("/api/reservations", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const reservations = await storage.getAllReservations();
+      res.json(reservations);
+    } catch (error) {
+      console.error("Error fetching reservations:", error);
+      res.status(500).json({ message: "Failed to fetch reservations" });
+    }
+  });
+
+  // Get reservation by ID (Admin only)
+  app.get("/api/reservations/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const reservation = await storage.getReservationById(req.params.id);
+      if (!reservation) {
+        return res.status(404).json({ message: "Reservation not found" });
+      }
+      res.json(reservation);
+    } catch (error) {
+      console.error("Error fetching reservation:", error);
+      res.status(500).json({ message: "Failed to fetch reservation" });
+    }
+  });
+
+  // Update reservation status (Admin only)
+  app.patch("/api/reservations/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { status } = req.body;
+      if (!status || !["pending", "contacted", "enrolled", "rejected"].includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+      const updated = await storage.updateReservationStatus(req.params.id, status);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating reservation:", error);
+      res.status(500).json({ message: "Failed to update reservation" });
+    }
+  });
+
+  // Delete reservation (Admin only)
+  app.delete("/api/reservations/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      await storage.deleteReservation(req.params.id);
+      res.json({ message: "Reservation deleted" });
+    } catch (error) {
+      console.error("Error deleting reservation:", error);
+      res.status(500).json({ message: "Failed to delete reservation" });
+    }
+  });
+
+  // ========== PLAN CONFIGURATIONS API ==========
+  
+  // Get all plan configurations (Public - for displaying on landing page)
+  app.get("/api/plans", async (req, res) => {
+    try {
+      const plans = await storage.getAllPlanConfigurations();
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching plans:", error);
+      res.status(500).json({ message: "Failed to fetch plans" });
+    }
+  });
+
+  // Get plan by key (Public)
+  app.get("/api/plans/key/:planKey", async (req, res) => {
+    try {
+      const plan = await storage.getPlanConfigurationByKey(req.params.planKey);
+      if (!plan) {
+        return res.status(404).json({ message: "Plan not found" });
+      }
+      res.json(plan);
+    } catch (error) {
+      console.error("Error fetching plan:", error);
+      res.status(500).json({ message: "Failed to fetch plan" });
+    }
+  });
+
+  // Create new plan (Admin only)
+  app.post("/api/plans", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const plan = await storage.createPlanConfiguration(req.body);
+      res.status(201).json(plan);
+    } catch (error) {
+      console.error("Error creating plan:", error);
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create plan" });
+    }
+  });
+
+  // Update plan (Admin only)
+  app.patch("/api/plans/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const updated = await storage.updatePlanConfiguration(req.params.id, req.body);
+      if (!updated) {
+        return res.status(404).json({ message: "Plan not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating plan:", error);
+      res.status(500).json({ message: "Failed to update plan" });
+    }
+  });
+
+  // Delete plan (Admin only)
+  app.delete("/api/plans/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      await storage.deletePlanConfiguration(req.params.id);
+      res.json({ message: "Plan deleted" });
+    } catch (error) {
+      console.error("Error deleting plan:", error);
+      res.status(500).json({ message: "Failed to delete plan" });
+    }
+  });
+
+  // Initialize default plans (Admin only - one-time setup)
+  app.post("/api/plans/initialize", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      await storage.initializeDefaultPlans();
+      res.json({ message: "Default plans initialized" });
+    } catch (error) {
+      console.error("Error initializing plans:", error);
+      res.status(500).json({ message: "Failed to initialize plans" });
+    }
+  });
+
+  // ========== SITE CONFIGURATION API ==========
+  
+  // Get all site configurations (Public)
+  app.get("/api/site-config", async (req, res) => {
+    try {
+      const configs = await storage.getAllSiteConfigurations();
+      res.json(configs);
+    } catch (error) {
+      console.error("Error fetching site config:", error);
+      res.status(500).json({ message: "Failed to fetch site configuration" });
+    }
+  });
+
+  // Get site configuration by key (Public)
+  app.get("/api/site-config/:key", async (req, res) => {
+    try {
+      const config = await storage.getSiteConfigurationByKey(req.params.key);
+      if (!config) {
+        return res.status(404).json({ message: "Configuration not found" });
+      }
+      res.json(config);
+    } catch (error) {
+      console.error("Error fetching site config:", error);
+      res.status(500).json({ message: "Failed to fetch site configuration" });
+    }
+  });
+
+  // Upsert site configuration (Admin only)
+  app.post("/api/site-config", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const config = await storage.upsertSiteConfiguration(req.body);
+      res.json(config);
+    } catch (error) {
+      console.error("Error upserting site config:", error);
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to upsert site configuration" });
+    }
+  });
+
+  // Initialize default site config (Admin only)
+  app.post("/api/site-config/initialize", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      await storage.initializeDefaultSiteConfig();
+      res.json({ message: "Default site configuration initialized" });
+    } catch (error) {
+      console.error("Error initializing site config:", error);
+      res.status(500).json({ message: "Failed to initialize site configuration" });
+    }
+  });
+
+  // ========== ADULT CYCLE CONFIGURATIONS API ==========
+  
+  // Get all adult cycles (Public)
+  app.get("/api/adult-cycles", async (req, res) => {
+    try {
+      const cycles = await storage.getAllAdultCycleConfigurations();
+      res.json(cycles);
+    } catch (error) {
+      console.error("Error fetching adult cycles:", error);
+      res.status(500).json({ message: "Failed to fetch adult cycles" });
+    }
+  });
+
+  // Get adult cycle by key (Public)
+  app.get("/api/adult-cycles/key/:cycleKey", async (req, res) => {
+    try {
+      const cycle = await storage.getAdultCycleConfigurationByKey(req.params.cycleKey);
+      if (!cycle) {
+        return res.status(404).json({ message: "Cycle not found" });
+      }
+      res.json(cycle);
+    } catch (error) {
+      console.error("Error fetching adult cycle:", error);
+      res.status(500).json({ message: "Failed to fetch adult cycle" });
+    }
+  });
+
+  // Create new adult cycle (Admin only)
+  app.post("/api/adult-cycles", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const cycle = await storage.createAdultCycleConfiguration(req.body);
+      res.status(201).json(cycle);
+    } catch (error) {
+      console.error("Error creating adult cycle:", error);
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create adult cycle" });
+    }
+  });
+
+  // Update adult cycle (Admin only)
+  app.patch("/api/adult-cycles/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const updated = await storage.updateAdultCycleConfiguration(req.params.id, req.body);
+      if (!updated) {
+        return res.status(404).json({ message: "Cycle not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating adult cycle:", error);
+      res.status(500).json({ message: "Failed to update adult cycle" });
+    }
+  });
+
+  // Delete adult cycle (Admin only)
+  app.delete("/api/adult-cycles/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      await storage.deleteAdultCycleConfiguration(req.params.id);
+      res.json({ message: "Cycle deleted" });
+    } catch (error) {
+      console.error("Error deleting adult cycle:", error);
+      res.status(500).json({ message: "Failed to delete adult cycle" });
+    }
+  });
+
+  // Initialize default adult cycles (Admin only)
+  app.post("/api/adult-cycles/initialize", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      await storage.initializeDefaultAdultCycles();
+      res.json({ message: "Default adult cycles initialized" });
+    } catch (error) {
+      console.error("Error initializing adult cycles:", error);
+      res.status(500).json({ message: "Failed to initialize adult cycles" });
+    }
+  });
+
+  // ============================================
+  // Gemini Copilots Routes
+  // ============================================
+
+  // GET: Get all copilots
+  app.get("/api/gemini-copilots", async (req, res) => {
+    try {
+      const copilots = await storage.getAllGeminiCopilots();
+      res.json(copilots);
+    } catch (error) {
+      console.error("Error fetching copilots:", error);
+      res.status(500).json({ message: "Failed to fetch copilots" });
+    }
+  });
+
+  // GET: Get copilot by level ID
+  app.get("/api/gemini-copilots/by-level/:levelId", async (req, res) => {
+    try {
+      const copilot = await storage.getGeminiCopilotByLevel(req.params.levelId);
+      if (!copilot) {
+        return res.status(404).json({ message: "No copilot found for this level" });
+      }
+      res.json(copilot);
+    } catch (error) {
+      console.error("Error fetching copilot:", error);
+      res.status(500).json({ message: "Failed to fetch copilot" });
+    }
+  });
+
+  // GET: Get copilot by ID
+  app.get("/api/gemini-copilots/:id", async (req, res) => {
+    try {
+      const copilot = await storage.getGeminiCopilotById(req.params.id);
+      if (!copilot) {
+        return res.status(404).json({ message: "Copilot not found" });
+      }
+      res.json(copilot);
+    } catch (error) {
+      console.error("Error fetching copilot:", error);
+      res.status(500).json({ message: "Failed to fetch copilot" });
+    }
+  });
+
+  // POST: Create new copilot (Admin only)
+  app.post("/api/gemini-copilots", isAdmin, async (req, res) => {
+    try {
+      const copilot = await storage.createGeminiCopilot(req.body);
+      res.status(201).json({ message: "Copilot created successfully", data: copilot });
+    } catch (error: any) {
+      console.error("Error creating copilot:", error);
+      res.status(500).json({ message: "Failed to create copilot", error: error.message });
+    }
+  });
+
+  // PUT: Update copilot (Admin only)
+  app.put("/api/gemini-copilots/:id", isAdmin, async (req, res) => {
+    try {
+      const copilot = await storage.updateGeminiCopilot(req.params.id, req.body);
+      if (!copilot) {
+        return res.status(404).json({ message: "Copilot not found" });
+      }
+      res.json({ message: "Copilot updated successfully", data: copilot });
+    } catch (error: any) {
+      console.error("Error updating copilot:", error);
+      res.status(500).json({ message: "Failed to update copilot", error: error.message });
+    }
+  });
+
+  // DELETE: Delete copilot (Admin only)
+  app.delete("/api/gemini-copilots/:id", isAdmin, async (req, res) => {
+    try {
+      await storage.deleteGeminiCopilot(req.params.id);
+      res.json({ message: "Copilot deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting copilot:", error);
+      res.status(500).json({ message: "Failed to delete copilot" });
+    }
+  });
+
+  // PATCH: Toggle active status (Admin only)
+  app.patch("/api/gemini-copilots/:id/toggle", isAdmin, async (req, res) => {
+    try {
+      const copilot = await storage.toggleGeminiCopilotStatus(req.params.id);
+      if (!copilot) {
+        return res.status(404).json({ message: "Copilot not found" });
+      }
+      res.json({ message: "Copilot status toggled", data: copilot });
+    } catch (error) {
+      console.error("Error toggling copilot:", error);
+      res.status(500).json({ message: "Failed to toggle copilot status" });
+    }
+  });
+
+  // ============================================
+  // Level-Based Plan Configurations Routes
+  // ============================================
+
+  // GET: Get all level-based plans
+  app.get("/api/level-plans", async (req, res) => {
+    try {
+      const plans = await storage.getAllLevelPlanConfigurations();
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching level plans:", error);
+      res.status(500).json({ message: "Failed to fetch level plans" });
+    }
+  });
+
+  // GET: Get level plan by ID
+  app.get("/api/level-plans/:id", async (req, res) => {
+    try {
+      const plan = await storage.getLevelPlanConfigurationById(req.params.id);
+      if (!plan) {
+        return res.status(404).json({ message: "Level plan not found" });
+      }
+      res.json(plan);
+    } catch (error) {
+      console.error("Error fetching level plan:", error);
+      res.status(500).json({ message: "Failed to fetch level plan" });
+    }
+  });
+
+  // GET: Get level plan by key
+  app.get("/api/level-plans/key/:levelGroupKey", async (req, res) => {
+    try {
+      const plan = await storage.getLevelPlanConfigurationByKey(req.params.levelGroupKey);
+      if (!plan) {
+        return res.status(404).json({ message: "Level plan not found" });
+      }
+      res.json(plan);
+    } catch (error) {
+      console.error("Error fetching level plan:", error);
+      res.status(500).json({ message: "Failed to fetch level plan" });
+    }
+  });
+
+  // POST: Create new level plan (Admin only)
+  app.post("/api/level-plans", isAdmin, async (req, res) => {
+    try {
+      const plan = await storage.createLevelPlanConfiguration(req.body);
+      res.status(201).json({ message: "Level plan created successfully", data: plan });
+    } catch (error: any) {
+      console.error("Error creating level plan:", error);
+      res.status(500).json({ message: "Failed to create level plan", error: error.message });
+    }
+  });
+
+  // PATCH: Update level plan (Admin only)
+  app.patch("/api/level-plans/:id", isAdmin, async (req, res) => {
+    try {
+      const plan = await storage.updateLevelPlanConfiguration(req.params.id, req.body);
+      if (!plan) {
+        return res.status(404).json({ message: "Level plan not found" });
+      }
+      res.json({ message: "Level plan updated successfully", data: plan });
+    } catch (error: any) {
+      console.error("Error updating level plan:", error);
+      res.status(500).json({ message: "Failed to update level plan", error: error.message });
+    }
+  });
+
+  // DELETE: Delete level plan (Admin only)
+  app.delete("/api/level-plans/:id", isAdmin, async (req, res) => {
+    try {
+      await storage.deleteLevelPlanConfiguration(req.params.id);
+      res.json({ message: "Level plan deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting level plan:", error);
+      res.status(500).json({ message: "Failed to delete level plan" });
+    }
+  });
+
+  // POST: Initialize default level plans (Admin only)
+  app.post("/api/level-plans/initialize", isAdmin, async (req, res) => {
+    try {
+      await storage.initializeDefaultLevelPlans();
+      res.json({ message: "Default level plans initialized successfully" });
+    } catch (error) {
+      console.error("Error initializing level plans:", error);
+      res.status(500).json({ message: "Failed to initialize level plans" });
     }
   });
 

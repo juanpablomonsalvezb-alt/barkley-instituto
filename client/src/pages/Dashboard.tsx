@@ -25,7 +25,15 @@ import {
   LogOut,
   Loader2,
   User,
-  CloudDownload
+  CloudDownload,
+  ClipboardList,
+  DollarSign,
+  Sliders,
+  Home,
+  LinkIcon,
+  Bot,
+  ChevronUp,
+  ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -38,7 +46,20 @@ import { motion } from "framer-motion";
 
 export default function Dashboard() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [activeTab, setActiveTab] = useState("menores"); // menores | adultos
+  // Removed activeTab - now showing all levels together
+  const [scrollContainerRef, setScrollContainerRef] = useState<HTMLDivElement | null>(null);
+
+  const scrollDown = () => {
+    if (scrollContainerRef) {
+      scrollContainerRef.scrollBy({ top: 300, behavior: 'smooth' });
+    }
+  };
+
+  const scrollUp = () => {
+    if (scrollContainerRef) {
+      scrollContainerRef.scrollBy({ top: -300, behavior: 'smooth' });
+    }
+  };
   const { user, isLoading, isAuthenticated, logout } = useAuth();
   const { isAdmin } = useProfile();
   const [, setLocation] = useLocation();
@@ -75,23 +96,15 @@ export default function Dashboard() {
   //   return null;
   // }
 
-  const programmaticStructure = {
-    menores: [
-      { id: "7b", label: "7° Básico", subjects: ["Lengua y Literatura", "Matemática", "Ciencias Naturales", "Historia, Geografía y C. Sociales", "Inglés"], sessions: 15 },
-      { id: "8b", label: "8° Básico", subjects: ["Lengua y Literatura", "Matemática", "Ciencias Naturales", "Historia, Geografía y C. Sociales", "Inglés"], sessions: 15 },
-      { id: "1m", label: "1° Medio", subjects: ["Lengua y Literatura", "Matemática", "Ciencias Naturales (Bio, Fis, Quim)", "Historia, Geografía y C. Sociales", "Inglés"], sessions: 15 },
-      { id: "2m", label: "2° Medio", subjects: ["Lengua y Literatura", "Matemática", "Ciencias Naturales (Bio, Fis, Quim)", "Historia, Geografía y C. Sociales", "Inglés"], sessions: 15 },
-      { id: "3m", label: "3° Medio", subjects: ["Lengua y Literatura", "Matemática", "Educación Ciudadana", "Filosofía", "Ciencias para la Ciudadanía", "Inglés"], sessions: 15 },
-      { id: "4m", label: "4° Medio", subjects: ["Lengua y Literatura", "Matemática", "Educación Ciudadana", "Filosofía", "Ciencias para la Ciudadanía", "Inglés"], sessions: 15 },
-    ],
-    adultos: [
-      { id: "nb1", label: "Primer Nivel Básico (1°-4°)", subjects: ["Lengua Castellana y Comunicación", "Educación Matemática", "Ciencias Naturales", "Estudios Sociales"], sessions: 15 },
-      { id: "nb2", label: "Segundo Nivel Básico (5°-6°)", subjects: ["Lengua Castellana y Comunicación", "Educación Matemática", "Ciencias Naturales", "Estudios Sociales"], sessions: 15 },
-      { id: "nb3", label: "Tercer Nivel Básico (7°-8°)", subjects: ["Lengua Castellana y Comunicación", "Educación Matemática", "Ciencias Naturales", "Estudios Sociales", "Inglés"], sessions: 15 },
-      { id: "nm1", label: "Primer Ciclo Medio (1°-2°)", subjects: ["Lengua Castellana y Comunicación", "Educación Matemática", "Ciencias Naturales", "Estudios Sociales", "Inglés"], sessions: 15 },
-      { id: "nm2", label: "Segundo Ciclo Medio (3°-4°)", subjects: ["Lengua Castellana y Comunicación", "Educación Matemática", "Ciencias Naturales", "Estudios Sociales", "Filosofía"], sessions: 15 },
-    ]
-  };
+  // All levels together from 7° Básico to 4° Medio
+  const allLevels = [
+    { id: "7b", label: "7° Básico", subjects: ["Lengua y Literatura", "Matemática", "Ciencias Naturales", "Historia, Geografía y C. Sociales", "Inglés"], sessions: 15 },
+    { id: "8b", label: "8° Básico", subjects: ["Lengua y Literatura", "Matemática", "Ciencias Naturales", "Historia, Geografía y C. Sociales", "Inglés"], sessions: 15 },
+    { id: "1m", label: "1° Medio", subjects: ["Lengua y Literatura", "Matemática", "Ciencias Naturales (Bio, Fis, Quim)", "Historia, Geografía y C. Sociales", "Inglés"], sessions: 15 },
+    { id: "2m", label: "2° Medio", subjects: ["Lengua y Literatura", "Matemática", "Ciencias Naturales (Bio, Fis, Quim)", "Historia, Geografía y C. Sociales", "Inglés"], sessions: 15 },
+    { id: "3m", label: "3° Medio", subjects: ["Lengua y Literatura", "Matemática", "Educación Ciudadana", "Filosofía", "Ciencias para la Ciudadanía", "Inglés"], sessions: 15 },
+    { id: "4m", label: "4° Medio", subjects: ["Lengua y Literatura", "Matemática", "Educación Ciudadana", "Filosofía", "Ciencias para la Ciudadanía", "Inglés"], sessions: 15 },
+  ];
 
   const getSubjectSlug = (subjectName: string) => {
     return subjectName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-");
@@ -137,6 +150,42 @@ export default function Dashboard() {
               </button>
             </Link>
           ))}
+          
+          {isAdmin && (
+            <>
+              <p className="text-[9px] font-bold text-white/30 uppercase tracking-[0.4em] px-4 mb-4 mt-8">Administración</p>
+              <Link href="/reservations">
+                <button className="w-full flex items-center gap-4 p-3 rounded-xl transition-all group text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-white/5">
+                  <ClipboardList className="w-5 h-5 shrink-0 transition-colors group-hover:text-white" />
+                  {!isSidebarCollapsed && <span className="text-[13px] font-medium">Reservas de Cupo</span>}
+                </button>
+              </Link>
+              <Link href="/barkley-admin">
+                <button className="w-full flex items-center gap-4 p-3 rounded-xl transition-all group text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-white/5">
+                  <Sliders className="w-5 h-5 shrink-0 transition-colors group-hover:text-white" />
+                  {!isSidebarCollapsed && <span className="text-[13px] font-medium">Panel Barkley Institute</span>}
+                </button>
+              </Link>
+              <Link href="/evaluation-links-admin">
+                <button className="w-full flex items-center gap-4 p-3 rounded-xl transition-all group text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-white/5">
+                  <LinkIcon className="w-5 h-5 shrink-0 transition-colors group-hover:text-white" />
+                  {!isSidebarCollapsed && <span className="text-[13px] font-medium">Evaluaciones Gemini</span>}
+                </button>
+              </Link>
+              <Link href="/gemini-copilots-admin">
+                <button className="w-full flex items-center gap-4 p-3 rounded-xl transition-all group text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-white/5">
+                  <Bot className="w-5 h-5 shrink-0 transition-colors group-hover:text-white" />
+                  {!isSidebarCollapsed && <span className="text-[13px] font-medium">Copilotos IA</span>}
+                </button>
+              </Link>
+              <Link href="/level-plan-settings">
+                <button className="w-full flex items-center gap-4 p-3 rounded-xl transition-all group text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-white/5">
+                  <DollarSign className="w-5 h-5 shrink-0 transition-colors group-hover:text-white" />
+                  {!isSidebarCollapsed && <span className="text-[13px] font-medium">Planes por Nivel</span>}
+                </button>
+              </Link>
+            </>
+          )}
         </nav>
       </aside>
 
@@ -144,20 +193,6 @@ export default function Dashboard() {
         <header className="h-20 bg-background/80 backdrop-blur-md border-b border-border flex items-center justify-between px-8 shrink-0 z-10 sticky top-0">
           <div className="flex items-center gap-6">
             <h1 className="text-2xl font-serif font-bold text-foreground tracking-tight">Mis Cursos <span className="text-[#A51C30] italic font-normal">Académicos</span></h1>
-            <div className="flex bg-muted p-1 rounded-sm">
-              <button
-                onClick={() => setActiveTab("menores")}
-                className={cn("px-4 py-1.5 text-xs font-semibold rounded-md transition-all", activeTab === "menores" ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-foreground")}
-              >
-                Menores
-              </button>
-              <button
-                onClick={() => setActiveTab("adultos")}
-                className={cn("px-4 py-1.5 text-xs font-semibold rounded-md transition-all", activeTab === "adultos" ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-foreground")}
-              >
-                Adultos (EPJA)
-              </button>
-            </div>
           </div>
           <div className="flex items-center gap-4">
             {user && (
@@ -174,6 +209,11 @@ export default function Dashboard() {
                 </span>
               </div>
             )}
+            <Link href="/">
+              <Button variant="ghost" size="sm" className="text-[9px] font-bold uppercase tracking-widest gap-2 hover:bg-primary/5 hover:text-primary">
+                <Home className="w-4 h-4" /> Home
+              </Button>
+            </Link>
             <a href="/api/logout" data-testid="btn-logout">
               <Button variant="outline" size="sm" className="text-[9px] font-bold uppercase tracking-widest gap-2">
                 <LogOut className="w-3 h-3" /> Salir
@@ -185,12 +225,35 @@ export default function Dashboard() {
           </div>
         </header>
 
-        <motion.div
-          className="flex-1 overflow-y-auto p-8 lg:p-12"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
+        <div 
+          ref={setScrollContainerRef}
+          className="flex-1 overflow-y-auto overflow-x-hidden relative" 
+          style={{ overscrollBehavior: 'contain' }}
         >
+          {/* Scroll Navigation Buttons */}
+          <div className="fixed right-8 bottom-24 flex flex-col gap-2 z-50">
+            <button
+              onClick={scrollUp}
+              className="p-3 bg-primary text-white rounded-full shadow-lg hover:bg-primary/90 transition-all hover:scale-110"
+              title="Subir"
+            >
+              <ChevronUp className="w-5 h-5" />
+            </button>
+            <button
+              onClick={scrollDown}
+              className="p-3 bg-primary text-white rounded-full shadow-lg hover:bg-primary/90 transition-all hover:scale-110"
+              title="Bajar"
+            >
+              <ChevronDown className="w-5 h-5" />
+            </button>
+          </div>
+
+          <motion.div
+            className="p-8 lg:p-12"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+          >
           <div className="max-w-7xl mx-auto space-y-12">
             <section className="space-y-8">
               <div className="border-b border-border pb-6">
@@ -219,7 +282,7 @@ export default function Dashboard() {
               </div>
 
               <div className="grid grid-cols-1 gap-12">
-                {(activeTab === "menores" ? programmaticStructure.menores : programmaticStructure.adultos).map((course, courseIndex) => (
+                {allLevels.map((course, courseIndex) => (
                   <motion.div
                     key={course.id}
                     className="space-y-6"
@@ -288,7 +351,8 @@ export default function Dashboard() {
               </div>
             </motion.section>
           </div>
-        </motion.div>
+          </motion.div>
+        </div>
       </main>
     </div>
   );

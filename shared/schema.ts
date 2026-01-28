@@ -338,3 +338,258 @@ export const insertTextbookConfigSchema = createInsertSchema(textbookConfigs, {
 
 export type TextbookConfig = typeof textbookConfigs.$inferSelect;
 export type InsertTextbookConfig = z.infer<typeof insertTextbookConfigSchema>;
+
+// Reservations - Formulario de Reserva de Cupo
+export const reservations = sqliteTable("reservations", {
+  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
+  // Datos personales
+  fullName: text("full_name").notNull(),
+  rut: text("rut").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone").notNull(),
+  dateOfBirth: text("date_of_birth").notNull(),
+  
+  // Datos del programa
+  programType: text("program_type", { enum: ["focus", "impulso", "stratmore", "tutoria"] }).notNull(),
+  levelInterest: text("level_interest"), // 7°B, 8°B, 1°M, etc.
+  
+  // Datos adicionales (eliminados del formulario pero mantenidos en DB por compatibilidad)
+  howDidYouHear: text("how_did_you_hear"),
+  comments: text("comments"),
+  
+  // Metadata
+  status: text("status", { enum: ["pending", "contacted", "enrolled", "rejected"] }).default("pending").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).defaultNow(),
+});
+
+// Schema base sin validación de Gmail personalizada
+const baseReservationSchema = createInsertSchema(reservations).omit({ 
+  id: true, 
+  status: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+
+// Schema para el formulario con validación de Gmail
+export const insertReservationSchema = z.object({
+  fullName: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
+  rut: z.string().min(8, "RUT inválido"),
+  email: z.string().email("Email inválido").refine(
+    (email) => email.endsWith("@gmail.com"),
+    { message: "Debe usar una cuenta de Gmail (@gmail.com)" }
+  ),
+  phone: z.string().min(8, "Teléfono inválido"),
+  dateOfBirth: z.string(),
+  programType: z.enum(["focus", "impulso", "stratmore", "tutoria"]),
+  levelInterest: z.string().optional(),
+  howDidYouHear: z.string().optional(),
+  comments: z.string().optional(),
+});
+
+export type Reservation = typeof reservations.$inferSelect;
+export type InsertReservation = z.infer<typeof insertReservationSchema>;
+
+// Barkley Institute Plans Configuration - OLD (mantener por compatibilidad)
+export const planConfigurations = sqliteTable("plan_configurations", {
+  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
+  planKey: text("plan_key").notNull().unique(),
+  planName: text("plan_name").notNull(),
+  planSubtitle: text("plan_subtitle"),
+  monthlyPrice: integer("monthly_price").notNull(),
+  enrollmentPrice: integer("enrollment_price").notNull(),
+  annualTotal: integer("annual_total"),
+  academicLoad: text("academic_load"),
+  evaluationsDetail: text("evaluations_detail"),
+  subjects: text("subjects").notNull().default('["Lenguaje","Matemática","Historia","Ciencias","Inglés"]'),
+  description: text("description"),
+  category: text("category"),
+  linkText: text("link_text"),
+  isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).defaultNow(),
+});
+
+export const insertPlanConfigurationSchema = createInsertSchema(planConfigurations, {
+  planKey: z.string().min(1, "La clave del plan es requerida"),
+  planName: z.string().min(2, "El nombre del plan es requerido"),
+  monthlyPrice: z.number().int().min(0, "El precio mensual debe ser positivo"),
+  enrollmentPrice: z.number().int().min(0, "El precio de matrícula debe ser positivo"),
+  subjects: z.string().default('["Lenguaje","Matemática","Historia","Ciencias","Inglés"]'),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+
+export type PlanConfiguration = typeof planConfigurations.$inferSelect;
+export type InsertPlanConfiguration = z.infer<typeof insertPlanConfigurationSchema>;
+
+// ============================================
+// Level-Based Plan Configurations - NEW SYSTEM
+// Organizado por NIVEL, no por PLAN
+// ============================================
+
+export const levelPlanConfigurations = sqliteTable("level_plan_configurations", {
+  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
+  
+  // Level Group Identification
+  levelGroupKey: text("level_group_key").notNull().unique(), // "7b-2m_menores", "3m-4m_menores", "adultos"
+  levelGroupName: text("level_group_name").notNull(), // "7° Básico a 2° Medio"
+  programType: text("program_type", { enum: ["menores", "adultos"] }).notNull(), // "menores" o "adultos"
+  levelsIncluded: text("levels_included").notNull(), // JSON array: ["7b", "8b", "1m", "2m"]
+  
+  // Pricing for this level group
+  monthlyPriceFull: integer("monthly_price_full").notNull(), // Plan Full
+  monthlyPriceStandard: integer("monthly_price_standard").notNull(), // Plan Estándar
+  monthlyPriceTutor: integer("monthly_price_tutor").notNull(), // Solo Tutor
+  enrollmentPrice: integer("enrollment_price").notNull(), // Matrícula común
+  
+  // Academic Details
+  modules: integer("modules").default(15).notNull(), // 15 módulos
+  evaluationsPerModule: integer("evaluations_per_module").default(4).notNull(), // 4 evaluaciones por módulo
+  totalEvaluations: integer("total_evaluations").default(60).notNull(), // 60 evaluaciones anuales
+  essays: integer("essays").default(2).notNull(), // 2 ensayos Mineduc
+  sessionsPerMonth: integer("sessions_per_month").default(2), // 2 sesiones mensuales (Full/Tutor)
+  
+  // Subjects (JSON array) - Específico por nivel
+  subjects: text("subjects").notNull().default('["Lenguaje","Matemática","Ciencias Naturales","Historia y Geografía","Inglés"]'),
+  
+  // Display Settings
+  isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  
+  // Metadata
+  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).defaultNow(),
+});
+
+export const insertLevelPlanConfigurationSchema = createInsertSchema(levelPlanConfigurations, {
+  levelGroupKey: z.string().min(1, "La clave del grupo es requerida"),
+  levelGroupName: z.string().min(2, "El nombre del grupo es requerido"),
+  programType: z.enum(["menores", "adultos"]),
+  levelsIncluded: z.string().min(1, "Debe incluir al menos un nivel"),
+  monthlyPriceFull: z.number().int().min(0, "El precio debe ser positivo"),
+  monthlyPriceStandard: z.number().int().min(0, "El precio debe ser positivo"),
+  monthlyPriceTutor: z.number().int().min(0, "El precio debe ser positivo"),
+  enrollmentPrice: z.number().int().min(0, "El precio de matrícula debe ser positivo"),
+  subjects: z.string().min(1, "Debe incluir asignaturas"),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+
+export type LevelPlanConfiguration = typeof levelPlanConfigurations.$inferSelect;
+export type InsertLevelPlanConfiguration = z.infer<typeof insertLevelPlanConfigurationSchema>;
+
+// Site Configuration - General settings for the landing page
+export const siteConfiguration = sqliteTable("site_configuration", {
+  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
+  configKey: text("config_key").notNull().unique(), // "header_description", "important_notice", etc.
+  configValue: text("config_value").notNull(),
+  configType: text("config_type").default("text").notNull(), // "text", "html", "json"
+  description: text("description"),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).defaultNow(),
+});
+
+// Adult Education Cycles Configuration
+export const adultCycleConfigurations = sqliteTable("adult_cycle_configurations", {
+  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
+  
+  cycleKey: text("cycle_key").notNull().unique(), // "cycle_1_june", "cycle_2_october"
+  cycleName: text("cycle_name").notNull(), // "Ciclo 1 (Junio)"
+  
+  // Pricing
+  monthlyPrice: integer("monthly_price").notNull(), // 45000
+  enrollmentPrice: integer("enrollment_price").notNull(), // 15000
+  totalPrice: integer("total_price").notNull(), // 195000
+  durationMonths: integer("duration_months").notNull(), // 4 or 8
+  
+  // Academic Details
+  modulesCount: integer("modules_count").notNull(), // 6 or 15
+  quizzesTotal: integer("quizzes_total").notNull(), // 24 or 60
+  essaysCount: integer("essays_count").notNull(), // 1 or 2
+  academicLoad: text("academic_load"), // "6 Módulos, 24 Quizzes Totales y 1 Ensayo General Final"
+  
+  // Subjects by decree
+  basicaDS10: text("basica_ds10"), // JSON array for D.S. 10
+  basicaDS257: text("basica_ds257"), // JSON array for D.S. 257
+  mediaDS257: text("media_ds257"), // JSON array for D.S. 257
+  
+  // Display
+  isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  
+  updatedAt: integer("updated_at", { mode: "timestamp" }).defaultNow(),
+});
+
+export const insertSiteConfigurationSchema = createInsertSchema(siteConfiguration).omit({ 
+  id: true, 
+  updatedAt: true 
+});
+
+export const insertAdultCycleConfigurationSchema = createInsertSchema(adultCycleConfigurations, {
+  cycleKey: z.string().min(1, "La clave del ciclo es requerida"),
+  cycleName: z.string().min(2, "El nombre del ciclo es requerido"),
+  monthlyPrice: z.number().int().min(0, "El precio mensual debe ser positivo"),
+  enrollmentPrice: z.number().int().min(0, "El precio de matrícula debe ser positivo"),
+  totalPrice: z.number().int().min(0, "El total debe ser positivo"),
+  durationMonths: z.number().int().min(1, "La duración debe ser al menos 1 mes"),
+  modulesCount: z.number().int().min(1, "Debe haber al menos 1 módulo"),
+  quizzesTotal: z.number().int().min(1, "Debe haber al menos 1 quiz"),
+  essaysCount: z.number().int().min(0, "Los ensayos no pueden ser negativos"),
+}).omit({ id: true, updatedAt: true });
+
+export type SiteConfiguration = typeof siteConfiguration.$inferSelect;
+export type InsertSiteConfiguration = z.infer<typeof insertSiteConfigurationSchema>;
+export type AdultCycleConfiguration = typeof adultCycleConfigurations.$inferSelect;
+export type InsertAdultCycleConfiguration = z.infer<typeof insertAdultCycleConfigurationSchema>;
+
+// ============================================
+// Evaluation Links (Gemini) - SQLite version
+// ============================================
+
+export const evaluationLinks = sqliteTable("evaluation_links", {
+  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
+  courseId: text("course_id").notNull(), // Using text to match levelSubject IDs
+  moduleNumber: integer("module_number").notNull(),
+  evaluationNumber: integer("evaluation_number").notNull(), // 1, 2, 3, or 4
+  geminiLink: text("gemini_link").notNull(),
+  title: text("title"),
+  releaseDate: integer("release_date", { mode: "timestamp" }), // Fecha calculada de liberación
+  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).defaultNow(),
+});
+
+export const insertEvaluationLinkSchema = createInsertSchema(evaluationLinks, {
+  courseId: z.string().min(1, "El ID del curso es requerido"),
+  moduleNumber: z.number().int().min(1, "El número de módulo debe ser al menos 1"),
+  evaluationNumber: z.number().int().min(1).max(4, "El número de evaluación debe ser entre 1 y 4"),
+  geminiLink: z.string().url("Debe ser una URL válida"),
+  title: z.string().optional(),
+  releaseDate: z.date().optional(),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+
+export type EvaluationLink = typeof evaluationLinks.$inferSelect;
+export type InsertEvaluationLink = z.infer<typeof insertEvaluationLinkSchema>;
+
+// ============================================
+// Gemini Copilots - AI Assistants per course groups
+// ============================================
+
+export const geminiCopilots = sqliteTable("gemini_copilots", {
+  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
+  name: text("name").notNull(), // "Academic Copilot I"
+  geminiLink: text("gemini_link").notNull(), // Link to Gemini copilot
+  description: text("description"), // Optional description
+  // JSON array of level IDs this copilot serves: ["3m", "4m"]
+  levelIds: text("level_ids").notNull().default("[]"),
+  isActive: integer("is_active", { mode: "boolean" }).default(true),
+  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).defaultNow(),
+});
+
+export const insertGeminiCopilotSchema = createInsertSchema(geminiCopilots, {
+  name: z.string().min(1, "El nombre es requerido"),
+  geminiLink: z.string().url("Debe ser una URL válida"),
+  description: z.string().optional(),
+  levelIds: z.string().default("[]"),
+  isActive: z.boolean().optional().default(true),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+
+export type GeminiCopilot = typeof geminiCopilots.$inferSelect;
+export type InsertGeminiCopilot = z.infer<typeof insertGeminiCopilotSchema>;

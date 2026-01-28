@@ -1,16 +1,21 @@
 import { 
   levels, subjects, levelSubjects, learningObjectives, weeklyResources,
   enrollments, studentProgress, weeklyCompletion, userProfiles,
-  programCalendar, moduleEvaluations, evaluationProgress, textbookConfigs,
+  programCalendar, moduleEvaluations, evaluationProgress, textbookConfigs, reservations, planConfigurations,
+  siteConfiguration, adultCycleConfigurations, geminiCopilots, levelPlanConfigurations,
   type Level, type InsertLevel, type Subject, type InsertSubject,
   type LevelSubject, type InsertLevelSubject, type LearningObjective, type InsertLearningObjective,
   type WeeklyResource, type InsertWeeklyResource, type Enrollment, type InsertEnrollment,
   type StudentProgress, type InsertStudentProgress, type UserProfile, type InsertUserProfile,
   type ProgramCalendar, type InsertProgramCalendar, type ModuleEvaluation, type InsertModuleEvaluation,
-  type EvaluationProgress, type InsertEvaluationProgress, type TextbookConfig, type InsertTextbookConfig
+  type EvaluationProgress, type InsertEvaluationProgress, type TextbookConfig, type InsertTextbookConfig,
+  type Reservation, type InsertReservation, type PlanConfiguration, type InsertPlanConfiguration,
+  type SiteConfiguration, type InsertSiteConfiguration, type AdultCycleConfiguration, type InsertAdultCycleConfiguration,
+  type InsertGeminiCopilot, insertGeminiCopilotSchema, type LevelPlanConfiguration, type InsertLevelPlanConfiguration,
+  insertLevelPlanConfigurationSchema
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, desc } from "drizzle-orm";
 
 export interface IStorage {
   // Levels
@@ -84,6 +89,35 @@ export interface IStorage {
     answersJson: string,
     passed: boolean
   ): Promise<EvaluationProgress>;
+  
+  // Reservations
+  getAllReservations(): Promise<Reservation[]>;
+  getReservationById(id: string): Promise<Reservation | undefined>;
+  createReservation(reservation: InsertReservation): Promise<Reservation>;
+  updateReservationStatus(id: string, status: string): Promise<Reservation | undefined>;
+  deleteReservation(id: string): Promise<void>;
+  
+  // Plan Configurations
+  getAllPlanConfigurations(): Promise<PlanConfiguration[]>;
+  getPlanConfigurationByKey(planKey: string): Promise<PlanConfiguration | undefined>;
+  createPlanConfiguration(plan: InsertPlanConfiguration): Promise<PlanConfiguration>;
+  updatePlanConfiguration(id: string, plan: Partial<InsertPlanConfiguration>): Promise<PlanConfiguration | undefined>;
+  deletePlanConfiguration(id: string): Promise<void>;
+  initializeDefaultPlans(): Promise<void>;
+  
+  // Site Configuration
+  getAllSiteConfigurations(): Promise<SiteConfiguration[]>;
+  getSiteConfigurationByKey(configKey: string): Promise<SiteConfiguration | undefined>;
+  upsertSiteConfiguration(config: InsertSiteConfiguration): Promise<SiteConfiguration>;
+  initializeDefaultSiteConfig(): Promise<void>;
+  
+  // Adult Cycle Configurations
+  getAllAdultCycleConfigurations(): Promise<AdultCycleConfiguration[]>;
+  getAdultCycleConfigurationByKey(cycleKey: string): Promise<AdultCycleConfiguration | undefined>;
+  createAdultCycleConfiguration(cycle: InsertAdultCycleConfiguration): Promise<AdultCycleConfiguration>;
+  updateAdultCycleConfiguration(id: string, cycle: Partial<InsertAdultCycleConfiguration>): Promise<AdultCycleConfiguration | undefined>;
+  deleteAdultCycleConfiguration(id: string): Promise<void>;
+  initializeDefaultAdultCycles(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -544,6 +578,386 @@ export class DatabaseStorage implements IStorage {
       .where(eq(levelSubjects.id, id))
       .limit(1);
     return results[0];
+  }
+
+  // Reservations
+  async getAllReservations(): Promise<Reservation[]> {
+    return db.select().from(reservations).orderBy(reservations.createdAt);
+  }
+
+  async getReservationById(id: string): Promise<Reservation | undefined> {
+    const [reservation] = await db.select().from(reservations).where(eq(reservations.id, id));
+    return reservation;
+  }
+
+  async createReservation(data: InsertReservation): Promise<Reservation> {
+    const [reservation] = await db.insert(reservations).values(data).returning();
+    return reservation;
+  }
+
+  async updateReservationStatus(id: string, status: string): Promise<Reservation | undefined> {
+    const [updated] = await db.update(reservations)
+      .set({ status: status as any, updatedAt: new Date() })
+      .where(eq(reservations.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteReservation(id: string): Promise<void> {
+    await db.delete(reservations).where(eq(reservations.id, id));
+  }
+
+  // Plan Configurations
+  async getAllPlanConfigurations(): Promise<PlanConfiguration[]> {
+    return db.select().from(planConfigurations).where(eq(planConfigurations.isActive, true)).orderBy(planConfigurations.sortOrder);
+  }
+
+  async getPlanConfigurationByKey(planKey: string): Promise<PlanConfiguration | undefined> {
+    const [plan] = await db.select().from(planConfigurations).where(eq(planConfigurations.planKey, planKey));
+    return plan;
+  }
+
+  async createPlanConfiguration(data: InsertPlanConfiguration): Promise<PlanConfiguration> {
+    const [plan] = await db.insert(planConfigurations).values(data).returning();
+    return plan;
+  }
+
+  async updatePlanConfiguration(id: string, data: Partial<InsertPlanConfiguration>): Promise<PlanConfiguration | undefined> {
+    const [updated] = await db.update(planConfigurations)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(planConfigurations.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePlanConfiguration(id: string): Promise<void> {
+    await db.delete(planConfigurations).where(eq(planConfigurations.id, id));
+  }
+
+  async initializeDefaultPlans(): Promise<void> {
+    const existing = await this.getAllPlanConfigurations();
+    if (existing.length > 0) return; // Ya hay planes configurados
+
+    const defaultPlans = [
+      {
+        planKey: "asincrono_pro",
+        planName: "Plan Asincrónico Pro",
+        planSubtitle: "Jóvenes (7° a 4° Medio)",
+        monthlyPrice: 65000,
+        enrollmentPrice: 90000,
+        annualTotal: 870000, // 12 * 65000 + 90000
+        academicLoad: "15 Módulos",
+        evaluationsDetail: "75 Quizzes y 2 Ensayos por asignatura",
+        subjects: '["Lenguaje","Matemática","Historia","Ciencias","Inglés"]',
+        description: "Preparación completa para Exámenes Libres con acceso 24/7 a contenido estructurado.",
+        category: "Validación de Estudios",
+        linkText: "Más Información",
+        isActive: true,
+        sortOrder: 1,
+      },
+      {
+        planKey: "asincrono_tutor",
+        planName: "Plan Asincrónico + Tutor",
+        planSubtitle: "Acompañamiento Personalizado",
+        monthlyPrice: 105000,
+        enrollmentPrice: 90000,
+        annualTotal: 1350000, // 12 * 105000 + 90000
+        academicLoad: "15 Módulos",
+        evaluationsDetail: "75 Quizzes y 2 Ensayos por asignatura",
+        subjects: '["Lenguaje","Matemática","Historia","Ciencias","Inglés"]',
+        description: "Incluye sesiones individuales con tutor académico para resolver dudas y reforzar aprendizaje.",
+        category: "Validación de Estudios",
+        linkText: "Más Información",
+        isActive: true,
+        sortOrder: 2,
+      },
+      {
+        planKey: "academic_mentor",
+        planName: "Plan Academic Mentor",
+        planSubtitle: "Mentoría Académica Premium",
+        monthlyPrice: 80000,
+        enrollmentPrice: 0,
+        annualTotal: 960000, // 12 * 80000
+        academicLoad: "15 Módulos",
+        evaluationsDetail: "75 Quizzes y 2 Ensayos por asignatura",
+        subjects: '["Lenguaje","Matemática","Historia","Ciencias","Inglés"]',
+        description: "Plan sin matrícula con mentoría personalizada enfocada en desarrollo de habilidades ejecutivas.",
+        category: "Validación de Estudios",
+        linkText: "Más Información",
+        isActive: true,
+        sortOrder: 3,
+      },
+    ];
+
+    for (const plan of defaultPlans) {
+      await this.createPlanConfiguration(plan);
+    }
+  }
+
+  // Site Configuration
+  async getAllSiteConfigurations(): Promise<SiteConfiguration[]> {
+    return db.select().from(siteConfiguration);
+  }
+
+  async getSiteConfigurationByKey(configKey: string): Promise<SiteConfiguration | undefined> {
+    const [config] = await db.select().from(siteConfiguration).where(eq(siteConfiguration.configKey, configKey));
+    return config;
+  }
+
+  async upsertSiteConfiguration(data: InsertSiteConfiguration): Promise<SiteConfiguration> {
+    const existing = await this.getSiteConfigurationByKey(data.configKey);
+    
+    if (existing) {
+      const [updated] = await db.update(siteConfiguration)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(siteConfiguration.configKey, data.configKey))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(siteConfiguration).values(data).returning();
+      return created;
+    }
+  }
+
+  async initializeDefaultSiteConfig(): Promise<void> {
+    const defaultConfigs = [
+      {
+        configKey: "header_description",
+        configValue: "Barkley Institute ofrece un ecosistema educativo de alto rendimiento para la Validación de Estudios (Exámenes Libres) en las 5 asignaturas exigidas por el Mineduc: Lenguaje, Matemática, Historia, Ciencias Naturales e Inglés.",
+        configType: "text",
+        description: "Descripción principal del header de la landing page",
+      },
+      {
+        configKey: "important_notice_4medio",
+        configValue: "Importante: Los alumnos de 4° Medio y estudiantes de Educación Superior deben validar directamente en el Ministerio de Educación.",
+        configType: "text",
+        description: "Aviso importante para estudiantes de 4° Medio y Educación Superior",
+      },
+    ];
+
+    for (const config of defaultConfigs) {
+      await this.upsertSiteConfiguration(config);
+    }
+  }
+
+  // Adult Cycle Configurations
+  async getAllAdultCycleConfigurations(): Promise<AdultCycleConfiguration[]> {
+    return db.select().from(adultCycleConfigurations).where(eq(adultCycleConfigurations.isActive, true)).orderBy(adultCycleConfigurations.sortOrder);
+  }
+
+  async getAdultCycleConfigurationByKey(cycleKey: string): Promise<AdultCycleConfiguration | undefined> {
+    const [cycle] = await db.select().from(adultCycleConfigurations).where(eq(adultCycleConfigurations.cycleKey, cycleKey));
+    return cycle;
+  }
+
+  async createAdultCycleConfiguration(data: InsertAdultCycleConfiguration): Promise<AdultCycleConfiguration> {
+    const [cycle] = await db.insert(adultCycleConfigurations).values(data).returning();
+    return cycle;
+  }
+
+  async updateAdultCycleConfiguration(id: string, data: Partial<InsertAdultCycleConfiguration>): Promise<AdultCycleConfiguration | undefined> {
+    const [updated] = await db.update(adultCycleConfigurations)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(adultCycleConfigurations.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteAdultCycleConfiguration(id: string): Promise<void> {
+    await db.delete(adultCycleConfigurations).where(eq(adultCycleConfigurations.id, id));
+  }
+
+  async initializeDefaultAdultCycles(): Promise<void> {
+    const existing = await this.getAllAdultCycleConfigurations();
+    if (existing.length > 0) return;
+
+    const defaultCycles = [
+      {
+        cycleKey: "cycle_1_june",
+        cycleName: "Ciclo 1 (Junio)",
+        monthlyPrice: 45000,
+        enrollmentPrice: 15000,
+        totalPrice: 195000, // 4 * 45000 + 15000
+        durationMonths: 4,
+        modulesCount: 6,
+        quizzesTotal: 24, // 6 módulos * 4 quizzes
+        essaysCount: 1,
+        academicLoad: "6 Módulos, 24 Quizzes Totales y 1 Ensayo General Final",
+        basicaDS10: '["Lenguaje","Matemática","Ciencias Naturales","Historia y Geografía"]',
+        basicaDS257: '["Lenguaje","Matemática","Ciencias Naturales","Historia y Geografía"]',
+        mediaDS257: '["Lenguaje","Matemática","Ciencias Naturales","Historia y Geografía","Inglés"]',
+        isActive: true,
+        sortOrder: 1,
+      },
+      {
+        cycleKey: "cycle_2_october",
+        cycleName: "Ciclo 2 (Octubre)",
+        monthlyPrice: 45000,
+        enrollmentPrice: 15000,
+        totalPrice: 375000, // 8 * 45000 + 15000
+        durationMonths: 8,
+        modulesCount: 15,
+        quizzesTotal: 60, // 15 módulos * 4 quizzes
+        essaysCount: 2,
+        academicLoad: "15 Módulos, 60 Quizzes Totales y 2 Ensayos Generales Finales",
+        basicaDS10: '["Lenguaje","Matemática","Ciencias Naturales","Historia y Geografía"]',
+        basicaDS257: '["Lenguaje","Matemática","Ciencias Naturales","Historia y Geografía"]',
+        mediaDS257: '["Lenguaje","Matemática","Ciencias Naturales","Historia y Geografía","Inglés"]',
+        isActive: true,
+        sortOrder: 2,
+      },
+    ];
+
+    for (const cycle of defaultCycles) {
+      await this.createAdultCycleConfiguration(cycle);
+    }
+  }
+
+  // ============================================
+  // Gemini Copilots Methods
+  // ============================================
+
+  async getAllGeminiCopilots() {
+    return await db.select().from(geminiCopilots).orderBy(desc(geminiCopilots.createdAt));
+  }
+
+  async getGeminiCopilotById(id: string) {
+    const result = await db.select().from(geminiCopilots).where(eq(geminiCopilots.id, id)).limit(1);
+    return result[0] || null;
+  }
+
+  async getGeminiCopilotByLevel(levelId: string) {
+    const allCopilots = await db.select().from(geminiCopilots).where(eq(geminiCopilots.isActive, true));
+    
+    // Find copilot that includes this level
+    const matchingCopilot = allCopilots.find(copilot => {
+      try {
+        const levelIds = JSON.parse(copilot.levelIds || "[]");
+        return levelIds.includes(levelId);
+      } catch {
+        return false;
+      }
+    });
+
+    return matchingCopilot || null;
+  }
+
+  async createGeminiCopilot(data: InsertGeminiCopilot) {
+    const validated = insertGeminiCopilotSchema.parse(data);
+    const result = await db.insert(geminiCopilots).values(validated).returning();
+    return result[0];
+  }
+
+  async updateGeminiCopilot(id: string, data: Partial<InsertGeminiCopilot>) {
+    const validated = insertGeminiCopilotSchema.partial().parse(data);
+    const result = await db
+      .update(geminiCopilots)
+      .set({ ...validated, updatedAt: new Date() })
+      .where(eq(geminiCopilots.id, id))
+      .returning();
+    return result[0] || null;
+  }
+
+  async deleteGeminiCopilot(id: string) {
+    await db.delete(geminiCopilots).where(eq(geminiCopilots.id, id));
+  }
+
+  async toggleGeminiCopilotStatus(id: string) {
+    const current = await this.getGeminiCopilotById(id);
+    if (!current) return null;
+
+    const result = await db
+      .update(geminiCopilots)
+      .set({ isActive: !current.isActive, updatedAt: new Date() })
+      .where(eq(geminiCopilots.id, id))
+      .returning();
+    return result[0] || null;
+  }
+
+  // ============================================
+  // Level-Based Plan Configurations Methods
+  // ============================================
+
+  async getAllLevelPlanConfigurations() {
+    return await db.select().from(levelPlanConfigurations).orderBy(levelPlanConfigurations.sortOrder);
+  }
+
+  async getLevelPlanConfigurationById(id: string) {
+    const result = await db.select().from(levelPlanConfigurations).where(eq(levelPlanConfigurations.id, id)).limit(1);
+    return result[0] || null;
+  }
+
+  async getLevelPlanConfigurationByKey(levelGroupKey: string) {
+    const result = await db.select().from(levelPlanConfigurations).where(eq(levelPlanConfigurations.levelGroupKey, levelGroupKey)).limit(1);
+    return result[0] || null;
+  }
+
+  async createLevelPlanConfiguration(data: InsertLevelPlanConfiguration) {
+    const validated = insertLevelPlanConfigurationSchema.parse(data);
+    const result = await db.insert(levelPlanConfigurations).values(validated).returning();
+    return result[0];
+  }
+
+  async updateLevelPlanConfiguration(id: string, data: Partial<InsertLevelPlanConfiguration>) {
+    const validated = insertLevelPlanConfigurationSchema.partial().parse(data);
+    const result = await db
+      .update(levelPlanConfigurations)
+      .set({ ...validated, updatedAt: new Date() })
+      .where(eq(levelPlanConfigurations.id, id))
+      .returning();
+    return result[0] || null;
+  }
+
+  async deleteLevelPlanConfiguration(id: string) {
+    await db.delete(levelPlanConfigurations).where(eq(levelPlanConfigurations.id, id));
+  }
+
+  async initializeDefaultLevelPlans() {
+    const existing = await this.getAllLevelPlanConfigurations();
+    if (existing.length > 0) return;
+
+    const defaultPlans: InsertLevelPlanConfiguration[] = [
+      {
+        levelGroupKey: "7b-2m_menores",
+        levelGroupName: "7° Básico a 2° Medio",
+        programType: "menores",
+        levelsIncluded: '["7b","8b","1m","2m"]',
+        monthlyPriceFull: 115000,
+        monthlyPriceStandard: 95000,
+        monthlyPriceTutor: 75000,
+        enrollmentPrice: 90000,
+        modules: 15,
+        evaluationsPerModule: 4,
+        totalEvaluations: 60,
+        essays: 2,
+        sessionsPerMonth: 2,
+        subjects: '["Lenguaje","Matemática","Ciencias Naturales","Historia y Geografía","Inglés"]',
+        isActive: true,
+        sortOrder: 1,
+      },
+      {
+        levelGroupKey: "3m-4m_menores",
+        levelGroupName: "3° y 4° Medio",
+        programType: "menores",
+        levelsIncluded: '["3m","4m"]',
+        monthlyPriceFull: 115000,
+        monthlyPriceStandard: 95000,
+        monthlyPriceTutor: 75000,
+        enrollmentPrice: 90000,
+        modules: 15,
+        evaluationsPerModule: 4,
+        totalEvaluations: 60,
+        essays: 2,
+        sessionsPerMonth: 2,
+        subjects: '["Lenguaje","Matemática","Educación Ciudadana","Filosofía","Ciencias para la Ciudadanía","Inglés"]',
+        isActive: true,
+        sortOrder: 2,
+      },
+    ];
+
+    for (const plan of defaultPlans) {
+      await this.createLevelPlanConfiguration(plan);
+    }
   }
 }
 

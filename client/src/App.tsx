@@ -11,6 +11,13 @@ import CoursePlayer from "@/pages/CoursePlayer";
 import DriveSync from "@/pages/DriveSync";
 import TextbookConfig from "@/pages/TextbookConfig";
 import TextbookConfigNew from "@/pages/TextbookConfigNew";
+import Reservations from "@/pages/Reservations";
+import PlanSettings from "@/pages/PlanSettings";
+import LevelPlanSettings from "@/pages/LevelPlanSettings";
+import PlanSelector2026 from "@/pages/PlanSelector2026";
+import BarkleyAdmin from "@/pages/BarkleyAdmin";
+import EvaluationLinksAdmin from "@/pages/EvaluationLinksAdmin";
+import GeminiCopilotsAdmin from "@/pages/GeminiCopilotsAdmin";
 
 import Lenis from 'lenis';
 import { useEffect } from "react";
@@ -49,6 +56,13 @@ function Router() {
       <Route path="/drive-sync" component={DriveSync} />
       <Route path="/textbook-config" component={TextbookConfig} />
       <Route path="/textbook-config-new" component={TextbookConfigNew} />
+      <Route path="/reservations" component={Reservations} />
+      <Route path="/plan-settings" component={PlanSettings} />
+      <Route path="/level-plan-settings" component={LevelPlanSettings} />
+      <Route path="/planes-2026" component={PlanSelector2026} />
+      <Route path="/barkley-admin" component={BarkleyAdmin} />
+      <Route path="/evaluation-links-admin" component={EvaluationLinksAdmin} />
+      <Route path="/gemini-copilots-admin" component={GeminiCopilotsAdmin} />
       <Route component={NotFound} />
     </Switch>
   );
