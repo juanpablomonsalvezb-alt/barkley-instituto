@@ -13,12 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle2 } from "lucide-react";
 
 const reservationSchema = z.object({
-  nivel: z.enum([
-    // Menores - cursos individuales
-    "7b", "8b", "1m", "2m", "3m", "4m",
-    // Adultos - por rangos
-    "adultos_7b-8b", "adultos_1m-2m", "adultos_3m-4m"
-  ]),
+  nivel: z.enum(["menores", "adultos"]),
   programType: z.string().min(1, "Debes seleccionar un plan"),
 });
 
@@ -45,7 +40,7 @@ export function ReservationDialog({ open, onOpenChange }: ReservationDialogProps
   const form = useForm<ReservationFormData>({
     resolver: zodResolver(reservationSchema),
     defaultValues: {
-      nivel: "7b",
+      nivel: "menores",
       programType: "",
     },
   });
@@ -211,36 +206,20 @@ export function ReservationDialog({ open, onOpenChange }: ReservationDialogProps
                 <div className="space-y-4">
                   {/* Nivel - Primero preguntamos esto */}
                   <div className="space-y-2">
-                    <Label htmlFor="nivel">1. ¿Qué curso o nivel deseas cursar? *</Label>
+                    <Label htmlFor="nivel">1. ¿Para quién es el plan? *</Label>
                     <Select
                       onValueChange={(value) => {
-                        form.setValue("nivel", value as any);
+                        form.setValue("nivel", value as "menores" | "adultos");
                         form.setValue("programType", ""); // Reset plan when nivel changes
                       }}
                       value={form.watch("nivel")}
                     >
                       <SelectTrigger className="rounded-none">
-                        <SelectValue placeholder="Selecciona tu curso o nivel" />
+                        <SelectValue placeholder="Selecciona primero el nivel" />
                       </SelectTrigger>
                       <SelectContent>
-                        {/* Menores - Cursos individuales */}
-                        <div className="px-2 py-1.5 text-xs font-semibold text-[#002147] bg-[#D4AF37]/10">
-                          MENORES (Jóvenes)
-                        </div>
-                        <SelectItem value="7b">7° Básico</SelectItem>
-                        <SelectItem value="8b">8° Básico</SelectItem>
-                        <SelectItem value="1m">1° Medio</SelectItem>
-                        <SelectItem value="2m">2° Medio</SelectItem>
-                        <SelectItem value="3m">3° Medio</SelectItem>
-                        <SelectItem value="4m">4° Medio</SelectItem>
-
-                        {/* Adultos - Por rangos de niveles */}
-                        <div className="px-2 py-1.5 text-xs font-semibold text-[#002147] bg-[#D4AF37]/10 mt-2">
-                          ADULTOS (Educación de Adultos)
-                        </div>
-                        <SelectItem value="adultos_7b-8b">7° y 8° Básico</SelectItem>
-                        <SelectItem value="adultos_1m-2m">1° y 2° Medio</SelectItem>
-                        <SelectItem value="adultos_3m-4m">3° y 4° Medio</SelectItem>
+                        <SelectItem value="menores">Menores (7° Básico a 4° Medio)</SelectItem>
+                        <SelectItem value="adultos">Adultos (Educación de Adultos)</SelectItem>
                       </SelectContent>
                     </Select>
                     {form.formState.errors.nivel && (
@@ -266,35 +245,18 @@ export function ReservationDialog({ open, onOpenChange }: ReservationDialogProps
                         </div>
 
                         {/* Mostrar planes según nivel seleccionado */}
-                        {/* Planes para Menores - Todos los cursos tienen los mismos 3 planes */}
-                        {(form.watch("nivel") === "7b" || form.watch("nivel") === "8b" || 
-                          form.watch("nivel") === "1m" || form.watch("nivel") === "2m" || 
-                          form.watch("nivel") === "3m" || form.watch("nivel") === "4m") && (
+                        {form.watch("nivel") === "menores" && (
                           <>
-                            <SelectItem value="menores_full">Plan Full</SelectItem>
-                            <SelectItem value="menores_standard">Plan Estándar</SelectItem>
-                            <SelectItem value="menores_mentor">Plan Mentor</SelectItem>
+                            <SelectItem value="menores_full">Plan Full - $110.000/mes</SelectItem>
+                            <SelectItem value="menores_standard">Plan Estándar - $60.000/mes</SelectItem>
+                            <SelectItem value="menores_mentor">Plan Mentor - $50.000/mes</SelectItem>
                           </>
                         )}
 
-                        {/* Planes para Adultos 7° y 8° Básico */}
-                        {form.watch("nivel") === "adultos_7b-8b" && (
+                        {form.watch("nivel") === "adultos" && (
                           <>
-                            <SelectItem value="adultos_standard_basica">Plan Estándar</SelectItem>
-                          </>
-                        )}
-
-                        {/* Planes para Adultos 1° y 2° Medio */}
-                        {form.watch("nivel") === "adultos_1m-2m" && (
-                          <>
-                            <SelectItem value="adultos_standard_media">Plan Estándar</SelectItem>
-                          </>
-                        )}
-
-                        {/* Planes para Adultos 3° y 4° Medio */}
-                        {form.watch("nivel") === "adultos_3m-4m" && (
-                          <>
-                            <SelectItem value="adultos_standard_media">Plan Estándar</SelectItem>
+                            <SelectItem value="adultos_standard_basica">Plan Estándar Básica - $40.000/mes</SelectItem>
+                            <SelectItem value="adultos_standard_media">Plan Estándar Media - $50.000/mes</SelectItem>
                           </>
                         )}
                       </SelectContent>
@@ -326,6 +288,23 @@ export function ReservationDialog({ open, onOpenChange }: ReservationDialogProps
                     </div>
                   )}
 
+                  <div className="space-y-2">
+                    <Label htmlFor="levelInterest">Nivel de Interés</Label>
+                    <Select onValueChange={(value) => form.setValue("levelInterest", value)}>
+                      <SelectTrigger className="rounded-none">
+                        <SelectValue placeholder="Selecciona un nivel" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7b">7° Básico</SelectItem>
+                        <SelectItem value="8b">8° Básico</SelectItem>
+                        <SelectItem value="1m">1° Medio</SelectItem>
+                        <SelectItem value="2m">2° Medio</SelectItem>
+                        <SelectItem value="3m">3° Medio</SelectItem>
+                        <SelectItem value="4m">4° Medio</SelectItem>
+                        <SelectItem value="adultos">Adultos (Básica/Media)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 

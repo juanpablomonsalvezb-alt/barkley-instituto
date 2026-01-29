@@ -5,11 +5,13 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
+import { ReservationDialog } from "@/components/ReservationDialog";
 
 interface PlanConfiguration {
   id: string;
   planKey: string;
   planName: string;
+  planSubtitle: string | null;
   monthlyPrice: number;
   enrollmentPrice: number;
   annualTotal: number | null;
@@ -17,11 +19,14 @@ interface PlanConfiguration {
   evaluationsDetail: string | null;
   subjects: string;
   description: string | null;
+  category: string | null;
+  linkText: string | null;
+  isActive: boolean;
+  sortOrder: number;
 }
 
 interface SelectedPlan {
   basePlan: PlanConfiguration | null;
-  hasTeacher: boolean;
 }
 
 export function PlanConfiguratorNew() {
@@ -29,37 +34,74 @@ export function PlanConfiguratorNew() {
   const [direction, setDirection] = useState(0);
   const [selectedPlan, setSelectedPlan] = useState<SelectedPlan>({
     basePlan: null,
-    hasTeacher: false,
   });
+  const [isReservationOpen, setIsReservationOpen] = useState(false);
 
-  // Fetch data
-  const { data: youthPlans = [] } = useQuery<PlanConfiguration[]>({
-    queryKey: ["/api/plans"],
+  // Fetch level-based plans - the real data source
+  const { data: levelPlans = [] } = useQuery<any[]>({
+    queryKey: ["/api/level-plans"],
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: adultCycles = [] } = useQuery<any[]>({
-    queryKey: ["/api/adult-cycles"],
-    staleTime: 5 * 60 * 1000,
-  });
+  // Transform level plans into the format expected by the configurator
+  // Each level group has 3 pricing tiers: Full, Standard, Tutor
+  const allPlans = levelPlans.flatMap(level => {
+    const parseSubjectsArray = (subjectsStr: string): string[] => {
+      try {
+        return JSON.parse(subjectsStr);
+      } catch {
+        return [];
+      }
+    };
 
-  // Combine all plans
-  const allPlans = [
-    ...youthPlans.map(p => ({ ...p, type: 'youth' as const })),
-    ...adultCycles.map(c => ({
-      id: c.id,
-      planKey: c.cycleKey,
-      planName: c.cycleName,
-      monthlyPrice: c.monthlyPrice,
-      enrollmentPrice: c.enrollmentPrice,
-      annualTotal: c.totalPrice,
-      academicLoad: c.academicLoad,
-      evaluationsDetail: `${c.modulesCount} Módulos, ${c.quizzesTotal} Quizzes, ${c.essaysCount} Ensayos`,
-      subjects: c.mediaDS257 || '[]',
-      description: `Programa para adultos con duración de ${c.durationMonths} meses`,
-      type: 'adult' as const,
-    }))
-  ];
+    return [
+      {
+        id: `${level.id}_full`,
+        planKey: `${level.levelGroupKey}_full`,
+        planName: `${level.levelGroupName} - Full`,
+        planSubtitle: level.programType === 'menores' ? 'Jóvenes - Plan Completo' : 'Adultos - Plan Completo',
+        monthlyPrice: level.monthlyPriceFull || 0,
+        enrollmentPrice: level.enrollmentPrice || 0,
+        annualTotal: (level.monthlyPriceFull || 0) * 12 + (level.enrollmentPrice || 0),
+        academicLoad: `${level.sessionsPerMonth || 0} sesiones/mes`,
+        evaluationsDetail: `${level.modules || 0} Módulos, ${level.totalEvaluations || 0} Evaluaciones, ${level.essays || 0} Ensayos`,
+        subjects: JSON.stringify(parseSubjectsArray(level.subjects || '[]')),
+        description: `Plan completo con todas las materias y acompañamiento integral para ${level.levelGroupName}.`,
+        category: level.programType === 'menores' ? 'Jóvenes' : 'Adultos',
+        type: 'full' as const,
+      },
+      {
+        id: `${level.id}_standard`,
+        planKey: `${level.levelGroupKey}_standard`,
+        planName: `${level.levelGroupName} - Estándar`,
+        planSubtitle: level.programType === 'menores' ? 'Jóvenes - Plan Estándar' : 'Adultos - Plan Estándar',
+        monthlyPrice: level.monthlyPriceStandard || 0,
+        enrollmentPrice: level.enrollmentPrice || 0,
+        annualTotal: (level.monthlyPriceStandard || 0) * 12 + (level.enrollmentPrice || 0),
+        academicLoad: `${level.sessionsPerMonth || 0} sesiones/mes`,
+        evaluationsDetail: `${level.modules || 0} Módulos, ${level.totalEvaluations || 0} Evaluaciones, ${level.essays || 0} Ensayos`,
+        subjects: JSON.stringify(parseSubjectsArray(level.subjects || '[]')),
+        description: `Plan estándar con todas las materias básicas para ${level.levelGroupName}.`,
+        category: level.programType === 'menores' ? 'Jóvenes' : 'Adultos',
+        type: 'standard' as const,
+      },
+      {
+        id: `${level.id}_tutor`,
+        planKey: `${level.levelGroupKey}_tutor`,
+        planName: `${level.levelGroupName} - Con Tutor`,
+        planSubtitle: level.programType === 'menores' ? 'Jóvenes - Con Tutoría' : 'Adultos - Con Tutoría',
+        monthlyPrice: level.monthlyPriceTutor || 0,
+        enrollmentPrice: level.enrollmentPrice || 0,
+        annualTotal: (level.monthlyPriceTutor || 0) * 12 + (level.enrollmentPrice || 0),
+        academicLoad: `${level.sessionsPerMonth || 0} sesiones/mes`,
+        evaluationsDetail: `${level.modules || 0} Módulos, ${level.totalEvaluations || 0} Evaluaciones, ${level.essays || 0} Ensayos`,
+        subjects: JSON.stringify(parseSubjectsArray(level.subjects || '[]')),
+        description: `Plan con tutoría personalizada para ${level.levelGroupName}.`,
+        category: level.programType === 'menores' ? 'Jóvenes' : 'Adultos',
+        type: 'tutor' as const,
+      },
+    ];
+  });
 
   const currentPlan = allPlans[currentPlanIndex];
 
@@ -67,11 +109,15 @@ export function PlanConfiguratorNew() {
   const goToNext = () => {
     setDirection(1);
     setCurrentPlanIndex((prev) => (prev + 1) % allPlans.length);
+    // Reset selection when navigating
+    setSelectedPlan({ basePlan: null });
   };
 
   const goToPrevious = () => {
     setDirection(-1);
     setCurrentPlanIndex((prev) => (prev - 1 + allPlans.length) % allPlans.length);
+    // Reset selection when navigating
+    setSelectedPlan({ basePlan: null });
   };
 
   const selectPlan = () => {
@@ -90,9 +136,7 @@ export function PlanConfiguratorNew() {
   // Calculate totals
   const calculateTotal = () => {
     if (!selectedPlan.basePlan) return 0;
-    let total = selectedPlan.basePlan.monthlyPrice;
-    if (selectedPlan.hasTeacher) total += 40000;
-    return total;
+    return selectedPlan.basePlan.monthlyPrice;
   };
 
   const calculateAnnualTotal = () => {
@@ -101,10 +145,19 @@ export function PlanConfiguratorNew() {
     return (monthly * 8) + enrollment;
   };
 
-  const parseSubjects = (subjectsStr: string): string[] => {
+  const parseSubjects = (subjectsStr: string | null | undefined): string[] => {
+    if (!subjectsStr) return [];
     try {
-      return JSON.parse(subjectsStr);
+      const parsed = JSON.parse(subjectsStr);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(item => typeof item === 'string' && item.trim().length > 0);
+      }
+      return [];
     } catch {
+      // If it's not valid JSON, try to split by comma
+      if (typeof subjectsStr === 'string' && subjectsStr.trim().length > 0) {
+        return subjectsStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
+      }
       return [];
     }
   };
@@ -159,7 +212,7 @@ export function PlanConfiguratorNew() {
             transition={{ duration: 0.6 }}
             className="lg:col-span-4"
           >
-            <Card className="border-2 border-[#002147]/20 overflow-hidden shadow-2xl" style={{ height: '500px' }}>
+            <Card className="border-2 border-[#002147]/20 overflow-hidden shadow-2xl" style={{ height: '550px' }}>
               {/* Header - Más compacto */}
               <div className="p-3 bg-gradient-to-r from-[#002147] via-[#003366] to-[#004d99] flex items-center justify-between border-b-2 border-[#D4AF37]">
                 <div className="flex items-center gap-2">
@@ -175,7 +228,7 @@ export function PlanConfiguratorNew() {
               </div>
 
               {/* Carousel - Más compacto */}
-              <div className="relative overflow-hidden" style={{ height: 'calc(500px - 55px)' }}>
+              <div className="relative overflow-hidden" style={{ height: 'calc(550px - 55px)' }}>
                 <AnimatePresence mode="wait" custom={direction}>
                   <motion.div
                     key={currentPlanIndex}
@@ -194,12 +247,17 @@ export function PlanConfiguratorNew() {
                     {/* Plan Content - Más compacto */}
                     <div className="space-y-3">
                       <div className="text-center">
-                        <Badge className="bg-[#002147]/10 text-[#002147] border border-[#002147]/30 mb-2 text-xs">
-                          {currentPlan.type === 'youth' ? 'Jóvenes' : 'Adultos'}
+                        <Badge className="bg-[#002147]/10 text-[#002147] border border-[#002147]/30 mb-2 text-sm">
+                          {currentPlan.category || (currentPlan.type === 'youth' ? 'Jóvenes' : 'Adultos')}
                         </Badge>
                         <h4 className="text-xl font-bold text-[#002147] mb-1">
                           {currentPlan.planName}
                         </h4>
+                        {currentPlan.planSubtitle && (
+                          <p className="text-sm text-[#002147]/60 mt-1">
+                            {currentPlan.planSubtitle}
+                          </p>
+                        )}
                       </div>
 
                       <div className="bg-gradient-to-br from-[#002147]/5 to-[#D4AF37]/10 rounded-lg p-4 text-center">
@@ -209,7 +267,7 @@ export function PlanConfiguratorNew() {
                           </span>
                           <span className="text-sm text-[#002147]/60 ml-1">/mes</span>
                         </div>
-                        <div className="text-xs">
+                        <div className="text-sm">
                           <span className="text-[#002147]/60">Matrícula: </span>
                           <span className="font-bold text-[#002147]">
                             {formatCurrency(currentPlan.enrollmentPrice)}
@@ -217,8 +275,10 @@ export function PlanConfiguratorNew() {
                         </div>
                       </div>
 
-                      <p className="text-xs text-[#002147]/70 text-center leading-relaxed">
-                        {currentPlan.description?.slice(0, 100)}...
+                      <p className="text-sm text-[#002147]/70 text-center leading-relaxed">
+                        {currentPlan.description && currentPlan.description.length > 100 
+                          ? `${currentPlan.description.slice(0, 100)}...` 
+                          : currentPlan.description || 'Plan de estudio completo'}
                       </p>
                     </div>
 
@@ -294,7 +354,7 @@ export function PlanConfiguratorNew() {
               selectedPlan.basePlan 
                 ? 'border-[#002147]/20' 
                 : 'border-[#002147]/10 opacity-50'
-            }`} style={{ height: '500px' }}>
+            }`} style={{ height: '550px' }}>
               {/* Header - Más compacto */}
               <div className={`p-3 flex items-center justify-between border-b-2 transition-all duration-500 ${
                 selectedPlan.basePlan
@@ -316,7 +376,7 @@ export function PlanConfiguratorNew() {
               </div>
 
               {/* Content - Más compacto */}
-              <div className="p-4 overflow-y-auto" style={{ height: 'calc(500px - 55px)' }}>
+              <div className="p-4 overflow-y-auto" style={{ height: 'calc(550px - 55px)' }}>
                 {!selectedPlan.basePlan ? (
                   <div className="flex items-center justify-center h-full">
                     <p className="text-[#002147]/30 text-center">
@@ -333,24 +393,37 @@ export function PlanConfiguratorNew() {
                     {/* Plan Description */}
                     <div>
                       <h4 className="font-bold text-[#002147] mb-2 text-sm">📋 Descripción</h4>
-                      <p className="text-[#002147]/70 leading-relaxed text-xs">
+                      <p className="text-[#002147]/70 leading-relaxed text-sm mb-2">
                         {selectedPlan.basePlan.description}
                       </p>
+                      <p className="text-[#002147]/70 leading-relaxed text-sm mb-3">
+                        <span className="font-semibold text-[#002147]">Recursos didácticos:</span> videos, presentaciones, audios, infografías.
+                      </p>
+                      <div className="bg-[#D4AF37]/10 border border-[#D4AF37]/30 rounded-lg p-3 mt-2">
+                        <div className="flex items-start gap-2">
+                          <Sparkles className="w-4 h-4 text-[#D4AF37] mt-0.5 shrink-0" />
+                          <div>
+                            <p className="font-semibold text-[#002147] text-sm mb-1">✨ Incluye Academic Copilot</p>
+                            <p className="text-[#002147]/70 text-sm leading-relaxed">
+                              Asistente de IA personalizado disponible 24/7 para resolver dudas, explicar conceptos y guiar tu aprendizaje.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Academic Load */}
-                    {selectedPlan.basePlan.academicLoad && (
+                    {/* Academic Load with Evaluations */}
+                    {(selectedPlan.basePlan.academicLoad || selectedPlan.basePlan.evaluationsDetail) && (
                       <div>
                         <h4 className="font-bold text-[#002147] mb-2 text-sm">📚 Carga Académica</h4>
-                        <p className="text-[#002147]/70 text-xs">{selectedPlan.basePlan.academicLoad}</p>
-                      </div>
-                    )}
-
-                    {/* Evaluations */}
-                    {selectedPlan.basePlan.evaluationsDetail && (
-                      <div>
-                        <h4 className="font-bold text-[#002147] mb-2 text-sm">✅ Evaluaciones</h4>
-                        <p className="text-[#002147]/70 text-xs">{selectedPlan.basePlan.evaluationsDetail}</p>
+                        <div className="space-y-2 text-[#002147]/70 text-sm">
+                          {selectedPlan.basePlan.academicLoad && (
+                            <p>{selectedPlan.basePlan.academicLoad}</p>
+                          )}
+                          {selectedPlan.basePlan.evaluationsDetail && (
+                            <p>{selectedPlan.basePlan.evaluationsDetail}</p>
+                          )}
+                        </div>
                       </div>
                     )}
 
@@ -358,45 +431,18 @@ export function PlanConfiguratorNew() {
                     <div>
                       <h4 className="font-bold text-[#002147] mb-2 text-sm">📖 Asignaturas</h4>
                       <div className="flex flex-wrap gap-1.5">
-                        {parseSubjects(selectedPlan.basePlan.subjects).map((subject, idx) => (
-                          <Badge key={idx} className="bg-[#002147]/10 text-[#002147] border border-[#002147]/20 text-xs px-2 py-0.5">
-                            {subject}
-                          </Badge>
-                        ))}
+                        {parseSubjects(selectedPlan.basePlan.subjects).length > 0 ? (
+                          parseSubjects(selectedPlan.basePlan.subjects).map((subject, idx) => (
+                            <Badge key={idx} className="bg-[#002147]/10 text-[#002147] border border-[#002147]/20 text-sm px-2 py-1">
+                              {subject}
+                            </Badge>
+                          ))
+                        ) : (
+                          <p className="text-[#002147]/60 text-sm">Asignaturas del currículo nacional chileno</p>
+                        )}
                       </div>
                     </div>
 
-                    {/* Divider */}
-                    <div className="border-t border-[#002147]/10 pt-4">
-                      <h4 className="font-bold text-[#002147] mb-3 text-sm">➕ Agrega Extras</h4>
-                      
-                      {/* Teacher Option - Más compacto */}
-                      <button
-                        onClick={() => setSelectedPlan(prev => ({ ...prev, hasTeacher: !prev.hasTeacher }))}
-                        className={`w-full p-3 rounded-lg border-2 transition-all duration-300 text-left ${
-                          selectedPlan.hasTeacher
-                            ? 'border-[#D4AF37] bg-[#D4AF37]/10'
-                            : 'border-[#002147]/20 hover:border-[#002147]/40'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                              selectedPlan.hasTeacher
-                                ? 'border-[#D4AF37] bg-[#D4AF37]'
-                                : 'border-[#002147]/30'
-                            }`}>
-                              {selectedPlan.hasTeacher && <Check className="w-3 h-3 text-white" />}
-                            </div>
-                            <div>
-                              <p className="font-bold text-[#002147] text-sm">Tutor Personalizado</p>
-                              <p className="text-xs text-[#002147]/60">Sesiones individuales</p>
-                            </div>
-                          </div>
-                          <p className="font-bold text-[#002147] text-sm">+$40.000</p>
-                        </div>
-                      </button>
-                    </div>
                   </motion.div>
                 )}
               </div>
@@ -414,7 +460,7 @@ export function PlanConfiguratorNew() {
               selectedPlan.basePlan 
                 ? 'border-[#D4AF37]/50 bg-gradient-to-br from-[#D4AF37]/5 to-transparent' 
                 : 'border-[#002147]/10 opacity-50'
-            }`} style={{ height: '500px' }}>
+            }`} style={{ height: '550px' }}>
               {/* Header - Más compacto */}
               <div className={`p-3 flex items-center justify-between border-b-2 transition-all duration-500 ${
                 selectedPlan.basePlan
@@ -436,7 +482,7 @@ export function PlanConfiguratorNew() {
               </div>
 
               {/* Content */}
-              <div className="p-4 flex flex-col justify-between" style={{ height: 'calc(500px - 55px)' }}>
+              <div className="p-4 flex flex-col justify-between" style={{ height: 'calc(550px - 55px)' }}>
                 {!selectedPlan.basePlan ? (
                   <div className="flex items-center justify-center h-full">
                     <p className="text-[#002147]/30 text-center">
@@ -455,25 +501,16 @@ export function PlanConfiguratorNew() {
                       <div className="flex justify-between items-center pb-2 border-b border-[#002147]/10">
                         <div>
                           <p className="font-semibold text-[#002147] text-sm">{selectedPlan.basePlan.planName}</p>
-                          <p className="text-xs text-[#002147]/60">Plan base</p>
+                          <p className="text-sm text-[#002147]/60">Plan base</p>
                         </div>
                         <p className="font-bold text-[#002147] text-sm">{formatCurrency(selectedPlan.basePlan.monthlyPrice)}</p>
                       </div>
 
-                      {selectedPlan.hasTeacher && (
-                        <div className="flex justify-between items-center pb-2 border-b border-[#002147]/10">
-                          <div>
-                            <p className="font-semibold text-[#002147] text-sm">Tutor Personalizado</p>
-                            <p className="text-xs text-[#002147]/60">Extra</p>
-                          </div>
-                          <p className="font-bold text-[#002147] text-sm">+$40.000</p>
-                        </div>
-                      )}
 
                       <div className="flex justify-between items-center pb-2 border-b border-[#002147]/10">
                         <div>
                           <p className="font-semibold text-[#002147] text-sm">Matrícula</p>
-                          <p className="text-xs text-[#002147]/60">Pago único</p>
+                          <p className="text-sm text-[#002147]/60">Pago único</p>
                         </div>
                         <p className="font-bold text-[#002147] text-sm">{formatCurrency(selectedPlan.basePlan.enrollmentPrice)}</p>
                       </div>
@@ -483,24 +520,33 @@ export function PlanConfiguratorNew() {
                     <div className="space-y-3">
                       <div className="bg-gradient-to-r from-[#002147] to-[#003d7a] rounded-lg p-4 text-white">
                         <div className="flex justify-between items-baseline mb-2">
-                          <span className="text-xs">Mensualidad</span>
+                          <span className="text-sm">Mensualidad</span>
                           <div>
                             <span className="text-2xl font-bold">{formatCurrency(calculateTotal())}</span>
-                            <span className="text-xs ml-1">/mes</span>
+                            <span className="text-sm ml-1">/mes</span>
                           </div>
                         </div>
                         <div className="flex justify-between items-baseline pt-2 border-t border-white/20">
-                          <span className="text-xs">Total Anual (8 meses)</span>
+                          <span className="text-sm">Total Anual (8 meses)</span>
                           <span className="text-lg font-bold">{formatCurrency(calculateAnnualTotal())}</span>
                         </div>
                       </div>
 
-                      <Button className="w-full bg-[#D4AF37] hover:bg-[#C5A028] text-[#002147] font-bold py-4 text-sm rounded-lg shadow-lg hover:shadow-xl transition-all">
+                      <Button 
+                        onClick={() => setIsReservationOpen(true)}
+                        className="w-full bg-[#D4AF37] hover:bg-[#C5A028] text-[#002147] font-bold py-4 text-sm rounded-lg shadow-lg hover:shadow-xl transition-all"
+                      >
                         <ShoppingBag className="w-4 h-4 mr-2" />
                         Reservar este Plan
                       </Button>
 
-                      <p className="text-xs text-center text-[#002147]/50">
+                      {/* Reservation Dialog */}
+                      <ReservationDialog 
+                        open={isReservationOpen}
+                        onOpenChange={setIsReservationOpen}
+                      />
+
+                      <p className="text-sm text-center text-[#002147]/50">
                         Sin compromiso • Cancela cuando quieras
                       </p>
                     </div>

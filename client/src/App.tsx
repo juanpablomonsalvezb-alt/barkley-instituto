@@ -72,7 +72,7 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <SmoothScroll />
+        {/* <SmoothScroll /> */}
         <TooltipProvider>
           <Toaster />
           <Router />

@@ -18,7 +18,7 @@ import { ThinkingBridge } from "@/components/ThinkingBridge";
 import { ReservationDialog } from "@/components/ReservationDialog";
 import { PlanConfiguratorNew } from "@/components/PlanConfiguratorNew";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
 
 interface PlanConfiguration {
   id: string;
@@ -1095,7 +1095,7 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="max-w-6xl mx-auto"
           >
-            <Accordion type="single" collapsible className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {/* Pregunta 1 */}
               <AccordionItem value="item-1" className="border border-[#002147]/10 rounded-lg px-6 bg-white shadow-sm hover:shadow-md transition-shadow">
                 <AccordionTrigger className="text-left font-semibold text-[#002147] hover:text-[#a51c30] py-6">

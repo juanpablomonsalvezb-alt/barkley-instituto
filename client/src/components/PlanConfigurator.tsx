@@ -11,6 +11,7 @@ interface PlanConfiguration {
   id: string;
   planKey: string;
   planName: string;
+  planSubtitle: string | null;
   monthlyPrice: number;
   enrollmentPrice: number;
   annualTotal: number | null;
@@ -18,6 +19,10 @@ interface PlanConfiguration {
   evaluationsDetail: string | null;
   subjects: string;
   description: string | null;
+  category: string | null;
+  linkText: string | null;
+  isActive: boolean;
+  sortOrder: number;
 }
 
 interface SelectedPlan {
@@ -199,79 +204,153 @@ export function PlanConfigurator() {
                             x: { type: "spring", stiffness: 300, damping: 30 },
                             opacity: { duration: 0.3 }
                           }}
-                          className="flex-1 flex flex-col"
+                          className="flex-1 flex flex-col justify-between"
                         >
-                    <div key={plan.id}>
-                      <button
-                        onClick={() => {
-                          setSelectedPlan(prev => ({ ...prev, basePlan: plan }));
-                          setStep(2);
-                        }}
-                        className={`w-full text-left p-3 rounded-lg border-2 transition-all group ${
-                          selectedPlan.basePlan?.id === plan.id
-                            ? 'border-[#002147] bg-[#002147]/5'
-                            : 'border-[#002147]/10 hover:border-[#002147]/30 hover:bg-[#002147]/5'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                                selectedPlan.basePlan?.id === plan.id
-                                  ? 'border-[#002147] bg-[#002147]'
-                                  : 'border-[#002147]/30 group-hover:border-[#002147]'
-                              }`}>
-                                {selectedPlan.basePlan?.id === plan.id && (
-                                  <Check className="w-3 h-3 text-white" />
-                                )}
+                          {/* Plan Content */}
+                          <div className="space-y-4">
+                            {/* Category Badge */}
+                            {currentPlan.category && (
+                              <div className="flex justify-center">
+                                <Badge className="bg-[#D4AF37]/20 text-[#002147] border border-[#D4AF37]">
+                                  {currentPlan.category}
+                                </Badge>
                               </div>
-                              <span className="font-bold text-[#002147]">{plan.planName}</span>
-                            </div>
-                            <p className="text-sm text-[#002147]/60 mb-2">{plan.description?.slice(0, 80)}...</p>
-                            <div className="flex items-baseline gap-2">
-                              <span className="text-2xl font-bold text-[#002147]">{formatCurrency(plan.monthlyPrice)}</span>
-                              <span className="text-sm text-[#002147]/50">/mes</span>
-                            </div>
-                          </div>
-                        </div>
-                      </button>
+                            )}
 
-                      {/* Collapsible Details */}
-                      <Collapsible
-                        open={expandedDetails === plan.id}
-                        onOpenChange={(open) => setExpandedDetails(open ? plan.id : null)}
-                      >
-                        <CollapsibleTrigger className="w-full mt-2">
-                          <button className="flex items-center gap-2 text-sm text-[#002147] hover:text-[#002147]/70 ml-4">
-                            <span>Ver detalles</span>
-                            <ChevronDown className={`w-4 h-4 transition-transform ${expandedDetails === plan.id ? 'rotate-180' : ''}`} />
-                          </button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <div className="mt-3 ml-4 p-4 bg-[#002147]/5 rounded-lg text-sm space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Check className="w-4 h-4 text-[#002147]" />
-                              <span className="text-[#002147]/80">{plan.academicLoad}</span>
+                            {/* Plan Title */}
+                            <div className="text-center">
+                              <h4 className="text-2xl font-bold text-[#002147] mb-1">
+                                {currentPlan.planName}
+                              </h4>
+                              {currentPlan.planSubtitle && (
+                                <p className="text-sm text-[#002147]/60">
+                                  {currentPlan.planSubtitle}
+                                </p>
+                              )}
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Check className="w-4 h-4 text-[#002147]" />
-                              <span className="text-[#002147]/80">{plan.evaluationsDetail}</span>
-                            </div>
-                            <div className="pt-2 border-t border-[#002147]/10">
-                              <p className="text-xs text-[#002147]/60 font-semibold mb-1">Asignaturas:</p>
-                              <div className="flex flex-wrap gap-1">
-                                {parseSubjects(plan.subjects).map((subject, idx) => (
-                                  <Badge key={idx} variant="outline" className="text-xs">
-                                    {subject}
-                                  </Badge>
-                                ))}
+
+                            {/* Price Display */}
+                            <div className="bg-gradient-to-br from-[#002147]/5 to-[#D4AF37]/10 rounded-xl p-6 text-center">
+                              <div className="mb-3">
+                                <span className="text-4xl font-bold text-[#002147]">
+                                  {formatCurrency(currentPlan.monthlyPrice)}
+                                </span>
+                                <span className="text-sm text-[#002147]/60 ml-2">/mes</span>
+                              </div>
+                              <div className="text-sm text-[#002147]/70">
+                                Matrícula: <span className="font-bold">{formatCurrency(currentPlan.enrollmentPrice)}</span>
                               </div>
                             </div>
+
+                            {/* Description */}
+                            <p className="text-sm text-[#002147]/70 text-center leading-relaxed">
+                              {currentPlan.description}
+                            </p>
+
+                            {/* Collapsible Details */}
+                            <Collapsible
+                              open={expandedDetails === currentPlan.id}
+                              onOpenChange={(open) => setExpandedDetails(open ? currentPlan.id : null)}
+                            >
+                              <CollapsibleTrigger className="w-full">
+                                <button className="flex items-center justify-center gap-2 text-sm text-[#002147] hover:text-[#002147]/70 w-full py-2 border-t border-[#002147]/10">
+                                  <span>Ver detalles completos</span>
+                                  <ChevronDown className={`w-4 h-4 transition-transform ${expandedDetails === currentPlan.id ? 'rotate-180' : ''}`} />
+                                </button>
+                              </CollapsibleTrigger>
+                              <CollapsibleContent>
+                                <div className="mt-3 p-4 bg-[#002147]/5 rounded-lg text-sm space-y-3">
+                                  {currentPlan.academicLoad && (
+                                    <div className="flex items-start gap-2">
+                                      <Check className="w-4 h-4 text-[#002147] mt-0.5 shrink-0" />
+                                      <span className="text-[#002147]/80">{currentPlan.academicLoad}</span>
+                                    </div>
+                                  )}
+                                  {currentPlan.evaluationsDetail && (
+                                    <div className="flex items-start gap-2">
+                                      <Check className="w-4 h-4 text-[#002147] mt-0.5 shrink-0" />
+                                      <span className="text-[#002147]/80">{currentPlan.evaluationsDetail}</span>
+                                    </div>
+                                  )}
+                                  <div className="pt-2 border-t border-[#002147]/10">
+                                    <p className="text-xs text-[#002147]/60 font-semibold mb-2">Asignaturas:</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {parseSubjects(currentPlan.subjects).map((subject, idx) => (
+                                        <Badge key={idx} variant="outline" className="text-xs border-[#002147]/30">
+                                          {subject}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
                           </div>
-                        </CollapsibleContent>
-                      </Collapsible>
-                    </div>
-                  ))}
+
+                          {/* Select Button */}
+                          <div className="space-y-3">
+                            <Button
+                              onClick={selectCurrentPlan}
+                              className={`w-full py-6 text-base font-bold transition-all duration-300 ${
+                                selectedPlan.basePlan?.id === currentPlan.id
+                                  ? 'bg-[#D4AF37] text-[#002147] hover:bg-[#C5A028]'
+                                  : 'bg-[#002147] text-white hover:bg-[#003366]'
+                              }`}
+                            >
+                              {selectedPlan.basePlan?.id === currentPlan.id ? (
+                                <>
+                                  <Check className="w-5 h-5 mr-2" />
+                                  Plan Seleccionado
+                                </>
+                              ) : (
+                                'Seleccionar este Plan'
+                              )}
+                            </Button>
+                          </div>
+                        </motion.div>
+                      </AnimatePresence>
+
+                      {/* Carousel Navigation */}
+                      <div className="flex items-center justify-between gap-4 mt-4">
+                        <Button
+                          onClick={goToPreviousPlan}
+                          variant="outline"
+                          size="sm"
+                          className="border-[#002147] text-[#002147] hover:bg-[#002147] hover:text-white"
+                        >
+                          <ChevronLeft className="w-4 h-4 mr-1" />
+                          Anterior
+                        </Button>
+
+                        <div className="flex gap-2">
+                          {allPlans.map((_, idx) => (
+                            <div
+                              key={idx}
+                              onClick={() => {
+                                setDirection(idx > currentPlanIndex ? 1 : -1);
+                                setCurrentPlanIndex(idx);
+                              }}
+                              className={`h-2 rounded-full cursor-pointer transition-all duration-300 ${
+                                idx === currentPlanIndex
+                                  ? 'w-8 bg-[#002147]'
+                                  : 'w-2 bg-[#002147]/20 hover:bg-[#002147]/40'
+                              }`}
+                            />
+                          ))}
+                        </div>
+
+                        <Button
+                          onClick={goToNextPlan}
+                          variant="outline"
+                          size="sm"
+                          className="border-[#002147] text-[#002147] hover:bg-[#002147] hover:text-white"
+                        >
+                          Siguiente
+                          <ChevronRight className="w-4 h-4 ml-1" />
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </Card>
             </motion.div>

@@ -17,8 +17,6 @@ import { motion } from "framer-motion";
 import { ThinkingBridge } from "@/components/ThinkingBridge";
 import { ReservationDialog } from "@/components/ReservationDialog";
 import { PlanConfiguratorNew } from "@/components/PlanConfiguratorNew";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface PlanConfiguration {
   id: string;
@@ -727,189 +725,6 @@ export default function Home() {
       </main>
 
       {/* Tech Stack / Partners Section */}
-
-      {/* Mentor Section - White Background 2 Columns */}
-      <section className="bg-white py-32">
-        <div className="max-w-[1400px] mx-auto px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            
-            {/* Left Column - Image */}
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="relative h-[500px] rounded-2xl overflow-hidden shadow-2xl"
-            >
-              <img 
-                src="/imagen01.jpg"
-                alt="Mentor Barkley" 
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#002147]/30 via-transparent to-transparent"></div>
-            </motion.div>
-
-            {/* Right Column - Content */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="space-y-6"
-            >
-              {/* Title - Grande */}
-              <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-[#002147] leading-[1.1]">
-                La figura del <span className="text-[#a51c30] italic">Mentor</span> en Barkley
-              </h2>
-
-              {/* Decorative line */}
-              <div className="h-1 w-20 bg-[#D4AF37]"></div>
-
-              {/* Description - Texto más pequeño */}
-              <p className="text-base md:text-lg text-[#002147]/80 leading-[1.8] font-normal">
-                La figura del Mentor en Barkley actúa como el puente estratégico entre la tecnología y el aprendizaje efectivo. Cada estudiante cuenta con dos sesiones online mensuales vía Zoom, diseñadas para la planificación de objetivos, resolución de nudos críticos y reforzamiento motivacional. Más que un instructor, es un guía que supervisa diariamente el progreso, gestiona el calendario de metas y garantiza la excelencia académica.
-              </p>
-
-              {/* Key Features */}
-              <div className="grid grid-cols-2 gap-6 pt-6">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-[#D4AF37]"></div>
-                    <span className="text-sm font-semibold text-[#002147]">2 Sesiones Mensuales</span>
-                  </div>
-                  <p className="text-xs text-[#002147]/60 ml-4">Reuniones online vía Zoom</p>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-[#D4AF37]"></div>
-                    <span className="text-sm font-semibold text-[#002147]">Seguimiento Diario</span>
-                  </div>
-                  <p className="text-xs text-[#002147]/60 ml-4">Supervisión continua del progreso</p>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-[#D4AF37]"></div>
-                    <span className="text-sm font-semibold text-[#002147]">Planificación Estratégica</span>
-                  </div>
-                  <p className="text-xs text-[#002147]/60 ml-4">Objetivos y calendario de metas</p>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-[#D4AF37]"></div>
-                    <span className="text-sm font-semibold text-[#002147]">Refuerzo Motivacional</span>
-                  </div>
-                  <p className="text-xs text-[#002147]/60 ml-4">Apoyo emocional y académico</p>
-                </div>
-              </div>
-            </motion.div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* Harvard-Style Benefits Section */}
-      <section className="py-24 bg-white">
-        <div className="container-harvard">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-20"
-          >
-            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6">
-              ¿Por qué elegirnos?
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Educación de calidad con metodología innovadora
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-12">
-            {[
-              {
-                icon: Brain,
-                title: "Metodología Barkley",
-                description: "Sistema probado de autorregulación y desarrollo de funciones ejecutivas basado en neurociencia"
-              },
-              {
-                icon: Users,
-                title: "Acompañamiento Personalizado",
-                description: "Success Mentors dedicados con seguimiento continuo del progreso académico"
-              },
-              {
-                icon: Award,
-                title: "Certificación Oficial",
-                description: "Programas validados y reconocidos por el Ministerio de Educación de Chile"
-              },
-              {
-                icon: Calendar,
-                title: "Flexibilidad Total",
-                description: "Aprende a tu ritmo con contenido disponible 24/7 y evaluaciones adaptadas"
-              },
-              {
-                icon: CheckCircle,
-                title: "Evaluación Continua",
-                description: "Sistema de evaluación formativa con retroalimentación constante e inmediata"
-              },
-              {
-                icon: Trophy,
-                title: "Resultados Garantizados",
-                description: "100% de tasa de aprobación con metodología comprobada científicamente"
-              }
-            ].map((benefit, index) => (
-              <motion.div
-                key={benefit.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1, duration: 0.5 }}
-                className="text-center space-y-6 p-8 rounded-2xl hover:bg-muted/30 transition-all duration-300 group"
-              >
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/5 rounded-2xl group-hover:bg-primary/10 group-hover:scale-110 transition-all duration-300">
-                  <benefit.icon className="w-10 h-10 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold group-hover:text-primary transition-colors">
-                  {benefit.title}
-                </h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  {benefit.description}
-                </p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section - Harvard Style */}
-      <section className="py-24 bg-primary text-white">
-        <div className="container-harvard text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="max-w-3xl mx-auto space-y-8"
-          >
-            <h2 className="text-4xl md:text-5xl font-serif font-bold">
-              Comienza tu viaje educativo hoy
-            </h2>
-            <p className="text-xl text-white/90 leading-relaxed">
-              Agenda una reunión gratuita con nuestros asesores educativos y descubre cómo podemos ayudarte
-            </p>
-            <Button
-              size="lg"
-              onClick={() => setReservationDialogOpen(true)}
-              className="bg-white text-primary hover:bg-white/90 text-lg px-12 py-7 rounded-full font-semibold shadow-xl hover:shadow-2xl transition-all"
-            >
-              <Calendar className="mr-2 w-5 h-5" />
-              Agendar Reunión Gratuita
-              <ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
-          </motion.div>
-        </div>
-      </section>
-
       <section className="bg-[#fafafa] py-16 border-t border-[#1e1e1e]/5">
         <div className="container-harvard">
           <motion.div
@@ -1066,151 +881,144 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
-      {/* FAQ Section - Compact Horizontal */}
-      <section className="py-16 bg-gradient-to-br from-[#f8f9fa] to-white">
-        <div className="max-w-[1200px] mx-auto px-8">
-          {/* Header */}
-          <div className="text-center mb-10">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-            >
-              <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#002147] mb-3">
-                Preguntas Frecuentes
+
+      {/* Harvard Interactive Finder Section */}
+      <section className="bg-[#2d2d2d] py-24">
+        <div className="max-w-[1100px] mx-auto px-8">
+
+          {/* Interactive Statements */}
+          <div className="space-y-10 mb-16">
+            {/* Statement 1 */}
+            <div className="group">
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight whitespace-nowrap" style={{ fontFamily: "'National 2', sans-serif" }}>
+                Quiero dominar <span className="font-bold cursor-pointer transition-all inline-block" style={{ 
+                  background: 'linear-gradient(to right, #ff6b9d, #ff4d6d)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                }}>Cualquier Asignatura</span><ChevronRight className="inline-block w-9 h-9 text-[#ff4d6d] ml-3" />
               </h2>
-              <div className="h-1 w-16 bg-[#D4AF37] mx-auto mb-4"></div>
-              <p className="text-sm text-[#002147]/60">
-                Pasa el cursor sobre cada pregunta para ver la respuesta
-              </p>
-            </motion.div>
+            </div>
+
+            {/* Statement 2 */}
+            <div className="group">
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight whitespace-nowrap" style={{ fontFamily: "'National 2', sans-serif" }}>
+                Busco un sistema de <span className="font-bold cursor-pointer transition-all inline-block" style={{ 
+                  background: 'linear-gradient(to right, #ff6b9d, #ff4d6d)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                }}>Rendimiento Avanzado</span><ChevronRight className="inline-block w-9 h-9 text-[#ff4d6d] ml-3" />
+              </h2>
+            </div>
           </div>
 
-          {/* FAQ Buttons Grid */}
+          {/* Help Button */}
+          <button className="bg-gradient-to-r from-[#c41e3a] to-[#a51c30] text-white px-12 py-5 rounded-full text-[15px] font-semibold hover:from-[#a51c30] hover:to-[#8a1828] transition-all shadow-lg hover:shadow-xl">
+            Ayúdame a elegir
+          </button>
+        </div>
+      </section>
+
+      {/* Harvard-Style Benefits Section */}
+      <section className="py-24 bg-white">
+        <div className="container-harvard">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="max-w-6xl mx-auto"
+            transition={{ duration: 0.6 }}
+            className="text-center mb-20"
           >
-            <Accordion type="single" collapsible className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {/* Pregunta 1 */}
-              <AccordionItem value="item-1" className="border border-[#002147]/10 rounded-lg px-6 bg-white shadow-sm hover:shadow-md transition-shadow">
-                <AccordionTrigger className="text-left font-semibold text-[#002147] hover:text-[#a51c30] py-6">
-                  ¿Cómo funciona el sistema de validación de estudios?
-                </AccordionTrigger>
-                <AccordionContent className="text-[#002147]/80 leading-relaxed pb-6">
-                  Nuestro sistema está alineado 100% con el currículo nacional chileno. Estudias de forma asíncrona con materiales diseñados específicamente, asistencia de Academic Copilot 24/7, y evaluaciones regulares que validan tu progreso. Al completar cada nivel, recibes certificación oficial reconocida por MINEDUC.
-                </AccordionContent>
-              </AccordionItem>
+            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6">
+              ¿Por qué elegirnos?
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Educación de calidad con metodología innovadora
+            </p>
+          </motion.div>
 
-              {/* Pregunta 2 */}
-              <AccordionItem value="item-2" className="border border-[#002147]/10 rounded-lg px-6 bg-white shadow-sm hover:shadow-md transition-shadow">
-                <AccordionTrigger className="text-left font-semibold text-[#002147] hover:text-[#a51c30] py-6">
-                  ¿Cuánto tiempo toma completar cada nivel?
-                </AccordionTrigger>
-                <AccordionContent className="text-[#002147]/80 leading-relaxed pb-6">
-                  El programa está diseñado para completarse en 8 meses (marzo a octubre) por nivel. Sin embargo, con nuestro sistema flexible, puedes avanzar a tu propio ritmo. Algunos estudiantes completan más rápido, otros prefieren tomarse el tiempo completo.
-                </AccordionContent>
-              </AccordionItem>
+          <div className="grid md:grid-cols-3 gap-12">
+            {[
+              {
+                icon: Brain,
+                title: "Metodología Barkley",
+                description: "Sistema probado de autorregulación y desarrollo de funciones ejecutivas basado en neurociencia"
+              },
+              {
+                icon: Users,
+                title: "Acompañamiento Personalizado",
+                description: "Success Mentors dedicados con seguimiento continuo del progreso académico"
+              },
+              {
+                icon: Award,
+                title: "Certificación Oficial",
+                description: "Programas validados y reconocidos por el Ministerio de Educación de Chile"
+              },
+              {
+                icon: Calendar,
+                title: "Flexibilidad Total",
+                description: "Aprende a tu ritmo con contenido disponible 24/7 y evaluaciones adaptadas"
+              },
+              {
+                icon: CheckCircle,
+                title: "Evaluación Continua",
+                description: "Sistema de evaluación formativa con retroalimentación constante e inmediata"
+              },
+              {
+                icon: Trophy,
+                title: "Resultados Garantizados",
+                description: "100% de tasa de aprobación con metodología comprobada científicamente"
+              }
+            ].map((benefit, index) => (
+              <motion.div
+                key={benefit.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1, duration: 0.5 }}
+                className="text-center space-y-6 p-8 rounded-2xl hover:bg-muted/30 transition-all duration-300 group"
+              >
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/5 rounded-2xl group-hover:bg-primary/10 group-hover:scale-110 transition-all duration-300">
+                  <benefit.icon className="w-10 h-10 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold group-hover:text-primary transition-colors">
+                  {benefit.title}
+                </h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  {benefit.description}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-              {/* Pregunta 3 */}
-              <AccordionItem value="item-3" className="border border-[#002147]/10 rounded-lg px-6 bg-white shadow-sm hover:shadow-md transition-shadow">
-                <AccordionTrigger className="text-left font-semibold text-[#002147] hover:text-[#a51c30] py-6">
-                  ¿El certificado es válido y reconocido por MINEDUC?
-                </AccordionTrigger>
-                <AccordionContent className="text-[#002147]/80 leading-relaxed pb-6">
-                  Sí, todos nuestros certificados son 100% válidos y reconocidos oficialmente. Cumplimos con todos los requisitos del Ministerio de Educación de Chile para validación de estudios, lo que te permite continuar estudios superiores o acceder al mundo laboral sin problemas.
-                </AccordionContent>
-              </AccordionItem>
-
-              {/* Pregunta 4 */}
-              <AccordionItem value="item-4" className="border border-[#002147]/10 rounded-lg px-6 bg-white shadow-sm hover:shadow-md transition-shadow">
-                <AccordionTrigger className="text-left font-semibold text-[#002147] hover:text-[#a51c30] py-6">
-                  ¿Necesito conocimientos previos para inscribirme?
-                </AccordionTrigger>
-                <AccordionContent className="text-[#002147]/80 leading-relaxed pb-6">
-                  Solo necesitas haber completado el nivel anterior al que deseas cursar. Si quieres validar 1° Medio, debes haber completado 8° Básico, y así sucesivamente. No se requieren conocimientos técnicos especiales, solo ganas de aprender y acceso a internet.
-                </AccordionContent>
-              </AccordionItem>
-
-              {/* Pregunta 5 */}
-              <AccordionItem value="item-5" className="border border-[#002147]/10 rounded-lg px-6 bg-white shadow-sm hover:shadow-md transition-shadow">
-                <AccordionTrigger className="text-left font-semibold text-[#002147] hover:text-[#a51c30] py-6">
-                  ¿Qué incluye Academic Copilot exactamente?
-                </AccordionTrigger>
-                <AccordionContent className="text-[#002147]/80 leading-relaxed pb-6">
-                  Academic Copilot es tu asistente de IA personalizado disponible 24/7. Te ayuda a resolver dudas al instante, explica conceptos complejos adaptándose a tu nivel, te guía paso a paso en ejercicios, y te da retroalimentación inmediata. Es como tener un profesor particular siempre disponible.
-                </AccordionContent>
-              </AccordionItem>
-
-              {/* Pregunta 6 */}
-              <AccordionItem value="item-6" className="border border-[#002147]/10 rounded-lg px-6 bg-white shadow-sm hover:shadow-md transition-shadow">
-                <AccordionTrigger className="text-left font-semibold text-[#002147] hover:text-[#a51c30] py-6">
-                  ¿Cuál es la diferencia entre Plan Full, Estándar y Mentor?
-                </AccordionTrigger>
-                <AccordionContent className="text-[#002147]/80 leading-relaxed pb-6">
-                  <strong>Plan Full:</strong> Incluye todo el material, Academic Copilot, evaluaciones y seguimiento completo.<br/>
-                  <strong>Plan Estándar:</strong> Material básico y Academic Copilot, ideal si eres autodidacta.<br/>
-                  <strong>Plan Mentor:</strong> Además de todo lo anterior, incluye 2 sesiones mensuales con un mentor personal vía Zoom para planificación y seguimiento personalizado.
-                </AccordionContent>
-              </AccordionItem>
-
-              {/* Pregunta 7 */}
-              <AccordionItem value="item-7" className="border border-[#002147]/10 rounded-lg px-6 bg-white shadow-sm hover:shadow-md transition-shadow">
-                <AccordionTrigger className="text-left font-semibold text-[#002147] hover:text-[#a51c30] py-6">
-                  ¿Hay requisitos de edad o nivel académico?
-                </AccordionTrigger>
-                <AccordionContent className="text-[#002147]/80 leading-relaxed pb-6">
-                  Para menores (7° Básico a 4° Medio): Edad según nivel que deseas cursar. Para adultos: Mayor de 18 años sin límite de edad superior. El único requisito académico es haber completado el nivel anterior al que deseas validar.
-                </AccordionContent>
-              </AccordionItem>
-
-              {/* Pregunta 8 */}
-              <AccordionItem value="item-8" className="border border-[#002147]/10 rounded-lg px-6 bg-white shadow-sm hover:shadow-md transition-shadow">
-                <AccordionTrigger className="text-left font-semibold text-[#002147] hover:text-[#a51c30] py-6">
-                  ¿Cómo son las evaluaciones y exámenes?
-                </AccordionTrigger>
-                <AccordionContent className="text-[#002147]/80 leading-relaxed pb-6">
-                  Las evaluaciones son 100% online y están diseñadas según el Método Barkley: ráfagas de estudio de 20 minutos seguidas de evaluaciones cortas. Hay evaluaciones formativas continuas y evaluaciones sumativas al final de cada unidad. Todo el sistema está pensado para maximizar tu aprendizaje efectivo.
-                </AccordionContent>
-              </AccordionItem>
-
-              {/* Pregunta 9 */}
-              <AccordionItem value="item-9" className="border border-[#002147]/10 rounded-lg px-6 bg-white shadow-sm hover:shadow-md transition-shadow">
-                <AccordionTrigger className="text-left font-semibold text-[#002147] hover:text-[#a51c30] py-6">
-                  ¿Puedo estudiar a mi propio ritmo o hay horarios fijos?
-                </AccordionTrigger>
-                <AccordionContent className="text-[#002147]/80 leading-relaxed pb-6">
-                  El sistema es 100% flexible. Estudias cuando quieras, a tu propio ritmo. Solo hay fechas límite para las evaluaciones finales de cada módulo, pero tienes amplio margen para organizarte según tu disponibilidad. Perfecto si trabajas o tienes otras responsabilidades.
-                </AccordionContent>
-              </AccordionItem>
-
-              {/* Pregunta 10 */}
-              <AccordionItem value="item-10" className="border border-[#002147]/10 rounded-lg px-6 bg-white shadow-sm hover:shadow-md transition-shadow">
-                <AccordionTrigger className="text-left font-semibold text-[#002147] hover:text-[#a51c30] py-6">
-                  ¿Qué pasa si necesito pausar mis estudios?
-                </AccordionTrigger>
-                <AccordionContent className="text-[#002147]/80 leading-relaxed pb-6">
-                  Entendemos que surgen imprevistos. Puedes solicitar una pausa temporal en tus estudios comunicándote con tu coordinador académico. Dependiendo del plan y el momento, podemos congelar tu matrícula para que continúes cuando estés listo, sin perder tu progreso.
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-
-            {/* CTA después del FAQ */}
-            <div className="mt-12 text-center p-8 bg-gradient-to-br from-[#f8f9fa] to-[#e9ecef] rounded-xl border-2 border-[#D4AF37]/20">
-              <p className="text-lg text-[#002147] mb-4 font-semibold">
-                ¿Tienes otra pregunta?
-              </p>
-              <p className="text-[#002147]/70 mb-6">
-                Nuestro equipo está listo para ayudarte. Chatea con nosotros o reserva una asesoría gratuita.
-              </p>
-              <Button className="bg-[#D4AF37] hover:bg-[#C5A028] text-[#002147] font-bold px-8 py-3">
-                Hablar con un Asesor
-              </Button>
-            </div>
+      {/* CTA Section - Harvard Style */}
+      <section className="py-24 bg-primary text-white">
+        <div className="container-harvard text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="max-w-3xl mx-auto space-y-8"
+          >
+            <h2 className="text-4xl md:text-5xl font-serif font-bold">
+              Comienza tu viaje educativo hoy
+            </h2>
+            <p className="text-xl text-white/90 leading-relaxed">
+              Agenda una reunión gratuita con nuestros asesores educativos y descubre cómo podemos ayudarte
+            </p>
+            <Button
+              size="lg"
+              onClick={() => setReservationDialogOpen(true)}
+              className="bg-white text-primary hover:bg-white/90 text-lg px-12 py-7 rounded-full font-semibold shadow-xl hover:shadow-2xl transition-all"
+            >
+              <Calendar className="mr-2 w-5 h-5" />
+              Agendar Reunión Gratuita
+              <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
           </motion.div>
         </div>
       </section>
