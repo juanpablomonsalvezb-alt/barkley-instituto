@@ -572,14 +572,6 @@ export class DatabaseStorage implements IStorage {
     await db.delete(textbookConfigs).where(eq(textbookConfigs.id, id));
   }
 
-  async getLevelSubjectById(id: string): Promise<any> {
-    const results = await db.select()
-      .from(levelSubjects)
-      .where(eq(levelSubjects.id, id))
-      .limit(1);
-    return results[0];
-  }
-
   // Reservations
   async getAllReservations(): Promise<Reservation[]> {
     return db.select().from(reservations).orderBy(reservations.createdAt);
